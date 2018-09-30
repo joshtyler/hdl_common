@@ -1,0 +1,16 @@
+VERILATOR = verilator
+#VERILATOR_FLAGS = --trace --cc --exe -CFLAGS '-Wall -Wextra -g -fno-stack-protector'
+VERILATOR_FLAGS = --trace --cc --exe -CFLAGS '-Wall -Wextra -g'
+
+VERILOG_TOP = crc.v
+CPP_SOURCES = test_crc.cpp
+
+default : run
+
+run:
+	$(VERILATOR) $(VERILATOR_FLAGS) $(VERILOG_TOP) $(CPP_SOURCES)
+
+	$(MAKE) -j 4 -C obj_dir -f Vcrc.mk
+
+clean:
+	rm -r obj_dir
