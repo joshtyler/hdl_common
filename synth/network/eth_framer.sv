@@ -235,7 +235,7 @@ axis_distributor
 );
 
 // CRC calculation
-crc crc_gen (
+eth_crc crc_gen (
 	.clk(clk),
 	.sresetn(sresetn),
 

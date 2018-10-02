@@ -6,7 +6,7 @@
 #include <string>
 
 #include "Peripheral.hpp"
-#include "ClockGen.hpp"
+#include "../other/ClockGen.hpp"
 
 // Class that binds together a clock generator, and a Verilated model input
 class ClockBind

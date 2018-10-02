@@ -5,8 +5,8 @@
 // For now, "transmit" (i.e data from fpga) only, and just log data to stdout
 
 
-#include "ClockGen.hpp"
-#include "Peripheral.hpp"
+#include "../other/ClockGen.hpp"
+#include "../verilator/Peripheral.hpp"
 #include <vector>
 
 struct DummyRMIIException : std::runtime_error
