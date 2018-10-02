@@ -1,6 +1,6 @@
 // Send on AXI stream slave input out to many masters
 
-module axis_distributor
+module axis_broadcaster
 #(
 	parameter AXIS_BYTES = 1,
 	parameter NUM_STREAMS = 1

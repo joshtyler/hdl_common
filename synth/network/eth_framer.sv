@@ -211,11 +211,11 @@ axis_joiner
 );
 
 // Distribute framed data top joiner and CRC
-axis_distributor
+axis_broadcaster
 #(
 	.AXIS_BYTES(1),
 	.NUM_STREAMS(2)
-) distr (
+) bcaster (
 	.clk(clk),
 	.sresetn(sresetn),
 
