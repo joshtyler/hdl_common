@@ -28,10 +28,21 @@ bool neverBreak(void)
 template <class MODEL> class VerilatedModel
 {
 public:
+
+	VerilatedModel(void)
+	:VerilatedModel("vcd.vcd",false)
+	{
+	}
+
 	VerilatedModel(int argc, char**argv, bool recordVcd)
-	:time(0), tfp(NULL), finishCallback(neverBreak)
+	:VerilatedModel(std::string(argv[0])+".vcd",recordVcd)
 	{
 		Verilated::commandArgs(argc, argv);
+	}
+
+	VerilatedModel(std::string vcdname, bool recordVcd)
+	:time(0), tfp(NULL), finishCallback(neverBreak)
+	{
 		uut = new MODEL;
 
 		if (recordVcd)
@@ -40,12 +51,11 @@ public:
 			tfp = new VerilatedVcdC;
 			uut->trace(tfp, 99);
 
-			std::string vcdname = argv[0];
-			vcdname += ".vcd";
 			std::cout << vcdname << std::endl;
 			tfp->open(vcdname.c_str());
 		}
 	}
+
 	~VerilatedModel()
 	{
 		delete uut;

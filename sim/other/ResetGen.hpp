@@ -4,7 +4,7 @@
 // Generate a reset pulse
 
 #include "ClockGen.hpp"
-#include "Peripheral.hpp"
+#include "../verilator/Peripheral.hpp"
 
 class ResetGen : public Peripheral
 {

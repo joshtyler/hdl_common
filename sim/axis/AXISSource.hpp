@@ -4,8 +4,8 @@
 // Output an AXI Stream from a vector of vectors
 // N.B. Currently this does not support any kind of reset
 
-#include "ClockGen.hpp"
-#include "Peripheral.hpp"
+#include "../other/ClockGen.hpp"
+#include "../verilator/Peripheral.hpp"
 #include <vector>
 
 template <class dataT> class AXISSource : public Peripheral
