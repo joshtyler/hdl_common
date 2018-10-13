@@ -7,25 +7,36 @@
 #        # These are the result of compiling the cpp test files.
 #        # These are then linked with the top level unit test file, which defines main
 
-VLOG_SOURCES = synth/axis/axis_fifo.sv
-CPP_SOURCES = synth/axis/tb/test_axis_fifo.cpp
+VLOG_INC_DIRS =
+VLOG_SOURCES =
+CPP_SOURCES =
+
+include synth/Makefile
+# This file includes Makefiles in subdirectories that add the actual source files
+# These makefiles have the following responsibilities:
+	# Add themselves to vpath for .cpp, if they contain those files
+	# Add themselves to VLOG_INC_DIRS if they contain any .sv or .v files
+	# Add any unit test cpp files to CPP_SOURCES
+	# Add any verilog files used in unit tests to VLOG_SOURCES
+	# Provide custom rules for verilation (and a custom name) for verilog modules with non-default generics
+	# Include makefiles in subdirectories off themselves
+# Includes from this file are at the end
 
 TESTS_TOP = run_unit_tests.cpp
 CPP_SOURCES += $(TESTS_TOP)
 BINARY_NAME = $(basename $(TESTS_TOP))
 
-VLOG_INC_DIRS = synth/other synth/axis
-
 OBJDIR = obj_dir
+
+CC = g++
+CFLAGS = -Wall -Wextra -g
 
 VERILATOR = verilator
 VERILATOR_INC_DIR = /usr/share/verilator/include
-VERILATOR_FLAGS = $(addprefix -y , $(VLOG_INC_DIRS)) --trace --cc -Mdir $(OBJDIR) -CFLAGS '-Wall -Wextra -g '
+VERILATOR_FLAGS = $(addprefix -y , $(VLOG_INC_DIRS)) --trace --cc -Mdir $(OBJDIR) -CFLAGS '$(CFLAGS)'
 
 # Add files that verilator requires to be compiled to the sources list
 CPP_SOURCES += $(VERILATOR_INC_DIR)/verilated.cpp $(VERILATOR_INC_DIR)/verilated_vcd_c.cpp
-
-CC = g++
 
 # Each module is named the same as its source files
 # Minus the extension
