@@ -6,7 +6,6 @@
 #    # Object files for the unit tests
 #        # These are the result of compiling the cpp test files.
 #        # These are then linked with the top level unit test file, which defines main
-
 VLOG_INC_DIRS =
 VLOG_SOURCES =
 CPP_SOURCES =
@@ -46,6 +45,9 @@ VLOG_MODULES = $(basename $(notdir $(VLOG_SOURCES)))
 # And it lives in the object directory
 VERILATED_LIBS = $(addprefix $(OBJDIR)/,$(addprefix V,$(addsuffix __ALL.a, $(VLOG_MODULES))))
 
+# Each header is named V[module name].h
+VERILATED_HEADERS = $(addprefix $(OBJDIR)/,$(addprefix V,$(addsuffix .h, $(VLOG_MODULES))))
+
 # Add source to vpath so that make will automatically search for them
 # sort avoids duplication
 vpath %.cpp $(sort $(dir $(CPP_SOURCES)))
@@ -58,12 +60,12 @@ all : $(BINARY_NAME)
 
 # The binary file depends on all of the compiled unit test object files
 # As well as all of the verilated libraries
-$(BINARY_NAME): $(CPP_OBJ) $(VERILATED_LIBS)
+$(BINARY_NAME): $(CPP_OBJ) $(VERILATED_LIBS) $(VERILATED_HEADERS)
 	$(CC) $(CPP_OBJ) $(VERILATED_LIBS) -o $@
 
 # All of the objects can be made from the respective .cpp file + verilated headers
 # Make can find these okay since vpath is set
-$(OBJDIR)/%.o : %.cpp $(VERILATED_LIBS)
+$(OBJDIR)/%.o : %.cpp $(VERILATED_LIBS) $(VERILATED_HEADERS)
 	$(CC) -c -I$(VERILATOR_INC_DIR) -I$(OBJDIR) $< -o $@
 
 # We can tell a file is verilated if the module header is produced
