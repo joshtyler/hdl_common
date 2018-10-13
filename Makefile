@@ -7,10 +7,12 @@
 #        # These are the result of compiling the cpp test files.
 #        # These are then linked with the top level unit test file, which defines main
 
-
 VLOG_SOURCES = synth/axis/axis_fifo.sv
 CPP_SOURCES = synth/axis/tb/test_axis_fifo.cpp
-BINARY_NAME = test_axis_fifo
+
+TESTS_TOP = run_unit_tests.cpp
+CPP_SOURCES += $(TESTS_TOP)
+BINARY_NAME = $(basename $(TESTS_TOP))
 
 VLOG_INC_DIRS = synth/other synth/axis
 
@@ -54,8 +56,9 @@ $(OBJDIR)/%.o : %.cpp $(VERILATED_LIBS)
 	$(CC) -c -I$(VERILATOR_INC_DIR) -I$(OBJDIR) $< -o $@
 
 # We can tell a file is verilated if the module header is produced
+# N.B we can get away without specifying a .v or .sv extension because verilator searches both!
 $(OBJDIR)/V%.h:
-	$(VERILATOR) $(VERILATOR_FLAGS) $*.sv
+	$(VERILATOR) $(VERILATOR_FLAGS) $*
 
 # This compiles the verilated sources into an object file
 # It depends on verilation having already happened
