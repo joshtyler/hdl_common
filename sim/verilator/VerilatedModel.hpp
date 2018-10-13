@@ -19,7 +19,7 @@ public:
 	vluint8_t &clk;
 };
 
-bool neverBreak(void)
+static bool neverBreak(void)
 {
 	return 0;
 }
