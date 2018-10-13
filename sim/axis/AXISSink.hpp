@@ -21,34 +21,35 @@ public:
 		addInput(&last);
 		addInput(&data);
 
-		//Push empty vector so that the first element has something to add to
-		vec.push_back(std::vector<dataT>());
-
-		//Always be ready
-		ready = 1;
+		resetState();
 	};
 	// Data is returned as a vector of vectors
 	// Each element in the base vector is a packet
 	// Each element in the subvector is a word
-	std::vector<std::vector<dataT>> getData(void) {return vec;};
+	std::vector<std::vector<dataT>> getData(void){return vec;};
 
 	//Return number of times tlast has been received
 	unsigned int getTlastCount(void) const {return vec.size()-1;};
 
 	void eval(void) override
 	{
-		#warning "Doesn't currently handle reset in the middle of sim"
-		if((clk.getEvent() == ClockGen::Event::RISING) and (sresetn == 1))
+		if(clk.getEvent() == ClockGen::Event::RISING)
 		{
-			//std::cout << "Got clk rising edge, ready:" << (int)ready << " valid:" << (int)valid << std::endl;
-			if(ready && valid)
+			if (sresetn == 1)
 			{
-				//std::cout << "Pushing" << std::endl;
-				vec[vec.size()-1].push_back(data);
-				if(last)
+				//std::cout << "Got clk rising edge, ready:" << (int)ready << " valid:" << (int)valid << std::endl;
+				if(ready && valid)
 				{
-					vec.push_back(std::vector<dataT>());
+					//std::cout << "Pushing" << std::endl;
+					curData.push_back(data);
+					if(last)
+					{
+						vec.push_back(curData);
+						curData = {};
+					}
 				}
+			} else {
+				resetState();
 			}
 		}
 	}
@@ -62,6 +63,18 @@ private:
 	InputLatch <dataT> data;
 
 	std::vector<std::vector<dataT>> vec;
+
+	std::vector<dataT> curData;
+
+	void resetState(void)
+	{
+		// Reset vector
+		vec = {};
+		curData = {};
+
+		//Always be ready
+		ready = 1;
+	}
 };
 
 #endif

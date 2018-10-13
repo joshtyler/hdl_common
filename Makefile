@@ -6,6 +6,9 @@
 #    # Object files for the unit tests
 #        # These are the result of compiling the cpp test files.
 #        # These are then linked with the top level unit test file, which defines main
+# Note, currently no dependancy information is included for make
+# So all tests are cleaned and rebuilt each time
+
 VLOG_INC_DIRS =
 VLOG_SOURCES =
 CPP_SOURCES =
@@ -21,6 +24,8 @@ include synth/Makefile
 	# Include makefiles in subdirectories off themselves
 # Includes from this file are at the end
 
+#SHELL += -x
+
 TESTS_TOP = run_unit_tests.cpp
 CPP_SOURCES += $(TESTS_TOP)
 BINARY_NAME = $(basename $(TESTS_TOP))
@@ -28,7 +33,7 @@ BINARY_NAME = $(basename $(TESTS_TOP))
 OBJDIR = obj_dir
 
 CC = g++
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -g -faligned-new #-fsanitize=address
 
 VERILATOR = verilator
 VERILATOR_INC_DIR = /usr/share/verilator/include
@@ -61,12 +66,12 @@ all : $(BINARY_NAME)
 # The binary file depends on all of the compiled unit test object files
 # As well as all of the verilated libraries
 $(BINARY_NAME): $(CPP_OBJ) $(VERILATED_LIBS) $(VERILATED_HEADERS)
-	$(CC) $(CPP_OBJ) $(VERILATED_LIBS) -o $@
+	$(CC) $(CFLAGS) $(CPP_OBJ) $(VERILATED_LIBS) -o $@
 
 # All of the objects can be made from the respective .cpp file + verilated headers
 # Make can find these okay since vpath is set
 $(OBJDIR)/%.o : %.cpp $(VERILATED_LIBS) $(VERILATED_HEADERS)
-	$(CC) -c -I$(VERILATOR_INC_DIR) -I$(OBJDIR) $< -o $@
+	$(CC) $(CFLAGS) -c -I$(VERILATOR_INC_DIR) -I$(OBJDIR) $< -o $@
 
 # We can tell a file is verilated if the module header is produced
 # N.B we can get away without specifying a .v or .sv extension because verilator searches both!
@@ -80,4 +85,6 @@ $(OBJDIR)/V%__ALL.a: $(OBJDIR)/V%.h
 
 
 clean:
-	rm -r obj_dir $(BINARY_NAME)
+	rm $(BINARY_NAME)
+	rm -r obj_dir
+	#find obj_dir/* -maxdepth 1 ! -name verilated.o -and ! -name verilated_vcd_c.o -and ! -name run_unit_tests.o -type f -delete
