@@ -3,7 +3,7 @@
 module axis_broadcaster
 #(
 	parameter AXIS_BYTES = 1,
-	parameter NUM_STREAMS = 1
+	parameter NUM_STREAMS = 2
 ) (
 	input clk,
 	input sresetn,

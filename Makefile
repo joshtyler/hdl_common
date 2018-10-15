@@ -12,8 +12,6 @@
 VLOG_INC_DIRS =
 VLOG_SOURCES =
 CPP_SOURCES =
-
-include synth/Makefile
 # This file includes Makefiles in subdirectories that add the actual source files
 # These makefiles have the following responsibilities:
 	# Add themselves to vpath for .cpp, if they contain those files
@@ -22,8 +20,7 @@ include synth/Makefile
 	# Add any verilog files used in unit tests to VLOG_SOURCES
 	# Provide custom rules for verilation (and a custom name) for verilog modules with non-default generics
 	# Include makefiles in subdirectories off themselves
-# Includes from this file are at the end
-
+include synth/Makefile
 #SHELL += -x
 
 TESTS_TOP = run_unit_tests.cpp
@@ -33,7 +30,7 @@ BINARY_NAME = $(basename $(TESTS_TOP))
 OBJDIR = obj_dir
 
 CC = g++
-CFLAGS = -Wall -Wextra -g -faligned-new #-fsanitize=address
+CFLAGS = -Wall -Wextra -g -faligned-new -fsanitize=address
 
 VERILATOR = verilator
 VERILATOR_INC_DIR = /usr/share/verilator/include
