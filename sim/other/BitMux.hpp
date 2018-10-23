@@ -10,74 +10,36 @@
  	// BitMuxIn takes a const reference to a variable, and returns only the bits we care about to the upstream application
  	// BitMuxOut takes a variable from the upstream application, and updates the variable
 
-template <class Ti, class To> class BitMuxIn
+template <class Tvlog, class Tcpp> class BitMux
 {
 public:
-	BitMuxIn(const Ti& ref, unsigned int lowBit,unsigned int highBit) :ref(ref), lowBit(lowBit), highBit(highBit) {};
-	operator To() const
+	BitMux(Tvlog& ref, unsigned int lowBit,unsigned int highBit) :ref(ref), lowBit(lowBit), highBit(highBit) {};
+
+	BitMux(const BitMux<Tvlog, Tcpp> &other) :ref(other.ref), lowBit(other.lowBit), highBit(other.highBit) {};
+	// This is used to get the value of ref
+	operator Tcpp() const
 	{
-		Ti temp = ref;
+		Tvlog temp = ref;
 		// Shift low bit to LSB
 		temp >>= lowBit;
 		// Mask off any bits higher than MSB
 		temp &= 2^(highBit - lowBit + 1)-1;
-		To ret = (To) temp;
+		Tcpp ret = (Tcpp) temp;
 		assert(ret == temp);
 		return ret;
 	};
-private:
-	const Ti &ref;
-	unsigned int lowBit, highBit;
-};
 
-// Bit mux out is slightly more complex than BitMuxIn
-// Because the application can update the variable as it pleases, there is no way to magically have BitMuxOut update the real value
-// Therefore we need to inherit from peripheral and call eval, but AFTER all the references have been updated
-namespace // Make only visible in this file
-{
-	template <class Ti, class To> class Writer
+	// This is used to set the value of ref
+	// Note that we don't allow chaining because it could introduce non obvious behaviour
+	void operator=(const Tcpp& other)
 	{
-	public:
-		Writer(unsigned int lowBit,unsigned int highBit) :lowBit(lowBit), highBit(highBit) {}
-		To getValue(void)
-		{
-			return (To) value; // Temp
-		}
-		Ti& getRef(void) {return value;};
-
-	private:
-		Ti value;
-		unsigned int lowBit, highBit;
-	};
-}
-template <class Ti, class To> class BitMuxOut : public Peripheral
-{
-public:
-	BitMuxOut(To& ref) :ref(ref) {};
-	~BitMuxOut()
-	{
-		for(auto it : writers)
-			delete it;
+		ref = (Tvlog) other; //Temp
 	}
 
-	Ti & registerWriter(int lowBit, int highBit)
-	{
-		writers.push_back(new Writer<Ti,To> (lowBit, highBit));
-		return writers.back()->getRef();
-	};
 
-	void eval(void) override
-	{
-		ref = 0;
-		for(auto it : writers)
-		{
-			ref |= it->getValue();
-		}
-	}
 private:
-	std::vector<Writer<Ti,To> *> writers;
-	To &ref;
-
+	Tvlog &ref;
+	const unsigned int lowBit, highBit;
 };
 
 #endif

@@ -8,11 +8,11 @@
 #include "../verilator/Peripheral.hpp"
 #include <vector>
 
-template <class dataT> class AXISSink : public Peripheral
+template <class dataT, class ctrlT=dataT, class resetT=ctrlT> class AXISSink : public Peripheral
 {
 public:
-	AXISSink(ClockGen &clk, const vluint8_t &sresetn,
-		vluint8_t &ready, const vluint8_t & validIn, const vluint8_t &lastIn,
+	AXISSink(ClockGen &clk, const resetT &sresetn,
+		ctrlT &ready, const ctrlT & validIn, const ctrlT &lastIn,
 		const dataT &dataIn)
 		:clk(clk), sresetn(sresetn), ready(ready), valid(validIn), last(lastIn),
 		 data(dataIn)
@@ -56,10 +56,10 @@ public:
 
 private:
 	ClockGen &clk;
-	const vluint8_t &sresetn;
-	vluint8_t &ready;
-	InputLatch <vluint8_t> valid;
-	InputLatch <vluint8_t> last;
+	const resetT &sresetn;
+	ctrlT &ready;
+	InputLatch <ctrlT> valid;
+	InputLatch <ctrlT> last;
 	InputLatch <dataT> data;
 
 	std::vector<std::vector<dataT>> vec;

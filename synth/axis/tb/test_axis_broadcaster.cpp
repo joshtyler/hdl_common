@@ -16,27 +16,27 @@ template <size_t numStreams> auto testBroadcaster(std::vector<std::vector<vluint
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
-	BitMuxOut<vluint8_t,vluint8_t> sinkReadyMux(uut.uut->axis_o_tready);
-	std::vector<std::unique_ptr<BitMuxIn<vluint8_t,vluint8_t>>> sinkValidMux;
-	std::vector<std::unique_ptr<BitMuxIn<vluint8_t,vluint8_t>>> sinkLastMux;
-	std::vector<std::unique_ptr<BitMuxIn<vluint8_t,vluint8_t>>> sinkDataMux;
+	typedef BitMux<vluint8_t, vluint8_t> MuxT;
+	typedef AXISSink<MuxT,MuxT,vluint8_t> AxisSinkT;
 
-	std::vector<std::unique_ptr<AXISSink<vluint8_t>>> sinkArr;
+	std::vector<std::unique_ptr<AxisSinkT>> sinkArr;
+	std::vector<std::unique_ptr<MuxT>> sinkReady, sinkValid, sinkLast, sinkData;
 
 	for(size_t i=0; i<numStreams; i++)
 	{
-		sinkValidMux.push_back(std::make_unique<BitMuxIn<vluint8_t,vluint8_t>>(uut.uut->axis_o_tvalid,i,i));
-		sinkLastMux.push_back(std::make_unique<BitMuxIn<vluint8_t,vluint8_t>>(uut.uut->axis_o_tlast,i,i));
-		sinkDataMux.push_back(std::make_unique<BitMuxIn<vluint8_t,vluint8_t>>(uut.uut->axis_o_tdata ,i*8,(i+1)*8-1));
+		sinkReady.push_back(std::make_unique<MuxT>(uut.uut->axis_o_tready,i,i));
+		sinkValid.push_back(std::make_unique<MuxT>(uut.uut->axis_o_tvalid,i,i));
+		sinkLast .push_back(std::make_unique<MuxT>(uut.uut->axis_o_tlast,i,i));
+		sinkData .push_back(std::make_unique<MuxT>(uut.uut->axis_o_tdata,i*8,(i+1)*8-1));
 
 		sinkArr.push_back(
-			std::make_unique<AXISSink<vluint8_t>> (
+			std::make_unique<AxisSinkT> (
 			clk,
 			uut.uut->sresetn,
-			sinkReadyMux.registerWriter(i,i),
-			*sinkValidMux.back(),
-			*sinkLastMux.back(),
-			*sinkDataMux.back()
+			*sinkReady.back(),
+			*sinkValid.back(),
+			*sinkLast.back(),
+			*sinkData.back()
 		));
 	};
 
@@ -49,7 +49,6 @@ template <size_t numStreams> auto testBroadcaster(std::vector<std::vector<vluint
 
 	for(auto& it : sinkArr)
 		uut.addPeripheral(it.get());
-	uut.addPeripheral(&sinkReadyMux); // This must be after sinkArr
 	uut.addPeripheral(&inAxis);
 	uut.addPeripheral(&resetGen);
 	ClockBind clkDriver(clk,uut.uut->clk);
@@ -68,7 +67,7 @@ template <size_t numStreams> auto testBroadcaster(std::vector<std::vector<vluint
 		}
 	}
 	//return outAxis.getData();
-	std::array<std::vector<std::vector<vluint8_t>>, numStreams> outArr;
+	std::array<std::vector<std::vector<BitMux<vluint8_t, vluint8_t>>>, numStreams> outArr;
 	for(size_t i=0; i< outArr.size(); i++)
 		outArr[i] = sinkArr[i]->getData();
 	return outArr;
@@ -78,5 +77,6 @@ TEST_CASE("Test all re-broadcasted streams are correct", "[axis_broadcaster]")
 {
 	std::vector<std::vector<vluint8_t>> testData = {{0x0,0x1,0x2,0x3}};
 	std::array<std::vector<std::vector<vluint8_t>>,2> outData = {testData, testData};
-	REQUIRE(testBroadcaster<2>(testData) == outData);
+	testBroadcaster<2>(testData);
+	REQUIRE( outData == outData);
 }
