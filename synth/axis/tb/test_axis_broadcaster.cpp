@@ -1,55 +1,36 @@
 #include <catch2/catch.hpp>
 #include <iostream>
 #include <verilated.h>
-#include "Vaxis_register.h"
+#include "Vaxis_broadcaster_harness.h"
 
 #include "../../../sim/verilator/VerilatedModel.hpp"
 #include "../../../sim/other/ResetGen.hpp"
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
-#include "../../../sim/other/BitMux.hpp"
 
-template <size_t numStreams> auto testBroadcaster(std::vector<std::vector<vluint8_t>> inData)
+auto testBroadcaster(std::vector<std::vector<vluint8_t>> inData)
 {
-	VerilatedModel<Vaxis_register> uut;
+	VerilatedModel<Vaxis_broadcaster_harness> uut;
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
-
-	typedef BitMux<vluint8_t, vluint8_t> MuxT;
-	typedef AXISSink<MuxT,MuxT,vluint8_t> AxisSinkT;
-
-	std::vector<std::unique_ptr<AxisSinkT>> sinkArr;
-	std::vector<std::unique_ptr<MuxT>> sinkReady, sinkValid, sinkLast, sinkData;
-
-	for(size_t i=0; i<numStreams; i++)
-	{
-		sinkReady.push_back(std::make_unique<MuxT>(uut.uut->axis_o_tready,i,i));
-		sinkValid.push_back(std::make_unique<MuxT>(uut.uut->axis_o_tvalid,i,i));
-		sinkLast .push_back(std::make_unique<MuxT>(uut.uut->axis_o_tlast,i,i));
-		sinkData .push_back(std::make_unique<MuxT>(uut.uut->axis_o_tdata,i*8,(i+1)*8-1));
-
-		sinkArr.push_back(
-			std::make_unique<AxisSinkT> (
-			clk,
-			uut.uut->sresetn,
-			*sinkReady.back(),
-			*sinkValid.back(),
-			*sinkLast.back(),
-			*sinkData.back()
-		));
-	};
-
 
 	AXISSource<vluint8_t> inAxis(clk, uut.uut->sresetn, uut.uut->axis_i_tready,
 		uut.uut->axis_i_tvalid, uut.uut->axis_i_tlast, uut.uut->axis_i_tdata,
 		inData);
 
+	AXISSink<vluint8_t> outAxis1(clk, uut.uut->sresetn, uut.uut->axis_o1_tready,
+		uut.uut->axis_o1_tvalid, uut.uut->axis_o1_tlast, uut.uut->axis_o1_tdata);
+
+	AXISSink<vluint8_t> outAxis2(clk, uut.uut->sresetn, uut.uut->axis_o2_tready,
+		uut.uut->axis_o2_tvalid, uut.uut->axis_o2_tlast, uut.uut->axis_o2_tdata);
+
+
 	ResetGen resetGen(clk,uut.uut->sresetn, false);
 
-	for(auto& it : sinkArr)
-		uut.addPeripheral(it.get());
 	uut.addPeripheral(&inAxis);
+	uut.addPeripheral(&outAxis1);
+	uut.addPeripheral(&outAxis2);
 	uut.addPeripheral(&resetGen);
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);
@@ -67,9 +48,9 @@ template <size_t numStreams> auto testBroadcaster(std::vector<std::vector<vluint
 		}
 	}
 	//return outAxis.getData();
-	std::array<std::vector<std::vector<BitMux<vluint8_t, vluint8_t>>>, numStreams> outArr;
-	for(size_t i=0; i< outArr.size(); i++)
-		outArr[i] = sinkArr[i]->getData();
+	std::array<std::vector<std::vector<vluint8_t>>, 2> outArr;
+	outArr[0] = outAxis1.getData();
+	outArr[1] = outAxis2.getData();
 	return outArr;
 }
 
@@ -77,6 +58,6 @@ TEST_CASE("Test all re-broadcasted streams are correct", "[axis_broadcaster]")
 {
 	std::vector<std::vector<vluint8_t>> testData = {{0x0,0x1,0x2,0x3}};
 	std::array<std::vector<std::vector<vluint8_t>>,2> outData = {testData, testData};
-	testBroadcaster<2>(testData);
+	testBroadcaster(testData);
 	REQUIRE( outData == outData);
 }

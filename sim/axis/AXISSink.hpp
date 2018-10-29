@@ -2,7 +2,6 @@
 #define AXIS_SINK_HPP
 
 // Receive an AXIS stream and save it to a std::vector
-// N.B. Currently this does not support any kind of reset
 
 #include "../other/ClockGen.hpp"
 #include "../verilator/Peripheral.hpp"

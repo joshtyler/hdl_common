@@ -18,5 +18,6 @@ CPP_SOURCES += test_axis_fifo.cpp
 VLOG_SOURCES += axis_register.sv
 CPP_SOURCES += test_axis_register.cpp
 
-VLOG_SOURCES += axis_broadcaster.sv
+VLOG_INC_DIRS += $(CUR_DIR_AXIS)/tb
+VLOG_SOURCES += axis_broadcaster_harness.sv
 CPP_SOURCES += test_axis_broadcaster.cpp
