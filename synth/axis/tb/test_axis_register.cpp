@@ -37,6 +37,7 @@ std::vector<std::vector<vluint8_t>> testRegister(std::vector<std::vector<vluint8
 			break;
 		}
 		// Break after a timeout
+		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;

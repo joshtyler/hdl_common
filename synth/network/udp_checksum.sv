@@ -32,24 +32,31 @@ module udp_checksum(
 	localparam SM_CALC = 2'b01;
 	localparam SM_DONE = 2'b10;
 
+	assign axis_i_tready = (state == SM_CALC);
+	assign axis_o_tlast = 1;
+	assign axis_o_tdata = ~acc[15:0];
+
 	always @(posedge clk) begin
-		if sresetn = 0 begin
+		if (sresetn == 0) begin
 			state <= SM_RESET;
 			axis_o_tvalid <= 0;
 		end else begin
-			case(state):
+			case(state)
 				SM_RESET: begin
 					// We can proceed if the current result has been accepted
 					// Or unconditoinally if the result is not valid (we have been reset)
-					if(axis_o_tvalid and axis_o_tready) or !axis_o_tvalid begin
+					if((axis_o_tvalid && axis_o_tready) || !axis_o_tvalid) begin
 						state <= SM_CALC;
+						axis_o_tvalid <= 0;
 						acc <= 0;
 					end
 				end
 				SM_CALC : begin
-					if(axis_i_tready and axis_i_tvalid) begin
+					if(axis_i_tready && axis_i_tvalid) begin
 						// Create 16 bit sum. Add on overflow bit from prevoius calculation
+						/*verilator lint_off WIDTH */
 						acc <= axis_i_tdata + acc[15:0] + acc[16];
+						/*verilator lint_on WIDTH */
 						if (axis_i_tlast) begin
 							state <= SM_DONE;
 						end
@@ -57,10 +64,14 @@ module udp_checksum(
 				end
 				SM_DONE : begin
 					// Add on final overflow bit and signal that output is valid
+					/*verilator lint_off WIDTH */
 					acc <= acc[15:0] + acc[16];
+					/*verilator lint_on WIDTH */
 					state <= SM_RESET;
+					axis_o_tvalid <= 1;
 				end
-			end
+				default: state <= SM_RESET;
+			endcase
 		end
 	end
 

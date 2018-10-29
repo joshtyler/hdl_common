@@ -42,6 +42,7 @@ auto testBroadcaster(std::vector<std::vector<vluint8_t>> inData)
 			break;
 		}
 		// Break after a timeout
+		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;
@@ -58,6 +59,6 @@ TEST_CASE("Test all re-broadcasted streams are correct", "[axis_broadcaster]")
 {
 	std::vector<std::vector<vluint8_t>> testData = {{0x0,0x1,0x2,0x3}};
 	std::array<std::vector<std::vector<vluint8_t>>,2> outData = {testData, testData};
-	testBroadcaster(testData);
-	REQUIRE( outData == outData);
+	auto result = testBroadcaster(testData);
+	REQUIRE( outData == result);
 }

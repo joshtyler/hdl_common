@@ -146,7 +146,7 @@ axis_broadcaster
 	.axis_o_tvalid({      main_out_axis_tvalid,
 	                 main_checksum_axis_tvalid}),
 	.axis_o_tlast ({      main_out_axis_tlast,
-                   main_checksum_axis_tlast}),
+                     main_checksum_axis_tlast}),
 	.axis_o_tdata ({      main_out_axis_tdata,
-                   main_checksum_axis_tdata})
+                     main_checksum_axis_tdata})
 );

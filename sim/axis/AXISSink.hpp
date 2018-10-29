@@ -7,10 +7,10 @@
 #include "../verilator/Peripheral.hpp"
 #include <vector>
 
-template <class dataT, class ctrlT=dataT, class resetT=ctrlT> class AXISSink : public Peripheral
+template <class dataT, class ctrlT=dataT> class AXISSink : public Peripheral
 {
 public:
-	AXISSink(ClockGen &clk, const resetT &sresetn,
+	AXISSink(ClockGen &clk, const ctrlT &sresetn,
 		ctrlT &ready, const ctrlT & validIn, const ctrlT &lastIn,
 		const dataT &dataIn)
 		:clk(clk), sresetn(sresetn), ready(ready), valid(validIn), last(lastIn),
@@ -55,7 +55,7 @@ public:
 
 private:
 	ClockGen &clk;
-	const resetT &sresetn;
+	const ctrlT &sresetn;
 	ctrlT &ready;
 	InputLatch <ctrlT> valid;
 	InputLatch <ctrlT> last;

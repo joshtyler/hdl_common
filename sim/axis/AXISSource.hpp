@@ -8,11 +8,11 @@
 #include "../verilator/Peripheral.hpp"
 #include <vector>
 
-template <class dataT> class AXISSource : public Peripheral
+template <class dataT, class ctrlT=dataT>class AXISSource : public Peripheral
 {
 public:
 	AXISSource(ClockGen &clk, const vluint8_t &sresetn,
-		const vluint8_t &readyIn, vluint8_t & valid, vluint8_t &last,
+		const ctrlT &readyIn, ctrlT & valid, ctrlT &last,
 		dataT &data, std::vector<std::vector<dataT>> vec)
 		:clk(clk), sresetn(sresetn), ready(readyIn), valid(valid), last(last),
 		 data(data), inputVec(vec)
@@ -64,10 +64,10 @@ public:
 
 private:
 	ClockGen &clk;
-	const vluint8_t &sresetn;
-	InputLatch<vluint8_t> ready;
-	vluint8_t &valid;
-	vluint8_t &last;
+	const ctrlT &sresetn;
+	InputLatch<ctrlT> ready;
+	ctrlT &valid;
+	ctrlT &last;
 	dataT &data;
 
 	std::vector<std::vector<dataT>> inputVec, vec;
@@ -76,7 +76,7 @@ private:
 	{
 		// Setup vector
 		vec = inputVec;
-		
+
 		//Initiailise outputs
 		valid = 1;
 		assert(vec[0].size() > 0);

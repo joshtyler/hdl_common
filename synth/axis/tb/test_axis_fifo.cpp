@@ -37,6 +37,7 @@ std::vector<std::vector<vluint8_t>> testFifo(std::vector<std::vector<vluint8_t>>
 			break;
 		}
 		// Break after a timeout
+		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;
