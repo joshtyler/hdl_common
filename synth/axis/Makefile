@@ -21,3 +21,6 @@ CPP_SOURCES += test_axis_register.cpp
 VLOG_INC_DIRS += $(CUR_DIR_AXIS)/tb
 VLOG_SOURCES += axis_broadcaster_harness.sv
 CPP_SOURCES += test_axis_broadcaster.cpp
+
+VLOG_SOURCES += axis_round_robin_harness.sv
+CPP_SOURCES += test_axis_round_robin.cpp

@@ -4,7 +4,7 @@
 module axis_switch
 #(
 	parameter AXIS_BYTES = 1,
-	parameter AXIS_TDEST_BITS = 4;
+	parameter AXIS_TDEST_BITS = 4,
 	parameter NUM_SLAVE_STREAMS = 1
 ) (
 	input clk,
@@ -27,16 +27,17 @@ module axis_switch
 genvar i;
 for(i=0; i<NUM_SLAVE_STREAMS; i++)
 begin
-	axis_o_tlast[i] = axis_i_tlast;
-	axis_o_tdata[(AXIS_BYTES*8)-1 -: 8] = axis_i_tdata;
+	assign axis_o_tlast[i] = axis_i_tlast;
+	assign axis_o_tdata[(i*AXIS_BYTES*8)-1 -: 8] = axis_i_tdata;
 
-	if(axis_i_tdest = i)
-	begin
-		axis_o_tvalid[i] = axis_i_tvalid;
-		axis_i_tready = axis_o_tready[i];
-	end else begin
-		axis_o_tvalid[i] = 0;
-	end;
+	always @(*)
+		if(axis_i_tdest == i)
+		begin
+			axis_o_tvalid[i] = axis_i_tvalid;
+			axis_i_tready = axis_o_tready[i];
+		end else begin
+			axis_o_tvalid[i] = 0;
+		end;
 end
 
 endmodule
