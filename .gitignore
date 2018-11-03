@@ -1,0 +1,4 @@
+obj_dir/
+*.vcd
+# This is the binary
+run_unit_tests

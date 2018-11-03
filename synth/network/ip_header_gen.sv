@@ -150,3 +150,23 @@ axis_broadcaster
 	.axis_o_tdata ({      main_out_axis_tdata,
                      main_checksum_axis_tdata})
 );
+
+
+axis_joiner
+#(
+	.AXIS_BYTES(1),
+	.NUM_STREAMS(2)
+) bcaster (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready({main_checksum_axis_tready, ip_checksum_axis_tready}),
+	.axis_i_tvalid({main_checksum_axis_tvalid, ip_checksum_axis_tvalid}),
+	.axis_i_tlast ({main_checksum_axis_tlast,  ip_checksum_axis_tlast}),
+	.axis_i_tdata ({main_checksum_axis_tdata,  ip_checksum_axis_tdata})
+
+	.axis_o_tready(checksum_in_axis_tready),
+	.axis_o_tvalid(checksum_in_axis_tvalid),
+	.axis_o_tlast (checksum_in_axis_tlast),
+	.axis_o_tdata (checksum_in_axis_tdata)
+);
