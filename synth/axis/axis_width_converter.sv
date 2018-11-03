@@ -5,7 +5,8 @@
 module axis_width_converter
 #(
 	parameter AXIS_I_BYTES = 1,
-	parameter AXIS_O_BYTES = 1
+	parameter AXIS_O_BYTES = 1,
+	parameter MSB_FIRST = 0
 ) (
 	input clk,
 	input sresetn,
@@ -59,7 +60,11 @@ module axis_width_converter
 
 			if (AXIS_I_BYTES > AXIS_O_BYTES) begin
 				// Unpacker
-				assign axis_o_tdata = axis_i_tdata_latch[(ctr+1)*(AXIS_O_BYTES*8)-1 -: (AXIS_O_BYTES*8)];
+				if (MSB_FIRST) begin
+					assign axis_o_tdata = axis_i_tdata_latch[((CTR_HIGH-ctr)+1)*(AXIS_O_BYTES*8)-1 -: (AXIS_O_BYTES*8)];
+				end else begin
+					assign axis_o_tdata = axis_i_tdata_latch[(ctr+1)*(AXIS_O_BYTES*8)-1 -: (AXIS_O_BYTES*8)];
+				end
 
 				always @(posedge clk)
 				begin
@@ -108,7 +113,11 @@ module axis_width_converter
 									end else begin
 										ctr <= ctr + 1;
 									end
-									axis_i_tdata_latch[(ctr+1)*(AXIS_I_BYTES*8)-1 -: (AXIS_I_BYTES*8)] <= axis_i_tdata;
+									if (MSB_FIRST) begin
+										axis_i_tdata_latch[((CTR_HIGH-ctr)+1)*(AXIS_I_BYTES*8)-1 -: (AXIS_I_BYTES*8)] <= axis_i_tdata;
+									end else begin
+										axis_i_tdata_latch[(ctr+1)*(AXIS_I_BYTES*8)-1 -: (AXIS_I_BYTES*8)] <= axis_i_tdata;
+									end
 									// The special case is if we get tlast early
 									// If this is the case, we go to output anyway, the upper bits will be zeroes
 									// We need to set the counter to CTR_HIGH in order to make axis_o_tlast work correctly

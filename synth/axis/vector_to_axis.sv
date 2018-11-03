@@ -1,4 +1,5 @@
 // Repeatedly output a byte vector as an AXI stream
+// This could be replaced with axis_width converter at some point...
 
 module vector_to_axis
 #(

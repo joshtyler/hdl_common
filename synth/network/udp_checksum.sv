@@ -7,7 +7,95 @@
 // This module takes the data in two bytes at a time
 // And data is output two bytes at a time
 
-module udp_checksum(
+module udp_checksum
+#(
+	parameter AXIS_BYTES = 2,
+	parameter MSB_FIRST = 0
+) (
+	input clk,
+	input sresetn,
+
+	// Input
+	output                     axis_i_tready,
+	input                      axis_i_tvalid,
+	input                      axis_i_tlast,
+	input [(AXIS_BYTES*8)-1:0] axis_i_tdata,
+
+	// Output
+	input                       axis_o_tready,
+	output                      axis_o_tvalid,
+	output                      axis_o_tlast,
+	output [(AXIS_BYTES*8)-1:0] axis_o_tdata
+);
+
+	logic        axis_i_conv_tready;
+	logic        axis_i_conv_tvalid;
+	logic        axis_i_conv_tlast;
+	logic [15:0] axis_i_conv_tdata;
+
+	logic        axis_o_conv_tready;
+	logic        axis_o_conv_tvalid;
+	logic        axis_o_conv_tlast;
+	logic [15:0] axis_o_conv_tdata;
+
+	axis_width_converter
+	#(
+		.AXIS_I_BYTES(AXIS_BYTES),
+		.AXIS_O_BYTES(2),
+		.MSB_FIRST(MSB_FIRST)
+	) conv_i (
+		.clk(clk),
+		.sresetn(sresetn),
+
+		.axis_i_tready(axis_i_tready),
+		.axis_i_tvalid(axis_i_tvalid),
+		.axis_i_tlast (axis_i_tlast),
+		.axis_i_tdata (axis_i_tdata),
+
+		.axis_o_tready(axis_i_conv_tready),
+		.axis_o_tvalid(axis_i_conv_tvalid),
+		.axis_o_tlast (axis_i_conv_tlast),
+		.axis_o_tdata (axis_i_conv_tdata)
+	);
+
+	udp_checksum_two_bytes checksum (
+		.clk(clk),
+		.sresetn(sresetn),
+
+		.axis_i_tready(axis_i_conv_tready),
+		.axis_i_tvalid(axis_i_conv_tvalid),
+		.axis_i_tlast (axis_i_conv_tlast),
+		.axis_i_tdata (axis_i_conv_tdata),
+
+		.axis_o_tready(axis_o_conv_tready),
+		.axis_o_tvalid(axis_o_conv_tvalid),
+		.axis_o_tlast (axis_o_conv_tlast),
+		.axis_o_tdata (axis_o_conv_tdata)
+	);
+
+	axis_width_converter
+	#(
+		.AXIS_I_BYTES(2),
+		.AXIS_O_BYTES(AXIS_BYTES),
+		.MSB_FIRST(MSB_FIRST)
+	) conv_o (
+		.clk(clk),
+		.sresetn(sresetn),
+
+		.axis_i_tready(axis_o_conv_tready),
+		.axis_i_tvalid(axis_o_conv_tvalid),
+		.axis_i_tlast (axis_o_conv_tlast),
+		.axis_i_tdata (axis_o_conv_tdata),
+
+		.axis_o_tready(axis_o_tready),
+		.axis_o_tvalid(axis_o_tvalid),
+		.axis_o_tlast (axis_o_tlast),
+		.axis_o_tdata (axis_o_tdata)
+	);
+
+endmodule
+
+module udp_checksum_two_bytes(
 	input clk,
 	input sresetn,
 

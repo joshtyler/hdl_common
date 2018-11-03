@@ -14,3 +14,6 @@ VLOG_INC_DIRS += $(CUR_DIR_NETWORK)
 
 VLOG_SOURCES += udp_checksum.sv
 CPP_SOURCES += test_udp_checksum.cpp
+
+VLOG_SOURCES += ip_header_gen.sv
+CPP_SOURCES += test_ip_header_gen.cpp
