@@ -50,7 +50,7 @@ module axis_width_converter
 			reg [CTR_WIDTH-1:0] ctr;
 
 			reg axis_i_tlast_latch;
-			reg [(AXIS_I_BYTES*8)-1:0] axis_i_tdata_latch;
+			reg [(AXIS_W_BYTES*8)-1:0] axis_i_tdata_latch;
 
 			assign axis_i_tready = (state == CAPTURE);
 			assign axis_o_tvalid = (state == OUTPUT);
@@ -103,11 +103,19 @@ module axis_width_converter
 						case(state)
 							CAPTURE: begin
 								if (axis_i_tvalid) begin
-									state <= OUTPUT;
-									axis_i_tdata_latch <= axis_i_tdata[(ctr+1)*(AXIS_O_BYTES*8)-1 -: (AXIS_O_BYTES*8)];
+									if (ctr == CTR_HIGH) begin
+										state <= OUTPUT;
+									end else begin
+										ctr <= ctr + 1;
+									end
+									axis_i_tdata_latch[(ctr+1)*(AXIS_I_BYTES*8)-1 -: (AXIS_I_BYTES*8)] <= axis_i_tdata;
+									// The special case is if we get tlast early
+									// If this is the case, we go to output anyway, the upper bits will be zeroes
+									// We need to set the counter to CTR_HIGH in order to make axis_o_tlast work correctly
 									if (axis_i_tlast) begin
 										axis_i_tlast_latch <= 1;
 										ctr <= CTR_HIGH;
+										state <= OUTPUT;
 									end
 								end
 							end

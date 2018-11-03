@@ -27,7 +27,15 @@ CPP_SOURCES += test_axis_round_robin.cpp
 
 # Custom rule for width converter to test different cases
 VLOG_SOURCES += axis_width_converter_1i_1o
+VLOG_SOURCES += axis_width_converter_1i_2o
+VLOG_SOURCES += axis_width_converter_2i_1o
 CPP_SOURCES += test_axis_width_converter.cpp
 
 $(OBJDIR)/Vaxis_width_converter_1i_1o.h:
-	$(VERILATOR) $(VERILATOR_FLAGS) -GAXIS_I_BYTES=1 -GAXIS_O_BYTES=1 --prefix Vaxis_width_converter_1i_1o axis_width_converter
+	$(VERILATOR) $(VERILATOR_FLAGS) -GAXIS_I_BYTES=1 -GAXIS_O_BYTES=1 --prefix $(basename $(notdir $@)) axis_width_converter
+
+$(OBJDIR)/Vaxis_width_converter_1i_2o.h:
+	$(VERILATOR) $(VERILATOR_FLAGS) -GAXIS_I_BYTES=1 -GAXIS_O_BYTES=2 --prefix $(basename $(notdir $@)) axis_width_converter
+
+$(OBJDIR)/Vaxis_width_converter_2i_1o.h:
+	$(VERILATOR) $(VERILATOR_FLAGS) -GAXIS_I_BYTES=2 -GAXIS_O_BYTES=1 --prefix $(basename $(notdir $@)) axis_width_converter
