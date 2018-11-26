@@ -76,6 +76,6 @@ TEST_CASE("Test packing with incomplete input", "[axis_width_converter]")
 {
 	std::vector<std::vector<vluint8_t>> inData = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6}};
 	std::vector<std::vector<vluint16_t>> outData = {{0x0100,0x0302,0x0504,0x0006}};
-	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(inData, "packer_uneven.vcd", true);
+	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(inData, "packer_uneven.vcd", false);
 	REQUIRE(outData == result);
 }

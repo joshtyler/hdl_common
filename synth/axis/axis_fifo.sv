@@ -19,6 +19,11 @@ module axis_fifo
 	output [(AXIS_BYTES*8)-1:0] axis_o_tdata
 );
 
+logic                      axis_o_buf_tready;
+logic                      axis_o_buf_tvalid;
+logic                      axis_o_buf_tlast;
+logic [(AXIS_BYTES*8)-1:0] axis_o_buf_tdata;
+
 logic full,empty;
 
 assign axis_i_tready = !full;
@@ -26,12 +31,13 @@ assign axis_i_tready = !full;
 // This is because empty is a "ready to accept reads" signal
 // So the data is valid one clock cycle after it goes low
 // And when it goes high again, the data is in fact valid!
-always @(posedge clk)
-	if(sresetn == 0)
-		axis_o_tvalid = 0;
-	else
-		axis_o_tvalid = !empty;
-
+always @(posedge clk) begin
+	if(sresetn == 0) begin
+		axis_o_buf_tvalid <= 0;
+	end else begin
+		axis_o_buf_tvalid <= !empty;
+	end
+end
 fifo
 	#(
 		.WIDTH((AXIS_BYTES*8)+1),
@@ -44,9 +50,27 @@ fifo
 		.wr_en(axis_i_tvalid),
 		.data_in ({axis_i_tdata, axis_i_tlast}),
 
-		.rd_en(axis_o_tready),
+		.rd_en(axis_o_buf_tready),
 		.empty(empty),
-		.data_out ({axis_o_tdata, axis_o_tlast})
+		.data_out ({axis_o_buf_tdata, axis_o_buf_tlast})
+	);
+
+axis_register
+	#(
+		.AXIS_BYTES(1)
+	) register (
+		.clk(clk),
+		.sresetn(sresetn),
+
+		.axis_i_tready(axis_o_buf_tready),
+		.axis_i_tvalid(axis_o_buf_tvalid),
+		.axis_i_tlast (axis_o_buf_tlast),
+		.axis_i_tdata (axis_o_buf_tdata),
+
+		.axis_o_tready(axis_o_tready),
+		.axis_o_tvalid(axis_o_tvalid),
+		.axis_o_tlast (axis_o_tlast),
+		.axis_o_tdata (axis_o_tdata)
 	);
 
 endmodule

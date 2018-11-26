@@ -170,7 +170,7 @@ vector_to_axis
 		.clk(clk),
 		.sresetn(sresetn),
 
-		.vec(16'h0008),
+		.vec(ethertype),
 
 		.axis_tready(ethertype_axis_tready),
 		.axis_tvalid(ethertype_axis_tvalid),
@@ -251,7 +251,7 @@ eth_crc crc_gen (
 );
 
 // Unpack crc
-axis_unpacker
+axis_width_converter
 #(
 	.AXIS_I_BYTES(4),
 	.AXIS_O_BYTES(1)

@@ -62,6 +62,6 @@ TEST_CASE("Test with random UDP packet", "[ip_header_gen]")
 	uint64_t src_ip = 0xC0A8001F; //192.168.0.31
 	uint64_t dest_ip = 0xC0A80023; //192.168.0.35
 	uint8_t protocol = 0x11; //UDP
-	auto result = testip(src_ip, dest_ip, protocol, {{13}}, "ip.vcd",true);
+	auto result = testip(src_ip, dest_ip, protocol, {{13}}, "ip.vcd",false);
 	REQUIRE(outData == result[0]);
 }

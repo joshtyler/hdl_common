@@ -59,6 +59,7 @@ public:
 			} else {
 				if(last_tx_en)
 				{
+					//vec.push_back((packet));
 					vec.push_back(verifyPacket(packet));
 				}
 			}

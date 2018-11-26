@@ -11,7 +11,7 @@
 
 auto testAxisRoundRobin(std::vector<std::vector<vluint8_t>> inData)
 {
-	VerilatedModel<Vaxis_round_robin_harness> uut("round_robin.vcd",true);
+	VerilatedModel<Vaxis_round_robin_harness> uut("round_robin.vcd",false);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
