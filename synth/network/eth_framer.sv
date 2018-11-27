@@ -88,6 +88,11 @@ logic       crc_unpacked_axis_tvalid;
 logic       crc_unpacked_axis_tlast;
 logic [7:0] crc_unpacked_axis_tdata;
 
+logic       payload_axis_padded_tready;
+logic       payload_axis_padded_tvalid;
+logic       payload_axis_padded_tlast;
+logic [7:0] payload_axis_padded_tdata;
+
 // Preamble Stream
 vector_to_axis
 	#(
@@ -178,6 +183,27 @@ vector_to_axis
 		.axis_tdata (ethertype_axis_tdata)
 	);
 
+// Pad input to minimum size with zeros
+axis_padder
+#(
+	.AXIS_BYTES(1),
+	.MIN_LENGTH(46), //Minimum ethernet payload length
+	.PAD_VALUE(0)
+) padder (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready(payload_axis_tready),
+	.axis_i_tvalid(payload_axis_tvalid),
+	.axis_i_tlast (payload_axis_tlast),
+	.axis_i_tdata (payload_axis_tdata),
+
+	.axis_o_tready(payload_axis_padded_tready),
+	.axis_o_tvalid(payload_axis_padded_tvalid),
+	.axis_o_tlast (payload_axis_padded_tlast),
+	.axis_o_tdata (payload_axis_padded_tdata)
+);
+
 // Join streams together
 axis_joiner
 #(
@@ -187,19 +213,19 @@ axis_joiner
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.axis_i_tready({  payload_axis_tready,
+	.axis_i_tready({  payload_axis_padded_tready,
 	                ethertype_axis_tready,
 	                  src_mac_axis_tready,
 	                  dst_mac_axis_tready}),
-	.axis_i_tvalid({  payload_axis_tvalid,
+	.axis_i_tvalid({  payload_axis_padded_tvalid,
 	                ethertype_axis_tvalid,
 	                  src_mac_axis_tvalid,
 	                  dst_mac_axis_tvalid}),
-	.axis_i_tlast ({  payload_axis_tlast,
+	.axis_i_tlast ({  payload_axis_padded_tlast,
                   ethertype_axis_tlast,
                     src_mac_axis_tlast,
                     dst_mac_axis_tlast}),
-	.axis_i_tdata ({  payload_axis_tdata,
+	.axis_i_tdata ({  payload_axis_padded_tdata,
                   ethertype_axis_tdata,
                     src_mac_axis_tdata,
                     dst_mac_axis_tdata}),
