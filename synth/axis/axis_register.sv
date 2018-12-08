@@ -6,16 +6,16 @@ module axis_register
 	input sresetn,
 
 	// Input
-	output                     axis_i_tready,
-	input                      axis_i_tvalid,
-	input                      axis_i_tlast,
-	input [(AXIS_BYTES*8)-1:0] axis_i_tdata,
+	output logic                      axis_i_tready,
+	input  logic                      axis_i_tvalid,
+	input  logic                      axis_i_tlast,
+	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
 
 	// Output
-	input                       axis_o_tready,
-	output                      axis_o_tvalid,
-	output                      axis_o_tlast,
-	output [(AXIS_BYTES*8)-1:0] axis_o_tdata
+	input  logic                      axis_o_tready,
+	output logic                      axis_o_tvalid,
+	output logic                      axis_o_tlast,
+	output logic [(AXIS_BYTES*8)-1:0] axis_o_tdata
 );
 	// We are able to store data when the register is empty
 	// Or we are also clocking data out

@@ -167,6 +167,8 @@ vector_to_axis
 
 // Generate length axis. This includes the header, so we need to add that on to the payload
 // Our header doesn't have options, so is a fixed 20 bytes
+localparam [15:0] IP_HEADER_LEN = 20;
+
 axis_width_converter
 #(
 	.AXIS_I_BYTES(2),
@@ -179,7 +181,7 @@ axis_width_converter
 	.axis_i_tready(payload_length_axis_tready),
 	.axis_i_tvalid(payload_length_axis_tvalid),
 	.axis_i_tlast (payload_length_axis_tlast),
-	.axis_i_tdata (payload_length_axis_tdata + 20),
+	.axis_i_tdata (payload_length_axis_tdata + IP_HEADER_LEN),
 
 	.axis_o_tready(len_byte_wide_axis_tready),
 	.axis_o_tvalid(len_byte_wide_axis_tvalid),

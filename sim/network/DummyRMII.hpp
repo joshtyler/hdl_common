@@ -61,6 +61,7 @@ public:
 				{
 					//vec.push_back((packet));
 					vec.push_back(verifyPacket(packet));
+					packet = {};
 				}
 			}
 			last_tx_en = tx_en;

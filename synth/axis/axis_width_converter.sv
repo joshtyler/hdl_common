@@ -86,6 +86,7 @@ module axis_width_converter
 									ctr <= ctr + 1;
 									if(ctr == CTR_HIGH) begin
 										state <= CAPTURE;
+										axis_i_tlast_latch <= 0;
 									end
 								end
 							end
@@ -133,6 +134,7 @@ module axis_width_converter
 									ctr <= 0;
 									state <= CAPTURE;
 									axis_i_tdata_latch <= 0;
+									axis_i_tlast_latch <= 0;
 								end
 							end
 						default : state <= CAPTURE;

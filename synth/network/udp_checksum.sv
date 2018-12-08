@@ -12,20 +12,20 @@ module udp_checksum
 	parameter AXIS_BYTES = 2,
 	parameter MSB_FIRST = 0
 ) (
-	input clk,
-	input sresetn,
+	input logic clk,
+	input logic sresetn,
 
 	// Input
-	output                     axis_i_tready,
-	input                      axis_i_tvalid,
-	input                      axis_i_tlast,
-	input [(AXIS_BYTES*8)-1:0] axis_i_tdata,
+	output logic                      axis_i_tready,
+	input  logic                      axis_i_tvalid,
+	input  logic                      axis_i_tlast,
+	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
 
 	// Output
-	input                       axis_o_tready,
-	output                      axis_o_tvalid,
-	output                      axis_o_tlast,
-	output [(AXIS_BYTES*8)-1:0] axis_o_tdata
+	input  logic                      axis_o_tready,
+	output logic                      axis_o_tvalid,
+	output logic                      axis_o_tlast,
+	output logic [(AXIS_BYTES*8)-1:0] axis_o_tdata
 );
 
 	logic        axis_i_conv_tready;
@@ -100,16 +100,16 @@ module udp_checksum_two_bytes(
 	input sresetn,
 
 	// Input
-	output       axis_i_tready,
-	input        axis_i_tvalid,
-	input        axis_i_tlast,
-	input [15:0] axis_i_tdata,
+	output logic        axis_i_tready,
+	input  logic        axis_i_tvalid,
+	input  logic        axis_i_tlast,
+	input  logic [15:0] axis_i_tdata,
 
 	// Output
-	input         axis_o_tready,
-	output        axis_o_tvalid,
-	output        axis_o_tlast,
-	output [15:0] axis_o_tdata
+	input  logic        axis_o_tready,
+	output logic        axis_o_tvalid,
+	output logic        axis_o_tlast,
+	output logic [15:0] axis_o_tdata
 );
 
 	// Accumulator, store the current checksum result. One bit wider for overflow bit

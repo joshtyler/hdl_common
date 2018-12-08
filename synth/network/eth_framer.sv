@@ -187,7 +187,7 @@ vector_to_axis
 axis_padder
 #(
 	.AXIS_BYTES(1),
-	.MIN_LENGTH(46), //Minimum ethernet payload length
+	.MIN_LENGTH(47), //Minimum ethernet payload length
 	.PAD_VALUE(0)
 ) padder (
 	.clk(clk),

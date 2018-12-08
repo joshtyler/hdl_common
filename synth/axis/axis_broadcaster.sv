@@ -28,7 +28,7 @@ assign axis_i_tready = & reg_ready;
 // Data to registers is valid when all registers are ready, and input is valid
 // N.B. This breaks AXI stream specification (we rely on the slave asserting ready before valid)
 // This is okay because we have the register in the path
-reg reg_valid;
+logic reg_valid;
 assign reg_valid = axis_i_tready && axis_i_tvalid;
 
 // Replicate all other input signals on the output

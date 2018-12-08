@@ -35,7 +35,9 @@ always @(posedge clk) begin
 	if(sresetn == 0) begin
 		axis_o_buf_tvalid <= 0;
 	end else begin
-		axis_o_buf_tvalid <= !empty;
+		if(axis_o_buf_tready) begin
+			axis_o_buf_tvalid <= !empty;
+		end
 	end
 end
 fifo

@@ -52,7 +52,7 @@ always @(posedge clk)
 		// If we've read and not written, we are net -1
 		end else if (!packet_written && packet_read) begin
 			tlast_ctr <= tlast_ctr - 1;
-			assert (tlast_ctr != 0);
+			//assert (tlast_ctr != 0);
 		end
 		// Otherwise there is no change
 	end

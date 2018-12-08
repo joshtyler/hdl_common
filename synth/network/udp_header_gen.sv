@@ -99,6 +99,8 @@ vector_to_axis
 );
 
 // Generate length axis. This includes the header, so we need to add that on to the payload
+
+localparam [15:0] UDP_HEADER_LEN = 8;
 axis_width_converter
 #(
 	.AXIS_I_BYTES(2),
@@ -111,7 +113,7 @@ axis_width_converter
 	.axis_i_tready(payload_length_axis_tready),
 	.axis_i_tvalid(payload_length_axis_tvalid),
 	.axis_i_tlast (payload_length_axis_tlast),
-	.axis_i_tdata (payload_length_axis_tdata + 8),
+	.axis_i_tdata (payload_length_axis_tdata + UDP_HEADER_LEN),
 
 	.axis_o_tready(len_byte_wide_axis_tready),
 	.axis_o_tvalid(len_byte_wide_axis_tvalid),

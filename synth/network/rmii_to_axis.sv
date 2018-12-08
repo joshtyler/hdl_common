@@ -4,26 +4,26 @@
 
 module rmii_to_axis
 (
-	input clk, // 50MHz
-	input sresetn,
+	input logic clk, // 50MHz
+	input logic sresetn,
 
 	// RMII interface
-	output [1:0] txd,
-	output tx_en,
-	input [1:0] rxd,
-	input crs_dv,
-	input rx_er,
+	output logic [1:0] txd,
+	output logic tx_en,
+	input  logic [1:0] rxd,
+	input  logic crs_dv,
+	input  logic rx_er,
 
 	// TX AXIS
-	output      tx_axis_ready,
-	input       tx_axis_tvalid,
-	input       tx_axis_tlast, //Not currently used
-	input [7:0] tx_axis_tdata,
+	output logic      tx_axis_ready,
+	input logic       tx_axis_tvalid,
+	input logic       tx_axis_tlast, //Not currently used
+	input logic [7:0] tx_axis_tdata,
 
 	// Rx axis
-	output       rx_axis_tvalid,
-	output       rx_axis_tlast,
-	output [7:0] rx_axis_tdata
+	output logic       rx_axis_tvalid,
+	output logic       rx_axis_tlast,
+	output logic [7:0] rx_axis_tdata
 );
 
 // N.B. Rx interface is not currently implemented
