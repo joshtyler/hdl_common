@@ -42,7 +42,6 @@ auto testAxisRoundRobin(std::vector<std::vector<vluint8_t>> inData)
 			break;
 		}
 		// Break after a timeout
-		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;

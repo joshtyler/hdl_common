@@ -11,7 +11,7 @@
 
 std::vector<std::vector<vluint8_t>> testFifo(std::vector<std::vector<vluint8_t>> inData)
 {
-	VerilatedModel<Vaxis_fifo> uut("fifo.vcd",true);
+	VerilatedModel<Vaxis_fifo> uut("fifo.vcd",false);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 	AXISSink<vluint8_t> outAxis(clk, uut.uut->sresetn, uut.uut->axis_o_tready,
@@ -37,7 +37,6 @@ std::vector<std::vector<vluint8_t>> testFifo(std::vector<std::vector<vluint8_t>>
 			break;
 		}
 		// Break after a timeout
-		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;

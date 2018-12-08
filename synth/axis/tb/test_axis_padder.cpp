@@ -12,7 +12,7 @@
 
 std::vector<std::vector<vluint8_t>> testPadder(std::vector<std::vector<vluint8_t>> inData)
 {
-	VerilatedModel<Vaxis_padder> uut("padder.vcd", true);
+	VerilatedModel<Vaxis_padder> uut("padder.vcd", false);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 	AXISSink<vluint8_t> outAxis(clk, uut.uut->sresetn, uut.uut->axis_o_tready,
@@ -38,7 +38,6 @@ std::vector<std::vector<vluint8_t>> testPadder(std::vector<std::vector<vluint8_t
 			break;
 		}
 		// Break after a timeout
-		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;

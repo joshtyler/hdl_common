@@ -40,7 +40,6 @@ template <class model_t, class data_in_t, class data_out_t> auto testWidthConver
 			break;
 		}
 		// Break after a timeout
-		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;

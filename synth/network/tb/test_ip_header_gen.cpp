@@ -42,7 +42,6 @@ auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std
 			break;
 		}
 		// Break after a timeout
-		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;

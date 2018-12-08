@@ -108,7 +108,6 @@ auto testUdpChecksum(std::vector<std::vector<vluint16_t>> inData)
 			break;
 		}
 		// Break after a timeout
-		#warning "This is lazy"
 		if(uut.getTime() == 10000)
 		{
 			break;
@@ -121,7 +120,7 @@ void testChecksum(std::vector<std::vector<vluint16_t>> in)
 {
 	// UDP Checksum is same algorithm as IP checksum
 	std::vector<std::vector<vluint16_t>> outData;
-	for(auto i=0; i < in.size();i++)
+	for(size_t i=0; i < in.size(); i++)
 	{
 		outData.push_back({ip_compute_csum((unsigned char *)in[i].data(),in[i].size()*sizeof(in[i][0]))});
 	}
