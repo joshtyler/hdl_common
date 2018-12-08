@@ -2,8 +2,6 @@
 //Generates a synchronous reset for one period after reset
 //en is an enable signal, e.g. from a PLL lock indicator
 
-/* verilator lint_off width */
-
 module reset_gen(clk, en, sreset);
 
 parameter POLARITY = 1;
@@ -29,4 +27,3 @@ if (POLARITY)
 else
 	assign sreset = (ctr == COUNT-1); //Active low
 endmodule
-/* verilator lint_on width */
