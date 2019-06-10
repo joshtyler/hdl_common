@@ -6,7 +6,7 @@
 #  modify it under the terms of the GNU Lesser General Public
 #  License as published by the Free Software Foundation; either
 #  version 2.1 of the License, or (at your option) any later version.
-#  See the file COPYING included with this distribution for more
+#  See the file LICENSE_LGPL included with this distribution for more
 #  information.
 
 
@@ -52,7 +52,7 @@ cat << EOF > $1
 //  modify it under the terms of the GNU Lesser General Public
 //  License as published by the Free Software Foundation; either
 //  version 2.1 of the License, or (at your option) any later version.
-//  See the file COPYING included with this distribution for more
+//  See the file LICENSE_LGPL included with this distribution for more
 //  information.
 
 EOF
@@ -66,7 +66,7 @@ cat << EOF > $1
 #  modify it under the terms of the GNU Lesser General Public
 #  License as published by the Free Software Foundation; either
 #  version 2.1 of the License, or (at your option) any later version.
-#  See the file COPYING included with this distribution for more
+#  See the file LICENSE_LGPL included with this distribution for more
 #  information.
 
 EOF
