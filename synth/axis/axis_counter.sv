@@ -1,3 +1,10 @@
+// Copyright (C) 2019 Joshua Tyler
+//
+//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
+//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
+
 // For now this is just a very simple counter, perhaps expand in the future
 
 module axis_counter

@@ -1,3 +1,10 @@
+// Copyright (C) 2019 Joshua Tyler
+//
+//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
+//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
+
 // Interface an RMII Phy to two AXIS streams
 // Data width is fixed at 8 bits because this is fundamental to how it works
 // N.B. This module assumes 100 BASE TX communication
