@@ -36,7 +36,7 @@ begin
 	else begin
 
 			baud_ctr <= baud_ctr + 1;
-			if(baud_ctr == CLKS_PER_BIT-1) // Go to next bit when our baud counter reaches the max value
+			if(baud_ctr == CLKS_PER_BIT[$clog2(CLKS_PER_BIT)-1:0]-1) // Go to next bit when our baud counter reaches the max value
 			begin
 				data_ctr <= data_ctr + 1;
 				baud_ctr <= 0;
@@ -56,9 +56,9 @@ begin
 			CAPTURE : begin
 				// Bit(0) is the start bit, don't sample this
 				// Bit(DATA_BITS+1) is the stop bit, go back to RESET on this
-				if(baud_ctr == CLKS_PER_BIT/2)  // Sample the value of the current bit when we are half way through
+				if(baud_ctr == CLKS_PER_BIT[$clog2(CLKS_PER_BIT):1])  // Sample the value of the current bit when we are half way through
 				begin
-					if(data_ctr == DATA_BITS+1) // Stop bit
+					if(data_ctr == DATA_BITS[$clog2(DATA_BITS+2)-1:0]+1) // Stop bit
 					begin
 						//assert(serial_data_reg);
 						state <= RESET;

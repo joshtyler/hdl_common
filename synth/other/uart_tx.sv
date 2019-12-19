@@ -40,7 +40,7 @@ begin
 			serial_data <= 1; // Default value after reset
 
 			baud_ctr <= baud_ctr + 1;
-			if(baud_ctr == CLKS_PER_BIT-1)
+			if(baud_ctr == CLKS_PER_BIT[$clog2(CLKS_PER_BIT)-1:0]-1)
 			begin
 				data_ctr <= data_ctr + 1;
 				baud_ctr <= 0;
@@ -59,7 +59,7 @@ begin
 			end
 			SEND : begin
 				serial_data <= data_reg[data_ctr];
-				if((data_ctr == DATA_BITS+1) && (baud_ctr == CLKS_PER_BIT-1))// End of stop bit
+				if((data_ctr == DATA_BITS[$clog2(DATA_BITS+2)-1:0]+1) && (baud_ctr == CLKS_PER_BIT[$clog2(CLKS_PER_BIT)-1:0]-1))// End of stop bit
 				begin
 					state <= CAPTURE;
 				end
