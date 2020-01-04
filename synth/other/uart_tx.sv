@@ -28,16 +28,23 @@ localparam SEND    = 1'b1; // Capture values of all bits except start bit
 
 always_comb
 begin
-	s_axis_tready = state == CAPTURE;
+	s_axis_tready = (state == CAPTURE);
+end
+
+logic serial_data_reg;
+
+always_comb
+begin
+	// Default to high when in reset (even if clock is not running)
+	serial_data = (!sresetn) || serial_data_reg;
 end
 
 always @(posedge clk)
 begin
-	if(!sresetn)
+	if(!sresetn) begin
 		state <= CAPTURE;
-	else begin
-
-			serial_data <= 1; // Default value after reset
+		serial_data_reg <= 1;
+	end else begin
 
 			baud_ctr <= baud_ctr + 1;
 			if(baud_ctr == CLKS_PER_BIT[$clog2(CLKS_PER_BIT)-1:0]-1)
@@ -58,8 +65,8 @@ begin
 				end
 			end
 			SEND : begin
-				serial_data <= data_reg[data_ctr];
-				if((data_ctr == DATA_BITS[$clog2(DATA_BITS+2)-1:0]+1) && (baud_ctr == CLKS_PER_BIT[$clog2(CLKS_PER_BIT)-1:0]-1))// End of stop bit
+				serial_data_reg <= data_reg[data_ctr];
+				if((data_ctr == DATA_BITS[$clog2(DATA_BITS+2)-1:0]+1) && (baud_ctr == CLKS_PER_BIT[$clog2(CLKS_PER_BIT)-1:0]-1)) // End of stop bit
 				begin
 					state <= CAPTURE;
 				end

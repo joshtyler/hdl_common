@@ -63,6 +63,9 @@ public:
 			std::cout << vcdname << std::endl;
 			tfp->open(vcdname.c_str());
 		}
+		
+		// Get initial state
+		uut->eval();
 	}
 
 	~VerilatedModel()
