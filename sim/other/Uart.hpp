@@ -36,7 +36,8 @@ template <class dataT> class Uart : public Peripheral
 			// Set as non-blocking
 			fcntl(fd, F_SETFL, FNDELAY);
 
-			std::cout << "The slave side is named: " << ptsname(fd) << std::endl;
+			slave_name = std::string(ptsname(fd));
+			std::cout << "The slave side is named: " << get_slave_name() << std::endl;
 		}
 
 		~Uart()
@@ -51,12 +52,18 @@ template <class dataT> class Uart : public Peripheral
 			tx_eval();
 		}
 
+		std::string get_slave_name(void) const
+		{
+			return slave_name;
+		}
+
 	private:
 		InputLatch <dataT> rx;
 		dataT &tx;
 		const int bit_interval;
 		int rx_timer, tx_timer, rx_bit, tx_bit;
 		int fd;
+		std::string slave_name;
 
 		enum class State
 		{
