@@ -74,13 +74,13 @@ begin
 					axis_o_tdata[CTR_HIGH-ctr] <= miso; // MSB first
 					if(ctr == CTR_HIGH) begin
 						state <= WAIT;
-						ctr <= 0;
 						axis_i_tready <= 1;
 					end
 				end
 			end
 			WAIT: begin
 				sck <= 0;
+				ctr <= 0;
 				if (axis_o_tready && axis_o_tvalid) begin
 					state <= SETUP;
 				end
