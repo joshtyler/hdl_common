@@ -1,5 +1,7 @@
 interface wishbone #(parameter BYTES = 1, parameter SEL_WIDTH = 1, parameter ADDR_BITS = 8);
+	/* verilator lint_off LITENDIAN */
 	logic [ADDR_BITS-1 : 0] addr;
+	/* verilator lint_on LITENDIAN */
 	logic [(8*BYTES)-1:0] dat_m2s, dat_s2m;
 	logic we, stb, ack, cyc, stall;
 	logic [SEL_WIDTH-1:0] sel;

@@ -66,13 +66,60 @@ begin
 	end
 end
 
-assign wb.stb = (state == SM_BUS_ACTIVE) && axis_i_tvalid;
-assign axis_i_tready = ! wb.stall;
+logic out_reg_ready;
+
+always_comb
+begin
+	wb.stb = 0;
+	if (state == SM_BUS_ACTIVE)
+	begin
+		if(wb.we)
+		begin
+			wb.stb = axis_i_tvalid;
+		end else begin
+			// This only works because we are doing one txn at a time
+			// The logic breaks if have more than one in flight transaction
+			// At this point we need a FIFO
+			wb.stb = out_reg_ready;
+		end
+	end
+end
+
+always_comb
+begin
+	axis_i_tready = 0;
+	if ((state == SM_GET_OP) || (state == SM_GET_ADDR))
+	begin
+		axis_i_tready = 1;
+	end else if (state == SM_BUS_ACTIVE) begin
+		if(wb.we)
+		begin
+			axis_i_tready = ! wb.stall;
+		end
+	end
+end
+
 assign wb.dat_m2s = axis_i_tdata;
 
-// Temporary
-assign axis_o_tvalid = 0;
-assign axis_o_tlast = 0;
-assign axis_o_tdata = '0;
+assign wb.cyc = (state == SM_BUS_ACTIVE) || (state == SM_LAST_ACK);
+
+
+axis_register
+#(
+	.AXIS_BYTES(BYTES)
+) wb_to_axis_reg (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready(out_reg_ready),
+	.axis_i_tvalid(wb.ack && (!wb.we)),
+	.axis_i_tlast(1), // Only valid because we only support a burst of one at the moment
+	.axis_i_tdata(wb.dat_s2m),
+
+	.axis_o_tready(axis_o_tready),
+	.axis_o_tvalid(axis_o_tvalid),
+	.axis_o_tlast(axis_o_tlast),
+	.axis_o_tdata(axis_o_tdata)
+);
 
 endmodule

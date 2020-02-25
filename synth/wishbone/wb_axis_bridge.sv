@@ -1,6 +1,6 @@
 module wb_axis_bridge
 #(
-	localparam BYTES = 1,
+	parameter BYTES = 1
 ) (
 	input logic clk,
 	input logic sresetn,
@@ -8,20 +8,20 @@ module wb_axis_bridge
 	// Wishbone
 	input  logic wb_stb, // cyc assumed to be high
 	input  logic wb_we,
-	input  logic [(AXIS_BYTES*8)-1:0] wb_data_i,
-	output logic [(AXIS_BYTES*8)-1:0] wb_data_o,
+	input  logic [(BYTES*8)-1:0] wb_data_i,
+	output logic [(BYTES*8)-1:0] wb_data_o,
 	output logic wb_ack,
 	output logic wb_stall,
 
 	// AXIS Input
 	output logic                      axis_i_tready,
 	input  logic                      axis_i_tvalid,
-	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
+	input  logic [(BYTES*8)-1:0] axis_i_tdata,
 
 	// AXIS Output
 	input  logic                      axis_o_tready,
 	output logic                      axis_o_tvalid,
-	output logic [(AXIS_BYTES*8)-1:0] axis_o_tdata
+	output logic [(BYTES*8)-1:0] axis_o_tdata
 );
 
 
@@ -39,18 +39,23 @@ begin
 	begin
 		wb_ack <= 0;
 	end else begin
-		wb_ack = wb_stb && !wb_stall;
+		wb_ack <= wb_stb && !wb_stall;
 	end
 end
 
 // Stall logic
 always_comb
 begin
-	if(wb_we)
+	if(wb_stb)
 	begin
-		wb_stall = !wb_to_axis_tready;
+		if(wb_we)
+		begin
+			wb_stall = !wb_to_axis_tready;
+		end else begin
+			wb_stall = !axis_to_wb_tvalid;
+		end
 	end else begin
-		wb_stall = !axis_to_wb_tvalid;
+		wb_stall = 0;
 	end
 end
 
@@ -60,10 +65,10 @@ begin
 	axis_to_wb_tready = wb_stb && !wb_we;
 end
 
-wb_to_axis_reg
+axis_register
 #(
 	.AXIS_BYTES(BYTES)
-) axis_register (
+) wb_to_axis_reg (
 	.clk(clk),
 	.sresetn(sresetn),
 

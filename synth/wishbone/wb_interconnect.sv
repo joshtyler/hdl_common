@@ -3,15 +3,27 @@
 
 module wb_interconnect
 #(
-	parameter NUM_SLAVES = 1,
-	parameter MASTER_ADDR_BITS = 1,
-	parameter [NUM_SLAVES*MASTER_ADDR_BITS-1:0] SLAVE_ADDRESSES = 0,
-	parameter integer SLAVE_ADDRESS_BITS [NUM_SLAVES-1:0] = {0}
+	parameter NUM_MASTERS = 1,
+	parameter ADDR_BITS = 1,
+	parameter BYTES = 1,
+	parameter SEL_WIDTH = 1,
+	parameter [NUM_MASTERS*ADDR_BITS-1:0] MASTER_ADDRESSES = 0,
+	parameter [NUM_MASTERS*ADDR_BITS-1:0] MASTER_ADDRESS_MASKS = 0
 ) (
-	wishbone.master m_wb,
-	wishbone.slave s_wb [NUM_SLAVES-1:0]
+	wishbone.slave s_wb,
+
+	output logic [NUM_MASTERS*ADDR_BITS-1:0] m_addr,
+	output logic [NUM_MASTERS*BYTES*8-1:0] m_dat_m2s,
+	input  logic [NUM_MASTERS*BYTES*8-1:0] m_dat_s2m,
+	output logic [NUM_MASTERS-1:0] m_we,
+	output logic [NUM_MASTERS*SEL_WIDTH-1:0] m_sel,
+	output logic [NUM_MASTERS-1:0] m_stb,
+	output logic [NUM_MASTERS-1:0] m_cyc,
+	input  logic [NUM_MASTERS-1:0] m_ack,
+	input  logic [NUM_MASTERS-1:0] m_stall
 );
 
+/*
 	function logic [MASTER_ADDR_BITS-1:0] gen_mask();
 		input integer bits;
 		integer i;
@@ -23,39 +35,41 @@ module wb_interconnect
 		end
 	end
 	endfunction
-
+*/
 
 
 	genvar i;
- 	for(i=0; i<NUM_SLAVES; i++)
+ 	for(i=0; i<NUM_MASTERS; i++)
 	begin
-		localparam [MASTER_ADDR_BITS-1:0] SLAVE_MASK = gen_mask(SLAVE_ADDRESS_BITS[i]);
+		localparam [ADDR_BITS-1:0] MASK = MASTER_ADDRESS_MASKS[(i+1)*ADDR_BITS-1 -: ADDR_BITS];
+		localparam [ADDR_BITS-1:0] ADDR = MASTER_ADDRESSES    [(i+1)*ADDR_BITS-1 -: ADDR_BITS];
 
-		logic slave_active;
-		assign slave_active = m_wb[i].addr & SLAVE_MASK;
+		logic active;
+		assign active = (s_wb.addr & MASK) == ADDR;
 
-		assign s_wb[i].addr = m_wb.addr[SLAVE_ADDRESS_BITS[i]-1:0];
-		assign s_wb[i].dat_m2s = m_wb.dat_m2s;
-		assign s_wb[i].we = m_wb.we;
-		assign s_wb[i].sel = m_wb.sel;
-		assign s_wb[i].stb = m_wb.stb && slave_active[i];
-		assign s_wb[i].cyc = m_wb.cyc && slave_active[i];
+		assign m_addr[(i+1)*ADDR_BITS-1 -: ADDR_BITS] = s_wb.addr & (~MASK);
+		assign m_dat_m2s[(i+1)*BYTES*8-1 -: BYTES*8]  = s_wb.dat_m2s;
+		assign m_we[i]   = s_wb.we;
+		assign m_sel[(i+1)*SEL_WIDTH-1 -: SEL_WIDTH]     = s_wb.sel;
+		assign m_stb[i]     = s_wb.stb && active;
+		assign m_cyc[i]     = s_wb.cyc && active;
 	end
 
+	int j;
 	always_comb
 	begin
-		m_wb.dat_s2m = '0;
-		m_wb.stall = '1;
-		m_wb.ack = '0;
-		for(i=0; i<NUM_SLAVES; i++)
+		s_wb.dat_s2m = '0;
+		s_wb.stall = 0;
+		s_wb.ack = 0;
+		for(j=0; j<NUM_MASTERS; j++)
 		begin
-			if(s_wb[i].cyc)
+			if(m_cyc[j])
 			begin
-				m_wb.dat_s2m = s_wb[i].dat_s2m;
-				m_wb.stall = s_wb[i].stall;
+				s_wb.dat_s2m = m_dat_s2m[(j+1)*BYTES*8-1 -: BYTES*8] ;
+				s_wb.stall   = m_stall[j];
 			end
 			// No dependancy on cyc as the master must wait for all acks before de-asserting cyc
-			m_wb.ack = m_wb.ack || s_wb[i].ack;
+			s_wb.ack = s_wb.ack || m_ack[j];
 		end
 	end
 
