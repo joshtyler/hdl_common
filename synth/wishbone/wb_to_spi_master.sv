@@ -1,12 +1,21 @@
 module wb_to_spi_master
 #(
 	localparam BYTES = 1,
-	localparam ADDR_BITS = 8
+	localparam ADDR_BITS = 8,
+	localparam SEL_WIDTH = 1
 ) (
 	input logic clk,
 	input logic sresetn,
 
-	wishbone.slave wb,
+	input  logic [ADDR_BITS-1:0] s_wb_addr,
+	input  logic [BYTES*8-1:0]   s_wb_dat_m2s,
+	output logic [BYTES*8-1:0]   s_wb_dat_s2m,
+	input  logic                 s_wb_we,
+	input  logic [SEL_WIDTH-1:0] s_wb_sel,
+	input  logic                 s_wb_stb,
+	input  logic                 s_wb_cyc,
+	output logic                 s_wb_ack,
+	output logic                 s_wb_stall,
 
 	output logic sck,
 	output logic ss,
@@ -14,17 +23,13 @@ module wb_to_spi_master
 	output logic mosi
 );
 
-wishbone
-#(
-	.BYTES(BYTES),
-	.ADDR_BITS(0)
-) config_wb();
-
-wishbone
-#(
-	.BYTES(BYTES),
-	.ADDR_BITS(0)
-) axis_wb();
+logic [BYTES*8-1:0]   wb_axis_dat_m2s , wb_config_dat_m2s;
+logic [BYTES*8-1:0]   wb_axis_dat_s2m , wb_config_dat_s2m;
+logic                 wb_axis_we      , wb_config_we     ;
+logic                 wb_axis_stb     , wb_config_stb    ;
+logic                 wb_axis_cyc     , wb_config_cyc    ;
+logic                 wb_axis_ack     , wb_config_ack    ;
+logic                 wb_axis_stall   , wb_config_stall  ;
 
 wb_interconnect
 #(
@@ -41,27 +46,45 @@ wb_interconnect
 		{(ADDR_BITS){1'b1}}
 	})
 ) ic (
-	.s_wb(wb),
-	.m_addr(),
-	.m_dat_m2s({axis_wb.dat_m2s, config_wb.dat_m2s}),
-	.m_dat_s2m({axis_wb.dat_s2m, config_wb.dat_s2m}),
-	.m_we({axis_wb.we, config_wb.we}),
-	.m_sel({axis_wb.sel, config_wb.sel}),
-	.m_stb({axis_wb.stb, config_wb.stb}),
-	.m_cyc({axis_wb.cyc, config_wb.cyc}),
-	.m_ack({axis_wb.ack, config_wb.ack}),
-	.m_stall({axis_wb.stall, config_wb.stall})
+	.s_wb_addr   (s_wb_addr   ),
+	.s_wb_dat_m2s(s_wb_dat_m2s),
+	.s_wb_dat_s2m(s_wb_dat_s2m),
+	.s_wb_we     (s_wb_we     ),
+	.s_wb_sel    (s_wb_sel    ),
+	.s_wb_stb    (s_wb_stb    ),
+	.s_wb_cyc    (s_wb_cyc    ),
+	.s_wb_ack    (s_wb_ack    ),
+	.s_wb_stall  (s_wb_stall  ),
+
+	.m_wb_addr(),
+	.m_wb_dat_m2s({wb_axis_dat_m2s , wb_config_dat_m2s}),
+	.m_wb_dat_s2m({wb_axis_dat_s2m , wb_config_dat_s2m}),
+	.m_wb_we     ({wb_axis_we      , wb_config_we     }),
+	.m_wb_sel    (),
+	.m_wb_stb    ({wb_axis_stb     , wb_config_stb    }),
+	.m_wb_cyc    ({wb_axis_cyc     , wb_config_cyc    }),
+	.m_wb_ack    ({wb_axis_ack     , wb_config_ack    }),
+	.m_wb_stall  ({wb_axis_stall   , wb_config_stall  })
 );
 
 logic [7:0] config_reg;
 simple_wb_slave
 #(
 	.BYTES(BYTES),
-	.ADDR_BITS(0)
+	.ADDR_BITS(0),
+	.INITAL_VAL('1)
 ) cs_inst (
 	.clk(clk),
 	.sresetn(sresetn),
-	.wb(config_wb),
+	.s_wb_addr   (0),
+ 	.s_wb_dat_m2s(wb_config_dat_m2s),
+ 	.s_wb_dat_s2m(wb_config_dat_s2m),
+ 	.s_wb_we     (wb_config_we     ),
+ 	.s_wb_sel    (1),
+ 	.s_wb_stb    (wb_config_stb    ),
+ 	.s_wb_cyc    (wb_config_cyc    ),
+ 	.s_wb_ack    (wb_config_ack    ),
+ 	.s_wb_stall  (wb_config_stall  ),
 	.regs(config_reg)
 );
 assign ss = config_reg[0];
@@ -81,12 +104,12 @@ wb_axis_bridge
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.wb_stb(axis_wb.stb),
-	.wb_we(axis_wb.we),
-	.wb_data_i(axis_wb.dat_m2s),
-	.wb_data_o(axis_wb.dat_s2m),
-	.wb_ack(axis_wb.ack),
-	.wb_stall(axis_wb.stall),
+	.wb_stb   (wb_axis_stb),
+	.wb_we    (wb_axis_we),
+	.wb_data_i(wb_axis_dat_m2s),
+	.wb_data_o(wb_axis_dat_s2m),
+	.wb_ack   (wb_axis_ack),
+	.wb_stall (wb_axis_stall),
 
 	.axis_i_tready(axis_spi_to_wb_tready),
 	.axis_i_tvalid(axis_spi_to_wb_tvalid),

@@ -86,10 +86,10 @@ template <class dataT> class Uart : public Peripheral
 					if(!rx)
 					{
 						rx_state = State::DATA;
-						rx_bit = 9;
+						rx_bit = 0;
 						rx_timer = bit_interval/2; // Sample half way through each bit
 						rx_data = 0;
-						std::cout << "Starting receive! (" << (int) rx << ")" << std::endl;
+						//std::cout << "Starting receive! (" << (int) rx << ")" << std::endl;
 					}
 					break;
 				case State::DATA:
@@ -97,14 +97,14 @@ template <class dataT> class Uart : public Peripheral
 					{
 						rx_timer--;
 					} else {
-						if(rx_bit == 9)
+						if(rx_bit == 0)
 						{
 							// Start bit
 							assert(!rx /* Start bit not low */);
-						} else if(rx_bit == 0) {
+						} else if(rx_bit == 9) {
 							// Stop bit
 							assert(rx /* Stop bit not high*/);
-							std::cout << "Got data bit: " << std::hex << (int) rx_data << std::dec << std::endl;
+							std::cout << "UART Rx (" << std::hex << (int) rx_data << std::dec << ")" << std::endl;
 							if(write(fd,&rx_data,1) != 1)
 							{
 								throw std::runtime_error("Writing failed");
@@ -118,7 +118,7 @@ template <class dataT> class Uart : public Peripheral
 							}
 						}
 						rx_timer = bit_interval;
-						rx_bit--;
+						rx_bit++;
 					}
 					break;
 			}
@@ -133,7 +133,7 @@ template <class dataT> class Uart : public Peripheral
 					if(read(fd, &tx_data, 1) == 1)
 					{
 						tx_state = State::DATA;
-						tx_bit = 9;
+						tx_bit = 0;
 						tx_timer = bit_interval;
 					} else if(!(errno == EAGAIN || errno == EWOULDBLOCK)) { // If we failed for any reason OTHER than data not available
 						std::cerr << "Something went wrong with read(): " << strerror(errno) << std::endl;
@@ -146,11 +146,11 @@ template <class dataT> class Uart : public Peripheral
 						tx_timer--;
 					} else {
 						//std::cout << "Tx: " << (int)tx << "Tx bit: " << tx_bit << std::endl;
-						if(tx_bit == 9)
+						if(tx_bit == 0)
 						{
 							// Start bit
 							tx = 0;
-						} else if(tx_bit == 0) {
+						} else if(tx_bit == 9) {
 							// Stop bit
 							tx = 1;
 						} else {
@@ -159,11 +159,11 @@ template <class dataT> class Uart : public Peripheral
 							//std::cout << "Setting to " << (int) tx << "(data : " << (int) tx_data << ")" << std::endl;
 						}
 						tx_timer = bit_interval;
-						if(tx_bit)
+						if(tx_bit < 9)
 						{
-							tx_bit--;
+							tx_bit++;
 						} else {
-							std::cout << "TX Done!" << std::endl;
+							std::cout << "UART Tx (" << std::hex << (int) tx_data << std::dec << ")" << std::endl;
 							tx_state = State::IDLE;
 						}
 					}

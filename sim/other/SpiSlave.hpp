@@ -41,13 +41,13 @@ template <class dataT,class devDataT> class SpiSlave : public Peripheral
 				{
 					ctr = CTR_HIGH;
 					current_tx_dat = dev->transfer(current_rx_dat.to_ulong());
-					std::cout << "New transmit data " << current_tx_dat << std::endl;
+					//std::cout << "New transmit data " << current_tx_dat << std::endl;
 					current_rx_dat = 0;
 				} else {
 					ctr--;
 				}
 				miso = current_tx_dat[ctr];
-				std::cout << "Setting MISO to " << miso << std::endl;
+				//std::cout << "Setting MISO to " << miso << std::endl;
 			}
 
 			prev_sck = sck;

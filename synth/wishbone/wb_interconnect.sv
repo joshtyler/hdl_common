@@ -10,17 +10,25 @@ module wb_interconnect
 	parameter [NUM_MASTERS*ADDR_BITS-1:0] MASTER_ADDRESSES = 0,
 	parameter [NUM_MASTERS*ADDR_BITS-1:0] MASTER_ADDRESS_MASKS = 0
 ) (
-	wishbone.slave s_wb,
+	input  logic [ADDR_BITS-1:0] s_wb_addr,
+	input  logic [BYTES*8-1:0]   s_wb_dat_m2s,
+	output logic [BYTES*8-1:0]   s_wb_dat_s2m,
+	input  logic                 s_wb_we,
+	input  logic [SEL_WIDTH-1:0] s_wb_sel,
+	input  logic                 s_wb_stb,
+	input  logic                 s_wb_cyc,
+	output logic                 s_wb_ack,
+	output logic                 s_wb_stall,
 
-	output logic [NUM_MASTERS*ADDR_BITS-1:0] m_addr,
-	output logic [NUM_MASTERS*BYTES*8-1:0] m_dat_m2s,
-	input  logic [NUM_MASTERS*BYTES*8-1:0] m_dat_s2m,
-	output logic [NUM_MASTERS-1:0] m_we,
-	output logic [NUM_MASTERS*SEL_WIDTH-1:0] m_sel,
-	output logic [NUM_MASTERS-1:0] m_stb,
-	output logic [NUM_MASTERS-1:0] m_cyc,
-	input  logic [NUM_MASTERS-1:0] m_ack,
-	input  logic [NUM_MASTERS-1:0] m_stall
+	output logic [NUM_MASTERS*ADDR_BITS-1:0] m_wb_addr,
+	output logic [NUM_MASTERS*BYTES*8-1:0]   m_wb_dat_m2s,
+	input  logic [NUM_MASTERS*BYTES*8-1:0]   m_wb_dat_s2m,
+	output logic [NUM_MASTERS-1:0]           m_wb_we,
+	output logic [NUM_MASTERS*SEL_WIDTH-1:0] m_wb_sel,
+	output logic [NUM_MASTERS-1:0]           m_wb_stb,
+	output logic [NUM_MASTERS-1:0]           m_wb_cyc,
+	input  logic [NUM_MASTERS-1:0]           m_wb_ack,
+	input  logic [NUM_MASTERS-1:0]           m_wb_stall
 );
 
 /*
@@ -45,31 +53,31 @@ module wb_interconnect
 		localparam [ADDR_BITS-1:0] ADDR = MASTER_ADDRESSES    [(i+1)*ADDR_BITS-1 -: ADDR_BITS];
 
 		logic active;
-		assign active = (s_wb.addr & MASK) == ADDR;
+		assign active = (s_wb_addr & MASK) == ADDR;
 
-		assign m_addr[(i+1)*ADDR_BITS-1 -: ADDR_BITS] = s_wb.addr & (~MASK);
-		assign m_dat_m2s[(i+1)*BYTES*8-1 -: BYTES*8]  = s_wb.dat_m2s;
-		assign m_we[i]   = s_wb.we;
-		assign m_sel[(i+1)*SEL_WIDTH-1 -: SEL_WIDTH]     = s_wb.sel;
-		assign m_stb[i]     = s_wb.stb && active;
-		assign m_cyc[i]     = s_wb.cyc && active;
+		assign m_wb_addr[(i+1)*ADDR_BITS-1 -: ADDR_BITS] = s_wb_addr & (~MASK);
+		assign m_wb_dat_m2s[(i+1)*BYTES*8-1 -: BYTES*8]  = s_wb_dat_m2s;
+		assign m_wb_we[i]   = s_wb_we;
+		assign m_wb_sel[(i+1)*SEL_WIDTH-1 -: SEL_WIDTH]     = s_wb_sel;
+		assign m_wb_stb[i]     = s_wb_stb && active;
+		assign m_wb_cyc[i]     = s_wb_cyc && active;
 	end
 
-	int j;
+	integer j;
 	always_comb
 	begin
-		s_wb.dat_s2m = '0;
-		s_wb.stall = 0;
-		s_wb.ack = 0;
+		s_wb_dat_s2m = '0;
+		s_wb_stall = 0;
+		s_wb_ack = 0;
 		for(j=0; j<NUM_MASTERS; j++)
 		begin
-			if(m_cyc[j])
+			if(m_wb_cyc[j])
 			begin
-				s_wb.dat_s2m = m_dat_s2m[(j+1)*BYTES*8-1 -: BYTES*8] ;
-				s_wb.stall   = m_stall[j];
+				s_wb_dat_s2m = m_wb_dat_s2m[(j+1)*BYTES*8-1 -: BYTES*8] ;
+				s_wb_stall   = m_wb_stall[j];
 			end
 			// No dependancy on cyc as the master must wait for all acks before de-asserting cyc
-			s_wb.ack = s_wb.ack || m_ack[j];
+			s_wb_ack = s_wb_ack || m_wb_ack[j];
 		end
 	end
 
