@@ -21,41 +21,95 @@ class FlashSpiDevice : public SpiDeviceInterface<uint8_t>
 			return 0;
 		}
 
+
+		// This needs a serious refactor!
 		virtual uint8_t transfer(uint8_t rx) override
 		{
-			std::cout << "Got data!" << std::endl;
+			std::cout << "Got data! : " << (int) rx << std::endl;
 			uint8_t ret;
 			switch(rx_state)
 			{
 				case RxState::INSTRUCTION:
 					instruction = rx;
 					ret = 0;
-					rx_state = RxState::ADDRESS_1;
-					break;
-				case RxState::ADDRESS_1:
-					address = rx << 16;
-					ret = 0;
-					rx_state = RxState::ADDRESS_2;
-					break;
-				case RxState::ADDRESS_2:
-					address |= rx << 8;
-					ret = 0;
-					rx_state = RxState::ADDRESS_3;
-					break;
-				case RxState::ADDRESS_3:
-					address |= rx;
-					rx_state = RxState::INSTRUCTION;
 					switch(instruction)
 					{
-						case 0x90: // Manufacturer ID
-							std::cout << "Returning manufacturer ID" << std::endl;
+						case 0x05:
+							std::cout << "Returning status register" << std::endl;
+							ret = 0x0;
+							break;
+						case 0xAB:
+							std::cout << "Returning device ID" << std::endl;
+							ret = 0x0;
+							break;
+						case 0x9F:
+							std::cout << "Returning JEDEC ID" << std::endl;
 							ret = 0xEF;
-							#warning "Really we should return device ID here after manufaturer ID"
+							break;
+						case 0x03:
+							std::cout << "Read data. Warning, not implemented" << std::endl;
+							ret = 0x0;
 							break;
 						default:
 							assert(false); // Unknown ID
 							break;
 					}
+					rx_state = RxState::BYTE_2;
+					break;
+				case RxState::BYTE_2:
+					ret = 0;
+					switch(instruction)
+					{
+						case 0x9F:
+							ret = 0x40;
+							break;
+						case 0x03:
+							std::cout << "Read data. Warning, not implemented" << std::endl;
+							ret = 0x0;
+							break;
+						default:
+							break;
+					}
+					rx_state = RxState::BYTE_3;
+					break;
+				case RxState::BYTE_3:
+					ret = 0;
+					switch(instruction)
+					{
+						case 0x9F:
+							ret = 0x18;
+							break;
+						case 0x03:
+							std::cout << "Read data. Warning, not implemented" << std::endl;
+							ret = 0x0;
+							break;
+						default:
+							break;
+					}
+					rx_state = RxState::BYTE_4;
+					break;
+				case RxState::BYTE_4:
+					ret = 0;
+					switch(instruction)
+					{
+						case 0xAB:
+							ret = 0x17;
+							break;
+						case 0x9F:
+							ret = 0x00;
+							break;
+						case 0x03:
+							std::cout << "Read data. Warning, not implemented" << std::endl;
+							ret = 0x0;
+							break;
+						default:
+							break;
+					}
+					rx_state = RxState::DUMMY;
+					break;
+				case RxState::DUMMY:
+					std::cout << "Returning dummy data" << std::endl;
+					ret = 0;
 					break;
 			}
 
@@ -71,14 +125,14 @@ class FlashSpiDevice : public SpiDeviceInterface<uint8_t>
 		enum class RxState
 		{
 			INSTRUCTION,
-			ADDRESS_1,
-			ADDRESS_2,
-			ADDRESS_3
+			BYTE_2,
+			BYTE_3,
+			BYTE_4,
+			DUMMY
 		};
 		RxState rx_state;
 
 		uint8_t instruction;
-		uint32_t address; // Only use 24 bits
 };
 
 #endif
