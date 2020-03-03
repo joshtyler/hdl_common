@@ -97,6 +97,10 @@ logic       axis_spi_to_wb_tready;
 logic       axis_spi_to_wb_tvalid;
 logic [7:0] axis_spi_to_wb_tdata;
 
+logic       axis_spi_to_wb_buf_tready;
+logic       axis_spi_to_wb_buf_tvalid;
+logic [7:0] axis_spi_to_wb_buf_tdata;
+
 wb_axis_bridge
 #(
 	.BYTES(BYTES)
@@ -111,13 +115,34 @@ wb_axis_bridge
 	.wb_ack   (wb_axis_ack),
 	.wb_stall (wb_axis_stall),
 
-	.axis_i_tready(axis_spi_to_wb_tready),
-	.axis_i_tvalid(axis_spi_to_wb_tvalid),
-	.axis_i_tdata(axis_spi_to_wb_tdata),
+	.axis_i_tready(axis_spi_to_wb_buf_tready),
+	.axis_i_tvalid(axis_spi_to_wb_buf_tvalid),
+	.axis_i_tdata (axis_spi_to_wb_buf_tdata),
 
 	.axis_o_tready(axis_wb_to_spi_tready),
 	.axis_o_tvalid(axis_wb_to_spi_tvalid),
 	.axis_o_tdata(axis_wb_to_spi_tdata)
+);
+
+// FIFO the data back from the SPI bus so that outstanding transactions are possible
+axis_fifo
+#(
+	.AXIS_BYTES(1),
+	.DEPTH(256)
+) fifo_inst (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready(axis_spi_to_wb_tready),
+	.axis_i_tvalid(axis_spi_to_wb_tvalid),
+	.axis_i_tlast(1),
+	.axis_i_tdata (axis_spi_to_wb_tdata),
+
+	// Output
+	.axis_o_tready(axis_spi_to_wb_buf_tready),
+	.axis_o_tvalid(axis_spi_to_wb_buf_tvalid),
+	.axis_o_tlast (),
+	.axis_o_tdata (axis_spi_to_wb_buf_tdata)
 );
 
 axis_spi_bridge
@@ -133,7 +158,7 @@ axis_spi_bridge
 
 	.axis_o_tready(axis_spi_to_wb_tready),
 	.axis_o_tvalid(axis_spi_to_wb_tvalid),
-	.axis_o_tdata(axis_spi_to_wb_tdata),
+	.axis_o_tdata (axis_spi_to_wb_tdata),
 
 	.sck(sck),
 	.miso(miso),
