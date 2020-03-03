@@ -86,8 +86,10 @@ axis_register
 
 // We don't actually need the register on the axis_to_wb direction
 // Ready is always asserted independantly of valid so it's axis compliant inherantly
+// We need to register wb_data_o because ack is delayed by one clock also
 assign axis_i_tready = axis_to_wb_tready;
 assign axis_to_wb_tvalid = axis_i_tvalid;
-assign wb_data_o = axis_i_tdata;
+always_ff @(posedge clk)
+	wb_data_o <= axis_i_tdata;
 
 endmodule
