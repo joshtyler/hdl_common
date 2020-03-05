@@ -10,6 +10,7 @@ module uart_tx
 	input logic clk,
 	input logic sresetn,
 
+	input logic serial_ready,
 	output logic serial_data,
 
 	output logic s_axis_tready,
@@ -28,7 +29,7 @@ localparam SEND    = 1'b1; // Capture values of all bits except start bit
 
 always_comb
 begin
-	s_axis_tready = (state == CAPTURE);
+	s_axis_tready = (state == CAPTURE) && serial_ready;
 end
 
 logic serial_data_reg;
@@ -59,7 +60,7 @@ begin
 				data_ctr <= 0; // Current data bit
 				data_reg <= {1'b1, s_axis_tdata, 1'b0}; //Stop bit, data, start bit
 
-				if(s_axis_tready && s_axis_tvalid)
+				if(s_axis_tready && s_axis_tvalid && serial_ready)
 				begin
 					state <= SEND;
 				end
