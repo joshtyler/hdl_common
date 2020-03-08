@@ -92,7 +92,7 @@ simple_wb_slave
 	.regs(config_reg)
 );
 logic discard_rx_data;
-//assign discard_rx_data = config_reg[1];
+assign discard_rx_data = config_reg[1];
 assign ss = config_reg[0];
 
 logic       axis_wb_to_spi_tready;
