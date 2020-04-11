@@ -70,30 +70,33 @@ wb_interconnect
 	.m_wb_stall  ({wb_inject_stall   , wb_axis_stall   , wb_config_stall   })
 );
 
-
-logic [7:0] config_reg;
-simple_wb_slave
-#(
-	.BYTES(BYTES),
-	.ADDR_BITS(0),
-	.INITAL_VAL(8'b00000001) // CS high, don't discard RX data
-) cs_inst (
-	.clk(clk),
-	.sresetn(sresetn),
-	.s_wb_addr   (0),
- 	.s_wb_dat_m2s(wb_config_dat_m2s),
- 	.s_wb_dat_s2m(wb_config_dat_s2m),
- 	.s_wb_we     (wb_config_we     ),
- 	.s_wb_sel    (1),
- 	.s_wb_stb    (wb_config_stb    ),
- 	.s_wb_cyc    (wb_config_cyc    ),
- 	.s_wb_ack    (wb_config_ack    ),
- 	.s_wb_stall  (wb_config_stall  ),
-	.regs(config_reg)
-);
+// Handle config reads and writes
 logic discard_rx_data;
-assign discard_rx_data = config_reg[1];
-assign ss = config_reg[0];
+logic axis_spi_bridge_active;
+
+always_ff @(posedge clk)
+begin
+	if (!sresetn)
+	begin
+		ss <= 1;
+		discard_rx_data <= 0;
+	end else begin
+
+		if (wb_config_stb && wb_config_we && (!wb_config_stall))
+		begin
+			ss <= wb_config_dat_m2s[0];
+			discard_rx_data <= wb_config_dat_m2s[1];
+		end
+	end
+
+	wb_config_dat_s2m <= {6'b000000, discard_rx_data, ss};
+
+	wb_config_ack <= wb_config_stb && (!wb_config_stall);
+end
+// Don't allow changing config whilst data is being transferred
+// This stops us from de-asserting SS half way through a transfer
+assign wb_config_stall = wb_config_stb && axis_spi_bridge_active;
+
 
 logic       axis_wb_to_spi_tready;
 logic       axis_wb_to_spi_tvalid;
@@ -109,6 +112,7 @@ logic [7:0] axis_spi_to_wb_buf_tdata;
 
 // Register to inject bytes into stream
 // When the counter is non zero, inject that many dummy bytes into the stream
+// This is realistic since the reason to inject is because we want to read from the device
 // To make the logic simple, assume that we are not trying to write at the same time
 logic [7:0] inject_ctr;
 always_ff @(posedge clk)
@@ -128,7 +132,6 @@ begin
 
 	wb_inject_dat_s2m <= inject_ctr;
 
-	// Acknowledge reads
 	wb_inject_ack <= wb_inject_stb;
 end
 // We never need to stall
@@ -170,7 +173,7 @@ axis_fifo
 	.sresetn(sresetn),
 
 	.axis_i_tready(axis_spi_to_wb_tready),
-	.axis_i_tvalid(axis_spi_to_wb_tvalid && !(discard_rx_data)), // If we are discarding RX data, don't save the read data into the buffer
+	.axis_i_tvalid(axis_spi_to_wb_tvalid),
 	.axis_i_tlast(1),
 	.axis_i_tdata (axis_spi_to_wb_tdata),
 
@@ -181,6 +184,12 @@ axis_fifo
 	.axis_o_tdata (axis_spi_to_wb_buf_tdata)
 );
 
+
+// This is actually the input valid signal
+// We are cheating slightly, we know that the SPI bridge is only transferring data when the input data is valid
+// (i.e. it doesn't buffer internally, it only asserts ready when it is done with the data)
+assign axis_spi_bridge_active = axis_wb_to_spi_tvalid || (inject_ctr != 0);
+
 axis_spi_bridge
 #(
 	.AXIS_BYTES(BYTES)
@@ -189,8 +198,9 @@ axis_spi_bridge
 	.sresetn(sresetn),
 
 	.axis_i_tready(axis_wb_to_spi_tready),
-	.axis_i_tvalid(axis_wb_to_spi_tvalid || (inject_ctr != 0)), // We're commanded to inject
+	.axis_i_tvalid(axis_spi_bridge_active),
 	.axis_i_tdata(axis_wb_to_spi_tdata),
+	.axis_i_tuser(discard_rx_data),
 
 	.axis_o_tready(axis_spi_to_wb_tready),
 	.axis_o_tvalid(axis_spi_to_wb_tvalid),

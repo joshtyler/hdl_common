@@ -19,6 +19,7 @@ module axis_spi_bridge
 	output logic                      axis_i_tready,
 	input  logic                      axis_i_tvalid,
 	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
+	input  logic [0:0]                axis_i_tuser, // If 1 discard the result, if 0 return the result
 
 	// Output
 	input  logic                      axis_o_tready,
@@ -41,12 +42,14 @@ localparam [CTR_WIDTH-1:0]CTR_HIGH = AXIS_BYTES*8-1;
 /* verilator lint_on WIDTH */
 logic [CTR_WIDTH-1:0] ctr;
 
+logic discard_result;
+
 // Only ack when we are done with the data
 //assign axis_i_tready = (state == TRANSFER) && (ctr == CTR_HIGH);
 
 assign mosi = axis_i_tdata[CTR_HIGH-ctr]; // MSB first
 
-assign axis_o_tvalid = (state == WAIT);
+assign axis_o_tvalid = (state == WAIT) && (!discard_result);
 
 // The state machine adds two dead cycles, but keeps the logic simple
 // And we're not really concerned about performance for this
@@ -63,6 +66,7 @@ begin
 			SETUP : begin
 				if (axis_i_tvalid) begin
 					state <= TRANSFER;
+					discard_result <= axis_i_tuser[0];
 				end
 			end
 			TRANSFER: begin
@@ -81,7 +85,7 @@ begin
 			WAIT: begin
 				sck <= 0;
 				ctr <= 0;
-				if (axis_o_tready && axis_o_tvalid) begin
+				if ((axis_o_tready && axis_o_tvalid) || discard_result) begin
 					state <= SETUP;
 				end
 			end
