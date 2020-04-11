@@ -34,6 +34,10 @@ class FlashSpiDevice : public SpiDeviceInterface<uint8_t>
 					ret = 0;
 					switch(instruction)
 					{
+						case 0x01:
+							std::cout << "Write status register 1. Warning, not implemented" << std::endl;
+							ret = 0x0;
+							break;
 						case 0x05:
 							std::cout << "Returning status register" << std::endl;
 							ret = 0x0;
@@ -50,7 +54,12 @@ class FlashSpiDevice : public SpiDeviceInterface<uint8_t>
 							std::cout << "Read data. Warning, not implemented" << std::endl;
 							ret = 0x0;
 							break;
+						case 0x06:
+							std::cout << "Write enable. Warning, not implemented" << std::endl;
+							ret = 0x0;
+							break;
 						default:
+							std::cout << "Unknown instruction 0x" << std::hex << static_cast<int>(instruction) << std::endl;
 							assert(false); // Unknown ID
 							break;
 					}
