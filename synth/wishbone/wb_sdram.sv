@@ -73,7 +73,7 @@ module wb_sdram
 	output logic                     ram_ras_n,
 	output logic                     ram_cas_n,
 	output logic                     ram_we_n,
-	output logic [DATA_BYTES-1:0]    ram_dqm_n,
+	output logic [DATA_BYTES-1:0]    ram_dqm,
 	output logic                     ram_cke
 );
 
@@ -90,14 +90,7 @@ logic cmd_we;
 
 // The reverse channel on wb is not flow controlled
 assign s_wb_dat_s2m = ram_dq_i;
-// We have a shift register for the receved data ack becuse of CAS latency
-// We know when data will be valid from the control signals
-// N.B. latency is CAS latency +1 because the data in the main state machine is registered
-logic [T_CL:0] w_dat_ack_shreg;
-always @(posedge clk)
-begin
-	w_dat_ack_shreg <= {(cmd_ready && cmd_valid && (!cmd_we)), w_dat_ack_shreg[T_CL:1]};
-end
+logic read_dq_valid;
 
 logic r_dat_ack;
 always @(posedge clk)
@@ -106,7 +99,7 @@ begin
 end
 
 // The OR works because we know that the wishbone master must clear outstanding reads before turning around the bus
-assign s_wb_ack = w_dat_ack_shreg[0] || r_dat_ack;
+assign s_wb_ack = read_dq_valid || r_dat_ack;
 
 assign addr_cmd_fifo_i_tvalid = s_wb_stb;
 assign s_wb_stall = !addr_cmd_fifo_i_tready;
@@ -134,7 +127,6 @@ axis_fifo
 );
 
 logic wr_dat_fifo_i_tvalid;
-logic [DATA_BYTES*8-1:0] wr_data_fifo_o;
 assign wr_dat_fifo_i_tvalid = addr_cmd_fifo_i_tvalid && s_wb_we;
 axis_fifo
 #(
@@ -152,21 +144,9 @@ axis_fifo
 	.axis_o_tready(cmd_ready && cmd_we),
 	.axis_o_tvalid(), // We know from the meta fifo when this will be valid
 	.axis_o_tlast(),
-	.axis_o_tdata(wr_data_fifo_o)
+	.axis_o_tdata(ram_dq_o)
 );
-
-// The controller registers the control signals
-// Therefore we have to re-register the data to align
-always @(posedge clk)
-begin
-	ram_dq_oe <= 0;
-	if(cmd_ready && cmd_valid && cmd_we)
-	begin
-		ram_dq_oe <= 1;
-		ram_dq_o <= wr_data_fifo_o;
-	end
-
-end
+assign ram_dq_oe = cmd_ready && cmd_valid && cmd_we;
 
 wb_sdram_controller
 #(
@@ -192,13 +172,15 @@ wb_sdram_controller
 	.cmd_i_addr (cmd_addr),
 	.cmd_i_we   (cmd_we),
 
+	.read_dq_valid(read_dq_valid),
+
 	.ram_a     (ram_a),
 	.ram_bs    (ram_bs),
 	.ram_cs_n  (ram_cs_n),
 	.ram_ras_n (ram_ras_n),
 	.ram_cas_n (ram_cas_n),
 	.ram_we_n  (ram_we_n),
-	.ram_dqm_n (ram_dqm_n),
+	.ram_dqm   (ram_dqm),
 	.ram_cke   (ram_cke)
 );
 

@@ -23,7 +23,8 @@ module  wb_sdram_controller
 	// This is because the state machine might take one or two exta cycles to honor it
 	// Not currently a concern since we currently break out long before it is a problem for refreshes
 	parameter T_RAS_max_s   = 99800e-9,
-	parameter T_RCD_s       = 15e-9
+	parameter T_RCD_s       = 15e-9,
+	parameter T_WR          = 2
 ) (
 	input logic clk,
 	input logic sresetn,
@@ -33,18 +34,20 @@ module  wb_sdram_controller
 	input logic [BANK_SEL_BITS+ROW_ADDR_BITS+COL_ADDR_BITS-1:0] cmd_i_addr,
 	input logic                                                 cmd_i_we,
 
+	output logic read_dq_valid,
+
 	output logic [ROW_ADDR_BITS-1:0] ram_a,
 	output logic [BANK_SEL_BITS-1:0] ram_bs,
 	output logic                     ram_cs_n,
 	output logic                     ram_ras_n,
 	output logic                     ram_cas_n,
 	output logic                     ram_we_n,
-	output logic [DATA_BYTES-1:0]    ram_dqm_n,
+	output logic [DATA_BYTES-1:0]    ram_dqm,
 	output logic                     ram_cke
 );
 
 assign ram_cke = 1;
-assign ram_dqm_n = '0;
+assign ram_dqm = '0;
 
 localparam REFRSH_CYCLES_PER_REFRESH_PERIOD = 4096;
 
@@ -96,6 +99,11 @@ localparam integer T_RAS_max = T_RAS_max_s/(1.0/CLK_RATE);
 logic [$clog2(T_RAS_min+1)-1:0] t_ras_min_ctr;
 logic [$clog2(T_RAS_max+1)-1:0] t_ras_max_ctr;
 
+logic [$clog2(T_WR+1)-1:0] t_wr_ctr;
+
+logic [T_CL-1:0] t_cl_shreg;
+assign read_dq_valid = t_cl_shreg[0];
+
 logic [3:0] cmd;
 localparam [3:0] CMD_NOP           = 4'b1111;
 localparam [3:0] CMD_AUTO_REFRESH  = 4'b0001;
@@ -146,19 +154,19 @@ logic [ROW_ADDR_BITS-1:0] open_row;
 	// The user wants to access data in another bank and/or row
 logic close_row;
 assign close_row = (refresh_request_valid|| (t_ras_max_ctr == 0) || (cmd_i_valid && ((cmd_i_addr_row != open_row) || (cmd_i_addr_bank != open_bank))));
-assign cmd_i_ready = (state == SM_ACTIVE) && (timeout_ctr == 0) && !close_row;
 
-always @ (posedge clk)
+always @(posedge clk)
 begin
 	if(!sresetn)
 	begin
 		state <= SM_INIT_PRECHARGE;
 		timeout_ctr <= 0;
-		cmd <= CMD_NOP;
 		init_refresh_ctr <= 0;
+		t_cl_shreg <= 0;
 	end else begin
 
-		cmd <= CMD_NOP;
+		// Shift register to show when we are expecting a read response
+		t_cl_shreg <= {(cmd == CMD_WRITE), t_cl_shreg[T_CL-1:1]};
 
 		// Timers for active state
 		if(t_ras_min_ctr > 0)
@@ -175,30 +183,24 @@ begin
 		begin
 			// If we are waiting for another operation to finish, wait here
 			timeout_ctr <= timeout_ctr -1;
-		end else if((refresh_request_valid && refresh_request_ready) || (init_refresh_ctr > 0)) begin
-			// If we are due a refresh cycle, this takes priority over the main state machine
-			// We are either here for the periodic timer, or becuase we are doing the requrired refresh cycles after setting the mode register
-			cmd <= CMD_AUTO_REFRESH;
-			timeout_ctr <= T_RC;
-			if(init_refresh_ctr > 0)
-			begin
-				init_refresh_ctr <= init_refresh_ctr-1;
-			end
-		end else begin
+		end
+
+		if(t_wr_ctr > 0)
+		begin
+			t_wr_ctr <= t_wr_ctr-1;
+		end
+
+		if(timeout_ctr == 0)
+		begin
 			// Main state machine
 			case(state)
 				SM_INIT_PRECHARGE:
 				begin
-					cmd <= CMD_PRECHARGE;
-					ram_a[10] <= 1; // Precharge all
 					timeout_ctr <= T_RP;
 					state <= SM_INIT_SET_MODE;
 				end
 				SM_INIT_SET_MODE:
 				begin
-					cmd <= CMD_SET_MODE;
-					ram_a <= ADDR_SET_MODE;
-					ram_bs <= '0;
 					state <= SM_IDLE;
 					timeout_ctr <= T_RSC;
 					// We need to have eight referesh cycles either before or after setting mode register
@@ -207,59 +209,37 @@ begin
 				end
 				SM_IDLE:
 				begin
-					if(cmd_i_valid)
+					if(cmd == CMD_ACTIVE)
 					begin
 						// Open the bank and row
 						// Store the opened bank and row
-						ram_bs    <= cmd_i_addr_bank;
 						open_bank <= cmd_i_addr_bank;
-						ram_a     <= cmd_i_addr_row;
 						open_row  <= cmd_i_addr_row;
 
-						cmd <= CMD_ACTIVE;
 						state <= SM_ACTIVE;
 						timeout_ctr <= T_RCD;
 
 						t_ras_min_ctr <= T_RAS_min;
 						t_ras_max_ctr <= T_RAS_max;
-					end
+					end else if(cmd == CMD_AUTO_REFRESH)
+					begin
+						timeout_ctr <= T_RC;
+						if(init_refresh_ctr > 0)
+						begin
+							init_refresh_ctr <= init_refresh_ctr-1;
+						end
+					end;
 				end
 
 				SM_ACTIVE:
 				begin
-					// We don't have to worry about T_RRD (bank to bank interleaved open delay) becuase we only open one bank at once
-					// (And T_RRD << T_RAS_min)
-					// We have to be in SM_ACTIVE within the bounds of t_RAS
-					// This is both a minimum and a maximum
-					// It is timed from the active command
-
-					// At the moment we break out as soon as we see a refresh available
-					// We don't have to do this, we could have a more complex system for better performance
-					// N.B. This means we currenly break for refreshes long before t_ras_max is a problem
-
-					if(close_row)
+					if(cmd == CMD_PRECHARGE)
 					begin
-						// Only permit the close if we have been open for at least the minimum time
-						if(t_ras_min_ctr == 0)
-						begin
-							cmd <= CMD_PRECHARGE;
-							ram_a[10] <= 0; // Only precharge this bank, not all. Although it doesn't matter in current configuration
-							state <= SM_IDLE;
-							// T_RP is the minimum time from precharging a bank to activating a row in the SAME bank
-							// If we used a different bank, we wouldn't have to wait here, but we cant guarantee this
-							timeout_ctr <= T_RP;
-						end
-					end else if (cmd_i_valid) begin
-						// N.B. we have already checked that the row and bank is the open row and bank
-						// We are good to go on issuing a transaction
-						if(cmd_i_we)
-						begin
-							cmd <= CMD_WRITE;
-						end else begin
-							cmd <= CMD_READ;
-						end
-						ram_a[10] <= 0; // Don't auto precharge
-						ram_a[COL_ADDR_BITS-1:0] <= cmd_i_addr_col;
+						state <= SM_IDLE;
+						timeout_ctr <= T_RP;
+					end else if(cmd == CMD_WRITE) begin
+						// We can't precharge until T_WR after issuing a write
+						t_wr_ctr <= T_WR;
 					end
 				end
 
@@ -272,7 +252,81 @@ begin
 	end
 end
 
-// We are able to do a refresh in the idle state, so do one if there is one pending
-assign refresh_request_ready = (state == SM_IDLE) && (timeout_ctr == 0);
+always @(*)
+begin
+	cmd = CMD_NOP;
+	ram_a = '0;
+	ram_bs = '0;
+	refresh_request_ready = 0;
+	cmd_i_ready = 0;
+	if(sresetn && timeout_ctr == 0)
+	begin
+		case(state)
+			SM_INIT_PRECHARGE:
+			begin
+				cmd = CMD_PRECHARGE;
+				ram_a[10] = 1; // Precharge all
+			end
+			SM_INIT_SET_MODE:
+			begin
+				cmd = CMD_SET_MODE;
+				ram_a = ADDR_SET_MODE;
+				ram_bs = '0;
+			end
+			SM_IDLE:
+			begin
+				refresh_request_ready = 1;
+				if(refresh_request_valid || (init_refresh_ctr > 0))
+				begin
+					cmd = CMD_AUTO_REFRESH;
+				end else if(cmd_i_valid) begin
+					cmd    = CMD_ACTIVE;
+					ram_bs = cmd_i_addr_bank;
+					ram_a  = cmd_i_addr_row;
+				end
+			end
+			SM_ACTIVE:
+			// We don't have to worry about T_RRD (bank to bank interleaved open delay) becuase we only open one bank at once
+			// (And T_RRD << T_RAS_min)
+			// We have to be in SM_ACTIVE within the bounds of t_RAS
+			// This is both a minimum and a maximum
+			// It is timed from the active command
 
+			// At the moment we break out as soon as we see a refresh available
+			// We don't have to do this, we could have a more complex system for better performance
+			// N.B. This means we currenly break for refreshes long before t_ras_max is a problem
+			begin
+				if(close_row)
+				begin
+					// Only permit the close if we have been open for at least the minimum time
+					// And we have waited long enough after a write
+					if((t_ras_min_ctr == 0) && (t_wr_ctr == 0))
+					begin
+						cmd = CMD_PRECHARGE;
+						ram_a[10] = 0; // Only precharge this bank, not all. Although it doesn't matter in current configuration
+						ram_bs = open_bank;
+					end
+				end else begin
+					// If we have a command to issue, issue it
+					// Unless it is a write that would result in bus contention
+					if (cmd_i_valid && ((cmd_i_we == 0) || (t_cl_shreg[0] == 0)))
+					begin
+						cmd_i_ready = 1;
+						// N.B. we have already checked that the row and bank is the open row and bank
+						// We are good to go on issuing a transaction
+						if(cmd_i_we)
+						begin
+							cmd = CMD_WRITE;
+						end else begin
+							cmd = CMD_READ;
+						end
+						ram_a[10] = 0; // Don't auto precharge
+						ram_a[COL_ADDR_BITS-1:0] = cmd_i_addr_col;
+						ram_bs = open_bank;
+					end
+				end
+			end
+		endcase
+	end
+end
 endmodule

@@ -102,10 +102,10 @@ wb_sdram
 // Assumes that the uut will always be ready etc(!)
 initial
 begin
-	s_wb_addr = '0;
-	s_wb_dat_m2s = '0;
-	s_wb_we = 0;
-	s_wb_stb = 0;
+	s_wb_addr <= '0;
+	s_wb_dat_m2s <= '0;
+	s_wb_we <= 0;
+	s_wb_stb <= 0;
 
 	$dumpfile("uut.vcd");
 	$dumpvars(0,test_wb_sdram);
@@ -114,36 +114,36 @@ begin
 	// Test write
 	@(posedge clk)
 
-	s_wb_dat_m2s = 16'h5555;
-	s_wb_we = 1;
-	s_wb_stb = 1;
+	s_wb_dat_m2s <= 16'h5555;
+	s_wb_we <= 1;
+	s_wb_stb <= 1;
 	@(posedge clk)
-	s_wb_stb = 0;
+	s_wb_stb <= 0;
 
 	// Test write
 	//@(posedge clk)
-	s_wb_addr = 23'd832;
-	s_wb_dat_m2s = 16'hABCD;
-	s_wb_we = 1;
-	s_wb_stb = 1;
+	s_wb_addr <= 23'd832;
+	s_wb_dat_m2s <= 16'hABCD;
+	s_wb_we <= 1;
+	s_wb_stb <= 1;
 	@(posedge clk)
-	s_wb_stb = 0;
+	s_wb_stb <= 0;
 
 	// Test read
 	//@(posedge clk)
-	s_wb_addr = '0;
-	s_wb_we = 0;
-	s_wb_stb = 1;
+	s_wb_addr <= '0;
+	s_wb_we <= 0;
+	s_wb_stb <= 1;
 	@(posedge clk)
-	s_wb_stb = 0;
+	s_wb_stb <= 0;
 
 	// Test read
 	//@(posedge clk)
-	s_wb_addr = 23'd832;
-	s_wb_we = 0;
-	s_wb_stb = 1;
+	s_wb_addr <= 23'd832;
+	s_wb_we <= 0;
+	s_wb_stb <= 1;
 	@(posedge clk)
-	s_wb_stb = 0;
+	s_wb_stb <= 0;
 
 	#200000ns $finish;
 end
