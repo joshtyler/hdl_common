@@ -1,8 +1,8 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Send on AXI stream slave input out to many masters
@@ -10,6 +10,7 @@
 module axis_broadcaster
 #(
 	parameter AXIS_BYTES = 1,
+	parameter AXIS_USER_BITS = 1,
 	parameter NUM_STREAMS = 2
 ) (
 	input clk,
@@ -20,12 +21,14 @@ module axis_broadcaster
 	input                      axis_i_tvalid,
 	input                      axis_i_tlast,
 	input [(AXIS_BYTES*8)-1:0] axis_i_tdata,
+	input [AXIS_USER_BITS-1:0] axis_i_tuser,
 
 	// Output
 	input  [NUM_STREAMS-1 : 0]              axis_o_tready,
 	output [NUM_STREAMS-1 : 0]              axis_o_tvalid,
 	output [NUM_STREAMS-1 : 0]              axis_o_tlast,
 	output [NUM_STREAMS*(AXIS_BYTES*8)-1:0] axis_o_tdata
+	output [NUM_STREAMS*AXIS_USER_BITS-1:0] axis_o_tuser,
 );
 
 reg [NUM_STREAMS-1 : 0] reg_ready;
@@ -53,11 +56,13 @@ begin
 		.axis_i_tvalid(reg_valid),
 		.axis_i_tlast (axis_i_tlast),
 		.axis_i_tdata (axis_i_tdata),
+		.axis_i_tuser (axis_i_tuser),
 
 		.axis_o_tready(axis_o_tready[i]),
 		.axis_o_tvalid(axis_o_tvalid[i]),
 		.axis_o_tlast (axis_o_tlast[i]),
 		.axis_o_tdata (axis_o_tdata[(1+i)*(AXIS_BYTES*8)-1 -: (AXIS_BYTES*8)])
+		.axis_o_tuser (axis_o_tuser[(1+i)*AXIS_USER_BITS-1 -: AXIS_USER_BITS])
 	);
 end
 

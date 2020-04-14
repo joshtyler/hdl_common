@@ -1,13 +1,14 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 module axis_fifo
 #(
 	parameter AXIS_BYTES = 1,
+	parameter AXIS_USER_BITS = 1,
 	parameter DEPTH = 1024
 ) (
 	input clk,
@@ -18,18 +19,21 @@ module axis_fifo
 	input                      axis_i_tvalid,
 	input                      axis_i_tlast,
 	input [(AXIS_BYTES*8)-1:0] axis_i_tdata,
+	input [AXIS_USER_BITS-1:0] axis_i_tuser,
 
 	// Output
 	input                       axis_o_tready,
 	output                      axis_o_tvalid,
 	output                      axis_o_tlast,
-	output [(AXIS_BYTES*8)-1:0] axis_o_tdata
+	output [(AXIS_BYTES*8)-1:0] axis_o_tdata,
+	output [AXIS_USER_BITS-1:0] axis_o_tuser
 );
 
 logic                      axis_o_buf_tready;
 logic                      axis_o_buf_tvalid;
 logic                      axis_o_buf_tlast;
 logic [(AXIS_BYTES*8)-1:0] axis_o_buf_tdata;
+logic [AXIS_USER_BITS-1:0] axis_o_buf_tuser;
 
 logic full,empty;
 
@@ -49,7 +53,7 @@ always @(posedge clk) begin
 end
 fifo
 	#(
-		.WIDTH((AXIS_BYTES*8)+1),
+		.WIDTH((AXIS_BYTES*8)+1+AXIS_USER_BITS),
 		.DEPTH(DEPTH)
 	) fifo_inst (
 		.clk(clk),
@@ -57,16 +61,17 @@ fifo
 
 		.full(full),
 		.wr_en(axis_i_tvalid),
-		.data_in ({axis_i_tdata, axis_i_tlast}),
+		.data_in ({axis_i_tdata, axis_i_tlast, axis_i_tuser}),
 
 		.rd_en(axis_o_buf_tready),
 		.empty(empty),
-		.data_out ({axis_o_buf_tdata, axis_o_buf_tlast})
+		.data_out ({axis_o_buf_tdata, axis_o_buf_tlast, axis_o_buf_tuser})
 	);
 
 axis_register
 	#(
-		.AXIS_BYTES(1)
+		.AXIS_BYTES(AXIS_BYTES),
+		.AXIS_USER_BITS(AXIS_USER_BITS)
 	) register (
 		.clk(clk),
 		.sresetn(sresetn),
@@ -75,11 +80,13 @@ axis_register
 		.axis_i_tvalid(axis_o_buf_tvalid),
 		.axis_i_tlast (axis_o_buf_tlast),
 		.axis_i_tdata (axis_o_buf_tdata),
+		.axis_i_tuser (axis_o_buf_tuser),
 
 		.axis_o_tready(axis_o_tready),
 		.axis_o_tvalid(axis_o_tvalid),
 		.axis_o_tlast (axis_o_tlast),
-		.axis_o_tdata (axis_o_tdata)
+		.axis_o_tdata (axis_o_tdata),
+		.axis_o_tuser (axis_o_tuser)
 	);
 
 endmodule
