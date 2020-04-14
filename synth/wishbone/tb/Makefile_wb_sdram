@@ -1,0 +1,26 @@
+SOURCES = \
+../../other/reset_gen.sv \
+../../other/fifo.sv \
+../../axis/axis_fifo.sv \
+../../axis/axis_register.sv \
+../wb_sdram.sv \
+../wb_sdram_controller.sv
+
+TESTBENCH = test_wb_sdram.sv \
+mt48lc16m16a2.v
+
+COMPILED = iverilog.out
+
+default : $(COMPILED)
+
+$(COMPILED): $(TESTBENCH) $(SOURCES)
+	iverilog -g2012 -v -o $@ $^
+
+.phony: run
+
+run: $(COMPILED)
+	vvp -v $(COMPILED) -lxt
+
+.phony: clean
+clean:
+	rm -rf $(COMPILED)
