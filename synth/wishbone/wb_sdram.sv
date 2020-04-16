@@ -31,18 +31,19 @@ module wb_sdram
 	parameter COL_ADDR_BITS = 9,
 	parameter BANK_SEL_BITS = 2,
 	parameter DATA_BYTES = 2,
-	parameter CLK_RATE      = 50e6,
-	parameter T_RC_s        = 60e-9,
-	parameter T_RP_s        = 15e-9,
+	parameter CLK_RATE      = 50_000_000,
+	parameter T_RC_ps       = 60_000,
+	parameter T_RP_ps       = 15_000,
 	parameter T_CL          = 3,
 	parameter T_RSC         = 2,
-	parameter REFRSH_PERIOD = 64e-3,
-	parameter T_RAS_min_s   = 42e-9,
+	parameter REFRSH_PERIOD_ms = 64,
+	parameter T_RAS_min_ps  = 42_000,
 	// It is advisable to be slightly cautious with T_RAS_max
 	// This is because the state machine might take one or two exta cycles to honor it
 	// Not currently a concern since we currently break out long before it is a problem for refreshes
-	parameter T_RAS_max_s   = 99800e-9,
-	parameter T_RCD_s       = 15e-9,
+	parameter T_RAS_max_ps  = 99800_000,
+	parameter T_RCD_ps      = 15_000,
+	parameter T_WR          = 2,
 	parameter WB_ADDR_BITS = BANK_SEL_BITS+ROW_ADDR_BITS+COL_ADDR_BITS // Should be localparm, but iverlog doesn't like it
 ) (
 	input logic clk,
@@ -155,14 +156,15 @@ wb_sdram_controller
 	.BANK_SEL_BITS (BANK_SEL_BITS),
 	.DATA_BYTES    (DATA_BYTES   ),
 	.CLK_RATE      (CLK_RATE     ),
-	.T_RC_s        (T_RC_s       ),
-	.T_RP_s        (T_RP_s       ),
+	.T_RC_ps       (T_RC_ps      ),
+	.T_RP_ps       (T_RP_ps      ),
 	.T_CL          (T_CL         ),
 	.T_RSC         (T_RSC        ),
-	.REFRSH_PERIOD (REFRSH_PERIOD),
-	.T_RAS_min_s   (T_RAS_min_s  ),
-	.T_RAS_max_s   (T_RAS_max_s  ),
-	.T_RCD_s       (T_RCD_s      )
+	.REFRSH_PERIOD_ms (REFRSH_PERIOD_ms),
+	.T_RAS_min_ps  (T_RAS_min_ps ),
+	.T_RAS_max_ps  (T_RAS_max_ps ),
+	.T_RCD_ps      (T_RCD_ps     ),
+	.T_WR          (T_WR         )
 ) contoller_inst (
 	.clk(clk),
 	.sresetn(sresetn),

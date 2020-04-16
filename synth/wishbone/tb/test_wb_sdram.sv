@@ -26,15 +26,16 @@ parameter ROW_ADDR_BITS = 12;
 parameter COL_ADDR_BITS = 9;
 parameter BANK_SEL_BITS = 2;
 parameter DATA_BYTES = 2;
-parameter CLK_RATE      = 50e6;
-parameter T_RC_s        = 60e-9;
-parameter T_RP_s        = 15e-9;
+parameter CLK_RATE      = 50_000_000;
+parameter T_RC_ps       = 60_000;
+parameter T_RP_ps       = 15_000;
 parameter T_CL          = 3;
 parameter T_RSC         = 2;
-parameter REFRSH_PERIOD = 64e-3;
-parameter T_RAS_min_s   = 42e-9;
-parameter T_RAS_max_s   = 99800e-9;
-parameter T_RCD_s       = 15e-9;
+parameter REFRSH_PERIOD_ms = 64;
+parameter T_RAS_min_ps  = 42_000;
+parameter T_RAS_max_ps  = 99800_000;
+parameter T_RCD_ps      = 15_000;
+parameter T_WR          = 2;
 parameter WB_ADDR_BITS = BANK_SEL_BITS+ROW_ADDR_BITS+COL_ADDR_BITS;
 
 
@@ -47,7 +48,7 @@ logic                     ram_cs_n;
 logic                     ram_ras_n;
 logic                     ram_cas_n;
 logic                     ram_we_n;
-logic [DATA_BYTES-1:0]    ram_dqm_n;
+logic [DATA_BYTES-1:0]    ram_dqm;
 logic                     ram_cke;
 
 logic [WB_ADDR_BITS-1:0] s_wb_addr;
@@ -65,14 +66,14 @@ wb_sdram
 	.BANK_SEL_BITS(BANK_SEL_BITS),
 	.DATA_BYTES   (DATA_BYTES   ),
 	.CLK_RATE     (CLK_RATE     ),
-	.T_RC_s       (T_RC_s       ),
-	.T_RP_s       (T_RP_s       ),
+	.T_RC_ps       (T_RC_ps       ),
+	.T_RP_ps       (T_RP_ps       ),
 	.T_CL         (T_CL         ),
 	.T_RSC        (T_RSC        ),
-	.REFRSH_PERIOD(REFRSH_PERIOD),
-	.T_RAS_min_s  (T_RAS_min_s  ),
-	.T_RCD_s      (T_RCD_s      ),
-	. WB_ADDR_BITS( WB_ADDR_BITS)
+	.REFRSH_PERIOD_ms(REFRSH_PERIOD_ms),
+	.T_RAS_min_ps  (T_RAS_min_ps  ),
+	.T_RCD_ps      (T_RCD_ps      ),
+	. T_WR        ( T_WR)
 ) uut (
 	.clk(clk),
 	.sresetn(sresetn),
@@ -94,7 +95,7 @@ wb_sdram
 	.ram_ras_n(ram_ras_n),
 	.ram_cas_n(ram_cas_n),
 	.ram_we_n (ram_we_n),
-	.ram_dqm_n(ram_dqm_n),
+	.ram_dqm  (ram_dqm),
 	.ram_cke  (ram_cke)
 );
 
@@ -163,7 +164,7 @@ mt48lc16m16a2 ram_inst
 	.Ras_n (ram_ras_n),
 	.Cas_n (ram_cas_n),
 	.We_n  (ram_we_n),
-	.Dqm   (ram_dqm_n)
+	.Dqm   (ram_dqm)
 );
 
 

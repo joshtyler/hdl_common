@@ -4,7 +4,7 @@
 
 // Naming convention for timing parameters
 // T_XXX <= In clock cycles
-// T_XXX_s <= In seconds
+// T_XXX_ps <= In picoseconds
 
 module  wb_sdram_controller
 #(
@@ -12,18 +12,18 @@ module  wb_sdram_controller
 	parameter COL_ADDR_BITS = 9,
 	parameter BANK_SEL_BITS = 2,
 	parameter DATA_BYTES    = 2,
-	parameter CLK_RATE      = 50e6,
-	parameter T_RC_s        = 60e-9,
-	parameter T_RP_s        = 15e-9,
+	parameter CLK_RATE      = 50_000_000,
+	parameter T_RC_ps       = 60_000,
+	parameter T_RP_ps       = 15_000,
 	parameter T_CL          = 3,
 	parameter T_RSC         = 2,
-	parameter REFRSH_PERIOD = 64e-3,
-	parameter T_RAS_min_s   = 42e-9,
+	parameter REFRSH_PERIOD_ms = 64,
+	parameter T_RAS_min_ps  = 42_000,
 	// It is advisable to be slightly cautious with T_RAS_max
 	// This is because the state machine might take one or two exta cycles to honor it
 	// Not currently a concern since we currently break out long before it is a problem for refreshes
-	parameter T_RAS_max_s   = 99800e-9,
-	parameter T_RCD_s       = 15e-9,
+	parameter T_RAS_max_ps  = 99800_000,
+	parameter T_RCD_ps      = 15_000,
 	parameter T_WR          = 2
 ) (
 	input logic clk,
@@ -52,7 +52,7 @@ assign ram_dqm = '0;
 localparam REFRSH_CYCLES_PER_REFRESH_PERIOD = 4096;
 
 // Handle refreshing
-localparam integer CLOCK_CYCLES_PER_REFRESH_CYCLE = (REFRSH_PERIOD/REFRSH_CYCLES_PER_REFRESH_PERIOD)/(1.0/CLK_RATE);
+localparam integer CLOCK_CYCLES_PER_REFRESH_CYCLE = ((REFRSH_PERIOD_ms*(10.0**-3))/REFRSH_CYCLES_PER_REFRESH_PERIOD)/(1.0/CLK_RATE);
 localparam REFRESH_CTR_WIDTH = $clog2(CLOCK_CYCLES_PER_REFRESH_CYCLE);
 logic [REFRESH_CTR_WIDTH-1:0] refresh_ctr;
 
@@ -89,12 +89,12 @@ logic [2:0] state;
 // Hard to know how wide to make this, I can't see any timeout needing more than 255 cycles
 localparam TIMEOUT_CTR_WIDTH = 8;
 logic [TIMEOUT_CTR_WIDTH-1:0] timeout_ctr;
-localparam integer T_RC  = T_RC_s/(1.0/CLK_RATE);
-localparam integer T_RP  = T_RP_s/(1.0/CLK_RATE);
-localparam integer T_RCD = T_RCD_s/(1.0/CLK_RATE);
+localparam integer T_RC  = (T_RC_ps*(10.0e-12))/(1.0/CLK_RATE);
+localparam integer T_RP  = (T_RP_ps*(10.0e-12))/(1.0/CLK_RATE);
+localparam integer T_RCD = (T_RCD_ps*(10.0e-12))/(1.0/CLK_RATE);
 
-localparam integer T_RAS_min = T_RAS_min_s/(1.0/CLK_RATE);
-localparam integer T_RAS_max = T_RAS_max_s/(1.0/CLK_RATE);
+localparam integer T_RAS_min = (T_RAS_min_ps*(10.0e-12))/(1.0/CLK_RATE);
+localparam integer T_RAS_max = (T_RAS_max_ps*(10.0e-12))/(1.0/CLK_RATE);
 // These counters are clog2(the number+1), because we need to store the parameter, not the parameter-1
 logic [$clog2(T_RAS_min+1)-1:0] t_ras_min_ctr;
 logic [$clog2(T_RAS_max+1)-1:0] t_ras_max_ctr;
