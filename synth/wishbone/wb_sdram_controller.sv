@@ -52,7 +52,7 @@ assign ram_dqm = '0;
 localparam REFRSH_CYCLES_PER_REFRESH_PERIOD = 4096;
 
 // Handle refreshing
-localparam integer CLOCK_CYCLES_PER_REFRESH_CYCLE = ((REFRSH_PERIOD_ms*(10.0**-3))/REFRSH_CYCLES_PER_REFRESH_PERIOD)/(1.0/CLK_RATE);
+localparam integer CLOCK_CYCLES_PER_REFRESH_CYCLE = $floor(((REFRSH_PERIOD_ms*(10.0**-3))/REFRSH_CYCLES_PER_REFRESH_PERIOD)/(1.0/CLK_RATE));
 localparam REFRESH_CTR_WIDTH = $clog2(CLOCK_CYCLES_PER_REFRESH_CYCLE);
 logic [REFRESH_CTR_WIDTH-1:0] refresh_ctr;
 
@@ -89,12 +89,12 @@ logic [2:0] state;
 // Hard to know how wide to make this, I can't see any timeout needing more than 255 cycles
 localparam TIMEOUT_CTR_WIDTH = 8;
 logic [TIMEOUT_CTR_WIDTH-1:0] timeout_ctr;
-localparam integer T_RC  = (T_RC_ps*(10.0e-12))/(1.0/CLK_RATE);
-localparam integer T_RP  = (T_RP_ps*(10.0e-12))/(1.0/CLK_RATE);
-localparam integer T_RCD = (T_RCD_ps*(10.0e-12))/(1.0/CLK_RATE);
+localparam integer T_RC  = $ceil((T_RC_ps*(10.0e-12))/(1.0/CLK_RATE));
+localparam integer T_RP  = $ceil((T_RP_ps*(10.0e-12))/(1.0/CLK_RATE));
+localparam integer T_RCD = $ceil((T_RCD_ps*(10.0e-12))/(1.0/CLK_RATE));
 
-localparam integer T_RAS_min = (T_RAS_min_ps*(10.0e-12))/(1.0/CLK_RATE);
-localparam integer T_RAS_max = (T_RAS_max_ps*(10.0e-12))/(1.0/CLK_RATE);
+localparam integer T_RAS_min = $ceil((T_RAS_min_ps*(10.0e-12))/(1.0/CLK_RATE));
+localparam integer T_RAS_max = $floor((T_RAS_max_ps*(10.0e-12))/(1.0/CLK_RATE));
 // These counters are clog2(the number+1), because we need to store the parameter, not the parameter-1
 logic [$clog2(T_RAS_min+1)-1:0] t_ras_min_ctr;
 logic [$clog2(T_RAS_max+1)-1:0] t_ras_max_ctr;
