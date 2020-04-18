@@ -99,6 +99,19 @@ wb_sdram
 	.ram_cke  (ram_cke)
 );
 
+initial
+begin
+	$dumpfile("uut.vcd");
+	$dumpvars(0,test_wb_sdram);
+	$dumpvars(0,ram_inst.Command[0]);
+	$dumpvars(0,ram_inst.Command[1]);
+	$dumpvars(0,ram_inst.Command[2]);
+	$dumpvars(0,ram_inst.Command[3]);
+	#1000000ns $finish;
+end
+
+`ifdef DUMB_STIMULUS
+
 // Really dumb stimulus
 // Assumes that the uut will always be ready etc(!)
 initial
@@ -107,9 +120,6 @@ begin
 	s_wb_dat_m2s <= '0;
 	s_wb_we <= 0;
 	s_wb_stb <= 0;
-
-	$dumpfile("uut.vcd");
-	$dumpvars(0,test_wb_sdram);
 	#200000ns;
 
 	// Test write
@@ -145,9 +155,101 @@ begin
 	s_wb_stb <= 1;
 	@(posedge clk)
 	s_wb_stb <= 0;
-
-	#200000ns $finish;
 end
+
+`else
+
+logic axis_tready;
+logic axis_tvalid;
+logic axis_tlast;
+logic [7:0] axis_tdata;
+
+rom_to_axis
+#(
+	.AXIS_BYTES(1),
+	.DEPTH(32),
+	.MEM({
+		{8'b00000001},
+		{8'b00000001}, // One byte
+		{8'b00000000},
+		{8'b00000000},  // Read
+
+		{8'b00000001},
+		{8'b00000001}, // One byte
+		{8'b00000000},
+		{8'b00000001},  // Write
+
+		{8'b00000001},
+		{8'b00000001}, // One byte
+		{8'b00000000},
+		{8'b00000000},  // Read
+
+		{8'b00000001},
+		{8'b00000001}, // One byte
+		{8'b00000000},
+		{8'b00000001},  // Write
+
+		{8'b00000001},
+		{8'b00000001}, // One byte
+		{8'b00000000},
+		{8'b00000000},  // Read
+
+		{8'b00000001},
+		{8'b00000001}, // One byte
+		{8'b00000000},
+		{8'b00000001},  // Write
+
+		{8'b00000001},
+		{8'b00000001}, // One byte
+		{8'b00000000},
+		{8'b00000000},  // Read
+
+		{8'b00000001},
+		{8'b00000001}, // One byte
+		{8'b00000000},
+		{8'b00000001}  // Write
+		})
+) rom_to_axis_inst (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_tready(axis_tready),
+	.axis_tvalid(axis_tvalid),
+	.axis_tlast(axis_tlast),
+	.axis_tdata(axis_tdata)
+);
+
+serial_wb_master
+#(
+	.BYTES(1),
+	.ADDR_BITS(8)
+) serial_wb_master_inst (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready(axis_tready),
+	.axis_i_tvalid(axis_tvalid),
+	.axis_i_tlast (axis_tlast ),
+	.axis_i_tdata (axis_tdata ),
+
+	// Output
+	.axis_o_tready(1'b1),
+	.axis_o_tvalid(),
+	.axis_o_tlast(),
+	.axis_o_tdata(),
+
+	.m_wb_addr   (s_wb_addr   ),
+	.m_wb_dat_m2s(s_wb_dat_m2s),
+	.m_wb_dat_s2m(s_wb_dat_s2m),
+	.m_wb_we     (s_wb_we     ),
+	.m_wb_sel    (    ),
+	.m_wb_stb    (s_wb_stb    ),
+	.m_wb_cyc    (    ),
+	.m_wb_ack    (s_wb_ack    ),
+	.m_wb_stall  (s_wb_stall  )
+);
+
+`endif
 
 wire [DATA_BYTES*8-1:0]  ram_dq;
 assign ram_dq_i = ram_dq;

@@ -3,8 +3,10 @@ SOURCES = \
 ../../other/fifo.sv \
 ../../axis/axis_fifo.sv \
 ../../axis/axis_register.sv \
+../../axis/rom_to_axis.sv \
 ../wb_sdram.sv \
-../wb_sdram_controller.sv
+../wb_sdram_controller.sv \
+../serial_wb_master.sv
 
 TESTBENCH = test_wb_sdram.sv \
 mt48lc16m16a2.v

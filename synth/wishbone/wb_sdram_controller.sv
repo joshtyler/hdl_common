@@ -166,7 +166,7 @@ begin
 	end else begin
 
 		// Shift register to show when we are expecting a read response
-		t_cl_shreg <= {(cmd == CMD_WRITE), t_cl_shreg[T_CL-1:1]};
+		t_cl_shreg <= {(cmd == CMD_READ), t_cl_shreg[T_CL-1:1]};
 
 		// Timers for active state
 		if(t_ras_min_ctr > 0)
@@ -308,8 +308,13 @@ begin
 					end
 				end else begin
 					// If we have a command to issue, issue it
-					// Unless it is a write that would result in bus contention
-					if (cmd_i_valid && ((cmd_i_we == 0) || (t_cl_shreg[0] == 0)))
+					// Unless it is a write and we already have a read in progress
+					// Previously I had the condition of only stopping a write if the read would result in bus contention
+					// I.E. (cmd_i_valid && ((cmd_i_we == 0) || (t_cl_shreg[0] == 0)))
+					// But the model didn't seem to like this, it would cancel the read...
+					// The datasheet is a little unclear, but now I'm not sure this is a valid thing to do?
+					// Until proven otherwise, I will leave this as the safer condition
+					if (cmd_i_valid && ((cmd_i_we == 0) || (t_cl_shreg == 0)))
 					begin
 						cmd_i_ready = 1;
 						// N.B. we have already checked that the row and bank is the open row and bank

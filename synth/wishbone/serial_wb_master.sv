@@ -2,7 +2,7 @@ module serial_wb_master
 #(
 	parameter BYTES = 1,
 	parameter ADDR_BITS = 8,
-	localparam  SEL_WIDTH = 1
+	parameter  SEL_WIDTH = 1
 ) (
 	input logic clk,
 	input logic sresetn,
@@ -143,7 +143,7 @@ axis_fifo
 
 	.axis_i_tready(), // It will never fill up, because the state machine only issues transactions it can store
 	.axis_i_tvalid(m_wb_ack && (!m_wb_we)),
-	.axis_i_tlast(1), // Currently ignored
+	.axis_i_tlast(1'b1), // Currently ignored
 	.axis_i_tdata(m_wb_dat_s2m),
 
 	// Output
