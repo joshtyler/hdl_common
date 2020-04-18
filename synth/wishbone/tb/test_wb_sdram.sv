@@ -164,6 +164,31 @@ logic axis_tvalid;
 logic axis_tlast;
 logic [7:0] axis_tdata;
 
+logic rom_to_axis_sresetn;
+
+// Run the stimulus a few times to make sure the RAM keeps behaving sensibly
+initial
+begin
+	rom_to_axis_sresetn <= 0;
+	@(posedge sresetn);
+	rom_to_axis_sresetn <= 1;
+	#100us;
+	@(posedge clk)
+	rom_to_axis_sresetn <= 0;
+	@(posedge clk)
+	rom_to_axis_sresetn <= 1;
+	#100us;
+	@(posedge clk)
+	rom_to_axis_sresetn <= 0;
+	@(posedge clk)
+	rom_to_axis_sresetn <= 1;
+	#100us;
+	@(posedge clk)
+	rom_to_axis_sresetn <= 0;
+	@(posedge clk)
+	rom_to_axis_sresetn <= 1;
+end
+
 rom_to_axis
 #(
 	.AXIS_BYTES(1),
@@ -211,7 +236,7 @@ rom_to_axis
 		})
 ) rom_to_axis_inst (
 	.clk(clk),
-	.sresetn(sresetn),
+	.sresetn(rom_to_axis_sresetn),
 
 	.axis_tready(axis_tready),
 	.axis_tvalid(axis_tvalid),
