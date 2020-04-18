@@ -40,6 +40,11 @@ localparam SM_LAST_ACK   = 3'b100;
 
 logic [7:0] count, outstanding_ctr;
 
+logic auto_increment_address;
+
+logic beat_sent;
+assign beat_sent = (m_wb_stb && !m_wb_stall);
+
 // At the moment the state machine is naive and assumes 1 byte data and 1 byte address
 always @(posedge clk)
 begin
@@ -48,18 +53,23 @@ begin
 		state <= SM_GET_OP;
 		outstanding_ctr <= 0;
 	end else begin
-		if(m_wb_ack && !(m_wb_stb && !m_wb_stall))
+		if(m_wb_ack && !beat_sent)
 		begin
 			outstanding_ctr <= outstanding_ctr-1;
-		end else if(!m_wb_ack && (m_wb_stb && !m_wb_stall)) begin
+		end else if(!m_wb_ack && beat_sent) begin
 			outstanding_ctr <= outstanding_ctr+1;
 		end
 
+		if(beat_sent && auto_increment_address)
+		begin
+			m_wb_addr <= m_wb_addr + 1;
+		end
 
 		case(state)
 			SM_GET_OP: begin
 				if(axis_i_tready && axis_i_tvalid)
 				begin
+					auto_increment_address <= axis_i_tdata[1];
 					m_wb_we <= axis_i_tdata[0];
 					state <= SM_GET_ADDR;
 				end
