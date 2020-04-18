@@ -93,10 +93,11 @@ logic cmd_we;
 assign s_wb_dat_s2m = ram_dq_i;
 logic read_dq_valid;
 
+// Ack all of the writes as soon as we receive them
 logic r_dat_ack;
 always @(posedge clk)
 begin
-	r_dat_ack <= addr_cmd_fifo_i_tvalid && addr_cmd_fifo_i_tready;
+	r_dat_ack <= addr_cmd_fifo_i_tvalid && addr_cmd_fifo_i_tready && s_wb_we;
 end
 
 // The OR works because we know that the wishbone master must clear outstanding reads before turning around the bus
