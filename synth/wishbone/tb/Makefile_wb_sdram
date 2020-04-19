@@ -4,6 +4,7 @@ SOURCES = \
 ../../axis/axis_fifo.sv \
 ../../axis/axis_register.sv \
 ../../axis/rom_to_axis.sv \
+../../axis/axis_width_converter.sv \
 ../wb_sdram.sv \
 ../wb_sdram_controller.sv \
 ../serial_wb_master.sv

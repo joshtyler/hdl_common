@@ -192,47 +192,35 @@ end
 rom_to_axis
 #(
 	.AXIS_BYTES(1),
-	.DEPTH(28),
+	.DEPTH(24),
 	.MEM({
+		{8'h01}, // One word
+		{8'hEB},
+		{8'hAF},
+		{8'h0C}, // Address 0x0CAFEB
+		{8'h00},  // Read
 
-		{8'b00000001}, // One byte
-		{8'b00000000},
-		{8'b00000000},  // Read
+		{8'h01}, // One word
+		{8'h00},
+		{8'h00},
+		{8'h00},  // Address 0
+		{8'h00},  // Read
 
-		{8'b00000001},
-		{8'b00000001}, // One byte
-		{8'b00000000},
-		{8'b00000001},  // Write
+		{8'hAD},
+		{8'hDE},
+		{8'h01}, // One word
+		{8'hEB},
+		{8'hAF},
+		{8'h0C}, // Address 0x0CAFEB
+		{8'h01},  // Write
 
-
-		{8'b00000001}, // One byte
-		{8'b00000000},
-		{8'b00000000},  // Read
-
-		{8'b00000001},
-		{8'b00000001}, // One byte
-		{8'b00000000},
-		{8'b00000001},  // Write
-
-
-		{8'b00000001}, // One byte
-		{8'b00000000},
-		{8'b00000000},  // Read
-
-		{8'b00000001},
-		{8'b00000001}, // One byte
-		{8'b00000000},
-		{8'b00000001},  // Write
-
-
-		{8'b00000001}, // One byte
-		{8'b00000000},
-		{8'b00000000},  // Read
-
-		{8'b00000001},
-		{8'b00000001}, // One byte
-		{8'b00000000},
-		{8'b00000001}  // Write
+		{8'h01},
+		{8'h00},
+		{8'h01}, // One word
+		{8'h00},
+		{8'h00},
+		{8'h00}, // Address 0
+		{8'h01}  // Write
 		})
 ) rom_to_axis_inst (
 	.clk(clk),
@@ -246,8 +234,8 @@ rom_to_axis
 
 serial_wb_master
 #(
-	.BYTES(1),
-	.ADDR_BITS(8)
+	.BYTES(2),
+	.ADDR_BITS(23)
 ) serial_wb_master_inst (
 	.clk(clk),
 	.sresetn(sresetn),
