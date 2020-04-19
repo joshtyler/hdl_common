@@ -38,7 +38,7 @@ begin
 	end
 
 	ctr <= next_ctr;
-	axis_tdata <= MEM[8*next_ctr +: 8];
+	axis_tdata <= MEM[AXIS_BYTES*8*next_ctr +: AXIS_BYTES*8];
 end
 
 always_comb
