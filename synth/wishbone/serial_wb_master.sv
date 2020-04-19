@@ -1,23 +1,23 @@
 module serial_wb_master
 #(
-	parameter BYTES = 1,
+	parameter BYTES = 1, // Wishbone only, stream is fixed as byte wide
 	parameter ADDR_BITS = 8,
-	parameter  SEL_WIDTH = 1
+	parameter SEL_WIDTH = 1 // Anything other than 1 is currently not implemented
 ) (
 	input logic clk,
 	input logic sresetn,
 
 	// Serial input to block
-	output logic                        axis_i_tready,
-	input  logic                        axis_i_tvalid,
-	input  logic                        axis_i_tlast,
-	input  logic [(BYTES*8)-1:0] axis_i_tdata,
+	output logic                 axis_i_tready,
+	input  logic                 axis_i_tvalid,
+	input  logic                 axis_i_tlast,
+	input  logic [7:0]           axis_i_tdata,
 
 	// Serial output from block
-	input  logic                        axis_o_tready,
-	output logic                        axis_o_tvalid,
-	output logic                        axis_o_tlast,
-	output logic [(BYTES*8)-1:0] axis_o_tdata,
+	input  logic                 axis_o_tready,
+	output logic                 axis_o_tvalid,
+	output logic                 axis_o_tlast,
+	output logic [7:0]           axis_o_tdata,
 
 	// Wishbone master bus
 	output logic [ADDR_BITS-1:0] m_wb_addr   ,
@@ -45,8 +45,17 @@ logic auto_increment_address;
 logic beat_sent;
 assign beat_sent = (m_wb_stb && !m_wb_stall);
 
-// At the moment the state machine is naive and assumes 1 byte data and 1 byte address
-always @(posedge clk)
+localparam integer ADDRESS_BYTES = $ceil(ADDR_BITS/(8.0));
+localparam integer ADDR_CTR_WIDTH = ADDRESS_BYTES == 1? 1 : $clog2(ADDRESS_BYTES); // Needed because a null vector is illegal in verilog
+logic[ADDR_CTR_WIDTH-1:0] addr_ctr;
+
+// Having our address signal be a multiple of the stream width makes assignment easier
+logic[ADDRESS_BYTES*8-1:0] addr;
+assign m_wb_addr = addr[ADDR_BITS-1:0];
+
+assign m_wb_sel = '1;
+
+always_ff @(posedge clk)
 begin
 	if(!sresetn)
 	begin
@@ -62,7 +71,7 @@ begin
 
 		if(beat_sent && auto_increment_address)
 		begin
-			m_wb_addr <= m_wb_addr + 1;
+			addr <= addr + 1;
 		end
 
 		case(state)
@@ -71,14 +80,19 @@ begin
 				begin
 					auto_increment_address <= axis_i_tdata[1];
 					m_wb_we <= axis_i_tdata[0];
+					addr_ctr <= ADDRESS_BYTES-1;
 					state <= SM_GET_ADDR;
 				end
 			end
 			SM_GET_ADDR: begin
 				if(axis_i_tready && axis_i_tvalid)
 				begin
-					m_wb_addr <= axis_i_tdata;
-					state <= SM_GET_COUNT;
+					addr[addr_ctr*8 +: 8] <= axis_i_tdata; // big endian
+					addr_ctr <= addr_ctr-1;
+					if(addr_ctr == 0)
+					begin
+						state <= SM_GET_COUNT;
+					end
 				end
 			end
 			SM_GET_COUNT: begin
@@ -90,9 +104,8 @@ begin
 			end
 
 			SM_BUS_ACTIVE: begin
-				if(m_wb_stb && !m_wb_stall)
+				if(beat_sent)
 				begin
-					//-m_wb_addr <= m_wb_addr + 1;
 					count <= count-1;
 					if(count == 0)
 					begin
@@ -110,6 +123,31 @@ begin
 	end
 end
 
+logic axis_widen_i_tready;
+logic axis_widen_i_tvalid;
+
+logic axis_widen_o_tready;
+logic axis_widen_o_tvalid;
+
+axis_width_converter
+#(
+	.AXIS_I_BYTES(1),
+	.AXIS_O_BYTES(BYTES),
+	.MSB_FIRST(1) // Big endian
+) input_dat_widen (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready(axis_widen_i_tready),
+	.axis_i_tvalid(axis_widen_i_tvalid),
+	.axis_i_tlast(1'b0),
+	.axis_i_tdata(axis_i_tdata),
+
+	.axis_o_tready(axis_widen_o_tready),
+	.axis_o_tvalid(axis_widen_o_tvalid),
+	.axis_o_tlast(),
+	.axis_o_tdata(m_wb_dat_m2s)
+);
 
 always_comb
 begin
@@ -118,7 +156,7 @@ begin
 	begin
 		if(m_wb_we)
 		begin
-			m_wb_stb = axis_i_tvalid;
+			m_wb_stb = axis_widen_o_tvalid;
 		end else begin
 			m_wb_stb = 1;
 		end
@@ -134,18 +172,33 @@ begin
 	end else if (state == SM_BUS_ACTIVE) begin
 		if(m_wb_we)
 		begin
-			axis_i_tready = ! m_wb_stall;
+			axis_i_tready = axis_widen_i_tready;
 		end
 	end
 end
 
-assign m_wb_dat_m2s = axis_i_tdata;
+always_comb
+begin
+	axis_widen_o_tready = 0;
+	axis_widen_i_tvalid = 0;
+	if (state == SM_BUS_ACTIVE) begin
+		if(m_wb_we)
+		begin
+			axis_widen_o_tready = ! m_wb_stall;
+			axis_widen_i_tvalid = axis_i_tvalid;
+		end
+	end
+end
 
 assign m_wb_cyc = (state == SM_BUS_ACTIVE) || (state == SM_LAST_ACK);
 
+logic axis_o_wide_tready;
+logic axis_o_wide_tvalid;
+logic [BYTES*8-1:0] axis_o_wide_tdata;
+
 axis_fifo
 #(
-	.AXIS_BYTES(1),
+	.AXIS_BYTES(BYTES),
 	.DEPTH(255)
 ) fifo_inst (
 	.clk(clk),
@@ -157,6 +210,26 @@ axis_fifo
 	.axis_i_tdata(m_wb_dat_s2m),
 
 	// Output
+	.axis_o_tready(axis_o_wide_tready),
+	.axis_o_tvalid(axis_o_wide_tvalid),
+	.axis_o_tlast(),
+	.axis_o_tdata(axis_o_wide_tdata)
+);
+
+axis_width_converter
+#(
+	.AXIS_I_BYTES(BYTES),
+	.AXIS_O_BYTES(1),
+	.MSB_FIRST(1) // Big endian
+) output_dat_narrow (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready(axis_o_wide_tready),
+	.axis_i_tvalid(axis_o_wide_tvalid),
+	.axis_i_tlast(1'b1),
+	.axis_i_tdata(axis_o_wide_tdata),
+
 	.axis_o_tready(axis_o_tready),
 	.axis_o_tvalid(axis_o_tvalid),
 	.axis_o_tlast(axis_o_tlast),
