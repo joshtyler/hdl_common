@@ -45,9 +45,11 @@ logic auto_increment_address;
 logic beat_sent;
 assign beat_sent = (m_wb_stb && !m_wb_stall);
 
+/* verilator lint_off REALCVT */
 localparam integer ADDRESS_BYTES = $ceil(ADDR_BITS/(8.0));
+/* verilator lint_on REALCVT */
 localparam integer ADDR_CTR_WIDTH = ADDRESS_BYTES == 1? 1 : $clog2(ADDRESS_BYTES); // Needed because a null vector is illegal in verilog
-logic[ADDR_CTR_WIDTH-1:0] addr_ctr;
+logic [ADDR_CTR_WIDTH-1:0] addr_ctr;
 
 // Having our address signal be a multiple of the stream width makes assignment easier
 logic[ADDRESS_BYTES*8-1:0] addr;
@@ -80,7 +82,9 @@ begin
 				begin
 					auto_increment_address <= axis_i_tdata[1];
 					m_wb_we <= axis_i_tdata[0];
+					/* verilator lint_off WIDTH */
 					addr_ctr <= ADDRESS_BYTES-1;
+					/* verilator lint_on WIDTH */
 					state <= SM_GET_ADDR;
 				end
 			end
@@ -208,12 +212,14 @@ axis_fifo
 	.axis_i_tvalid(m_wb_ack && (!m_wb_we)),
 	.axis_i_tlast(1'b1), // Currently ignored
 	.axis_i_tdata(m_wb_dat_s2m),
+	.axis_i_tuser(1'b0),
 
 	// Output
 	.axis_o_tready(axis_o_wide_tready),
 	.axis_o_tvalid(axis_o_wide_tvalid),
 	.axis_o_tlast(),
-	.axis_o_tdata(axis_o_wide_tdata)
+	.axis_o_tdata(axis_o_wide_tdata),
+	.axis_o_tuser()
 );
 
 axis_width_converter
