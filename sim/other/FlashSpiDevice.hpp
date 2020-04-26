@@ -38,6 +38,14 @@ class FlashSpiDevice : public SpiDeviceInterface<uint8_t>
 							std::cout << "Write status register 1. Warning, not implemented" << std::endl;
 							ret = 0x0;
 							break;
+						case 0x11:
+							std::cout << "Write status register 3. Warning, not implemented" << std::endl;
+							ret = 0x0;
+							break;
+						case 0x31:
+							std::cout << "Write status register 2. Warning, not implemented" << std::endl;
+							ret = 0x0;
+							break;
 						case 0x05:
 							std::cout << "Returning status register" << std::endl;
 							ret = 0x0;
@@ -56,6 +64,10 @@ class FlashSpiDevice : public SpiDeviceInterface<uint8_t>
 							break;
 						case 0x06:
 							std::cout << "Write enable. Warning, not implemented" << std::endl;
+							ret = 0x0;
+							break;
+						case 0x50:
+							std::cout << "Status register volatile write enable. Warning, not implemented" << std::endl;
 							ret = 0x0;
 							break;
 						default:
