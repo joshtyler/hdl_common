@@ -71,7 +71,8 @@ begin
 			outstanding_ctr <= outstanding_ctr+1;
 		end
 
-		if(beat_sent && auto_increment_address)
+		// Don't increment the address on the last beat to ensure we don't burst passed the end of a component
+		if(beat_sent && auto_increment_address && (count != 0))
 		begin
 			addr <= addr + 1;
 		end
