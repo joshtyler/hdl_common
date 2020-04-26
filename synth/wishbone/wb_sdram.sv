@@ -2,28 +2,9 @@
 // Current features/limitaions
 	// Single bank open at once
 	// No burst support
-	// Never precharge after write
+	// Never precharge after read/write
 // The controller is designed in an extensible manner to support overcoming these limitations in the future
 
-// Theory of operation:
-/*
-
- ______________        ______________
-|              |      | Operation    |
-| WB Interface | ---> | Encoder      |
-|              |      |              |
- --------------        --------------
-                             ^
-                             |
-                       ______________
-                      |              |
-                      | Refresh logic|
-                      |              |
-                       --------------
-
-
-
-*/
 
 module wb_sdram
 #(
