@@ -176,12 +176,14 @@ axis_fifo
 	.axis_i_tvalid(axis_spi_to_wb_tvalid),
 	.axis_i_tlast(1),
 	.axis_i_tdata (axis_spi_to_wb_tdata),
+	.axis_i_tuser(1'b0),
 
 	// Output
 	.axis_o_tready(axis_spi_to_wb_buf_tready),
 	.axis_o_tvalid(axis_spi_to_wb_buf_tvalid),
 	.axis_o_tlast (),
-	.axis_o_tdata (axis_spi_to_wb_buf_tdata)
+	.axis_o_tdata (axis_spi_to_wb_buf_tdata),
+	.axis_o_tuser()
 );
 
 
