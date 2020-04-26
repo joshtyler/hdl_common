@@ -76,11 +76,13 @@ axis_register
 	.axis_i_tvalid(wb_to_axis_tvalid),
 	.axis_i_tlast(0),
 	.axis_i_tdata(wb_data_i),
+	.axis_i_tuser(1'b0),
 
 	.axis_o_tready(axis_o_tready),
 	.axis_o_tvalid(axis_o_tvalid),
 	.axis_o_tlast(),
-	.axis_o_tdata(axis_o_tdata)
+	.axis_o_tdata(axis_o_tdata),
+	.axis_o_tuser()
 );
 
 
