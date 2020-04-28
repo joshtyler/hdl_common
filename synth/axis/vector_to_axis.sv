@@ -1,8 +1,8 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Repeatedly output a byte vector as an AXI stream
@@ -33,40 +33,37 @@ localparam integer CTR_MAX = (VEC_BYTES/AXIS_BYTES) -1;
 
 localparam integer CTR_WIDTH = CTR_MAX == 0? 1 : $clog2(CTR_MAX +1);
 
-reg [CTR_WIDTH-1 : 0] ctr;
+logic [CTR_WIDTH-1 : 0] ctr;
+
+localparam CTR_INIT = MSB_FIRST? CTR_MAX : 0;
+localparam CTR_LAST = MSB_FIRST? 0       : CTR_MAX;
 
 always @(posedge clk)
 begin
 	if (sresetn == 0)
 	begin
-		ctr <= 0;
+		ctr <= CTR_INIT;
 	end else begin
 		if (axis_tready == 1)
 		begin
-			if (ctr == CTR_MAX[CTR_WIDTH-1:0])
+			if (ctr == CTR_LAST)
 			begin
-				ctr <= 0;
+				ctr <= CTR_INIT;
 			end else begin
-				ctr <= ctr + 1;
+				if(MSB_FIRST)
+					ctr <= ctr - 1;
+				else
+					ctr <= ctr + 1;
 			end
 		end
 	end
 end
 
 assign axis_tvalid = sresetn; // Valid whenver not in reset
-assign axis_tlast = (ctr == CTR_MAX[CTR_WIDTH-1:0]);
+assign axis_tlast = (ctr == CTR_LAST);
 
-/* verilator lint_off WIDTH */
-generate
-	if (MSB_FIRST)
-	begin
-		always @(*)
-			axis_tdata = vec[ (((CTR_MAX[CTR_WIDTH-1:0]-ctr)+1)*AXIS_BYTES*8)-1 -: AXIS_BYTES*8];
-	end else begin
-		always @(*)
-			axis_tdata = vec[ ((ctr+1)*AXIS_BYTES*8)-1 -: AXIS_BYTES*8];
-	end
-endgenerate
-/* verilator lint_on WIDTH */
+assign axis_tdata = vec[ ((ctr+1)*AXIS_BYTES*8)-1 -: AXIS_BYTES*8];
+
+
 
 endmodule

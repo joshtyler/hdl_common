@@ -1,8 +1,8 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Enforce a gap between packets
@@ -28,7 +28,7 @@ module axis_spacer
 	output [(AXIS_BYTES*8)-1:0] axis_o_tdata
 );
 localparam integer CTR_WIDTH = GAP_CYCLES == 1? 1 : $clog2(GAP_CYCLES);
-localparam CTR_MAX = GAP_CYCLES-1;
+localparam integer CTR_MAX = GAP_CYCLES-1;
 
 logic [CTR_WIDTH-1:0] ctr;
 
@@ -41,6 +41,7 @@ assign axis_o_tlast = axis_i_tlast;
 
 assign axis_o_tvalid = (state == PASS)? axis_i_tvalid : 0;
 assign axis_i_tready = (state == PASS)? axis_o_tready : 0;
+
 
 always @(posedge clk)
 	if (sresetn == 0)
