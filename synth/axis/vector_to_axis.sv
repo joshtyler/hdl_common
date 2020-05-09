@@ -33,10 +33,11 @@ localparam integer CTR_MAX = (VEC_BYTES/AXIS_BYTES) -1;
 
 localparam integer CTR_WIDTH = CTR_MAX == 0? 1 : $clog2(CTR_MAX +1);
 
-logic [CTR_WIDTH-1 : 0] ctr;
-
-localparam CTR_INIT = MSB_FIRST? CTR_MAX : 0;
-localparam CTR_LAST = MSB_FIRST? 0       : CTR_MAX;
+logic [CTR_WIDTH-1:0] ctr;
+/* verilator lint_off WIDTH */
+localparam [CTR_WIDTH-1:0] CTR_INIT = MSB_FIRST? CTR_MAX : 0;
+localparam [CTR_WIDTH-1:0] CTR_LAST = MSB_FIRST? 0       : CTR_MAX;
+/* verilator lint_on WIDTH */
 
 always @(posedge clk)
 begin

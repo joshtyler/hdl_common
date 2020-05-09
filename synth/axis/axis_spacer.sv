@@ -28,8 +28,9 @@ module axis_spacer
 	output [(AXIS_BYTES*8)-1:0] axis_o_tdata
 );
 localparam integer CTR_WIDTH = GAP_CYCLES == 1? 1 : $clog2(GAP_CYCLES);
-localparam integer CTR_MAX = GAP_CYCLES-1;
-
+/* verilator lint_off WIDTH */
+localparam [CTR_WIDTH-1:0] CTR_MAX = GAP_CYCLES -1;
+/* verilator lint_on WIDTH */
 logic [CTR_WIDTH-1:0] ctr;
 
 logic [0:0] state;
