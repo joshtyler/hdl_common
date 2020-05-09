@@ -81,15 +81,12 @@ begin
 			SM_GET_OP: begin
 				if(axis_i_tready && axis_i_tvalid)
 				begin
-					if(!axis_i_tdata[7]) // If the highest bit is set, we treat this as an 'out of bound' commnand and ignore
-					begin
-						auto_increment_address <= axis_i_tdata[1];
-						m_wb_we <= axis_i_tdata[0];
-						/* verilator lint_off WIDTH */
-						addr_ctr <= ADDRESS_BYTES-1;
-						/* verilator lint_on WIDTH */
-						state <= SM_GET_ADDR;
-					end
+					auto_increment_address <= axis_i_tdata[1];
+					m_wb_we <= axis_i_tdata[0];
+					/* verilator lint_off WIDTH */
+					addr_ctr <= ADDRESS_BYTES-1;
+					/* verilator lint_on WIDTH */
+					state <= SM_GET_ADDR;
 				end
 			end
 			SM_GET_ADDR: begin
