@@ -4,7 +4,7 @@
 	# SYNTH_HDL_TOP : top file for implementation (not currently used)
 	# SIM_HDL_TOP : top file for simulation (must be the same name as the top level module)
 	# PCF_FILE : pin constraint file
-	# CLOCK_CONSTRAINTS : Clock constrain python file
+	# CLOCK_CONSTRAINTS_FILE : Clock constrain python file
 	# SIM_CPP_SRC_FILES : CPP sources for simulation
 
 SYNTH_HDL_SRC_FILES += $(HDL_SRC_FILES)
@@ -22,7 +22,7 @@ default: $(SYNTH_OUTPUT_NAME).bin
 
 %.asc: $(PCF_FILE) %.json
 	@echo "Begin pnr"
-	nextpnr-ice40 --hx8k --package $(PACKAGE) --json $(SYNTH_OUTPUT_NAME).json --pcf $(PCF_FILE) --asc $(SYNTH_OUTPUT_NAME).asc --pre-pack $(CLOCK_CONSTRAINTS)
+	nextpnr-ice40 --hx8k --package $(PACKAGE) --json $(SYNTH_OUTPUT_NAME).json --pcf $(PCF_FILE) --asc $(SYNTH_OUTPUT_NAME).asc --pre-pack $(CLOCK_CONSTRAINTS_FILE)
 
 %.bin: %.asc
 	icepack $< $@
