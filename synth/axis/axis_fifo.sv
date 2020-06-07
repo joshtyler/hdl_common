@@ -14,14 +14,12 @@ module axis_fifo
 	input clk,
 	input sresetn,
 
-	// Input
 	output logic                      axis_i_tready,
 	input  logic                      axis_i_tvalid,
 	input  logic                      axis_i_tlast,
 	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
 	input  logic [AXIS_USER_BITS-1:0] axis_i_tuser,
 
-	// Output
 	input  logic                      axis_o_tready,
 	output logic                      axis_o_tvalid,
 	output logic                      axis_o_tlast,
