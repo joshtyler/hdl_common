@@ -27,8 +27,8 @@ module axis_broadcaster
 	input  [NUM_STREAMS-1 : 0]              axis_o_tready,
 	output [NUM_STREAMS-1 : 0]              axis_o_tvalid,
 	output [NUM_STREAMS-1 : 0]              axis_o_tlast,
-	output [NUM_STREAMS*(AXIS_BYTES*8)-1:0] axis_o_tdata
-	output [NUM_STREAMS*AXIS_USER_BITS-1:0] axis_o_tuser,
+	output [NUM_STREAMS*(AXIS_BYTES*8)-1:0] axis_o_tdata,
+	output [NUM_STREAMS*AXIS_USER_BITS-1:0] axis_o_tuser
 );
 
 reg [NUM_STREAMS-1 : 0] reg_ready;
@@ -61,7 +61,7 @@ begin
 		.axis_o_tready(axis_o_tready[i]),
 		.axis_o_tvalid(axis_o_tvalid[i]),
 		.axis_o_tlast (axis_o_tlast[i]),
-		.axis_o_tdata (axis_o_tdata[(1+i)*(AXIS_BYTES*8)-1 -: (AXIS_BYTES*8)])
+		.axis_o_tdata (axis_o_tdata[(1+i)*(AXIS_BYTES*8)-1 -: (AXIS_BYTES*8)]),
 		.axis_o_tuser (axis_o_tuser[(1+i)*AXIS_USER_BITS-1 -: AXIS_USER_BITS])
 	);
 end

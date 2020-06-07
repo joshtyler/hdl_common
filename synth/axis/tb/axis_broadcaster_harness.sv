@@ -1,8 +1,8 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Send on AXI stream slave input out to many masters
@@ -45,11 +45,13 @@ axis_broadcaster
 		.axis_i_tvalid(axis_i_tvalid),
 		.axis_i_tlast (axis_i_tlast),
 		.axis_i_tdata (axis_i_tdata),
+		.axis_i_tuser (1'b1),
 
 		.axis_o_tready({axis_o1_tready, axis_o2_tready}),
 		.axis_o_tvalid({axis_o1_tvalid, axis_o2_tvalid}),
 		.axis_o_tlast ({axis_o1_tlast, axis_o2_tlast}),
-		.axis_o_tdata ({axis_o1_tdata, axis_o2_tdata})
+		.axis_o_tdata ({axis_o1_tdata, axis_o2_tdata}),
+		.axis_o_tuser ()
 	);
 
 endmodule

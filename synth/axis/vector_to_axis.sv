@@ -62,9 +62,8 @@ end
 
 assign axis_tvalid = sresetn; // Valid whenver not in reset
 assign axis_tlast = (ctr == CTR_LAST);
-
+/* verilator lint_off WIDTH */
 assign axis_tdata = vec[ ((ctr+1)*AXIS_BYTES*8)-1 -: AXIS_BYTES*8];
-
-
+/* verilator lint_on WIDTH */
 
 endmodule

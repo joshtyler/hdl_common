@@ -99,6 +99,6 @@ $(OBJDIR)/%.o : %.cpp $(VERILATED_LIBS) $(VERILATED_HEADERS)
 
 
 clean:
-	rm -r obj_dir
-	rm $(BINARY_NAME)
+	rm -rf obj_dir
+	rm -f $(BINARY_NAME)
 	#find obj_dir/* -maxdepth 1 ! -name verilated.o -and ! -name verilated_vcd_c.o -and ! -name run_unit_tests.o -type f -delete

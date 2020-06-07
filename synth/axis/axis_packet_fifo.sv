@@ -1,8 +1,8 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 module axis_packet_fifo
@@ -67,7 +67,7 @@ always @(posedge clk)
 
 axis_fifo #(
 		.AXIS_BYTES(AXIS_BYTES),
-		.DEPTH(2**LOG2_DEPTH)
+		.LOG2_DEPTH(LOG2_DEPTH)
 	) fifo_inst (
 		.clk(clk),
 		.sresetn(sresetn),
@@ -76,11 +76,13 @@ axis_fifo #(
 		.axis_i_tvalid(axis_i_tvalid),
 		.axis_i_tlast (axis_i_tlast),
 		.axis_i_tdata (axis_i_tdata),
+		.axis_i_tuser(1'b1),
 
 		.axis_o_tready(axis_o_gate_tready),
 		.axis_o_tvalid(axis_o_gate_tvalid),
 		.axis_o_tlast (axis_o_gate_tlast),
-		.axis_o_tdata (axis_o_gate_tdata)
+		.axis_o_tdata (axis_o_gate_tdata),
+		.axis_o_tuser()
 	);
 
 logic axis_gater_c_pass;

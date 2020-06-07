@@ -1,8 +1,8 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Create an IPv4 header
@@ -246,6 +246,7 @@ axis_broadcaster
 	.axis_i_tvalid(input_joined_axis_tvalid),
 	.axis_i_tlast (input_joined_axis_tlast),
 	.axis_i_tdata (input_joined_axis_tdata),
+	.axis_i_tuser(1'b1),
 
 	.axis_o_tready({      main_out_axis_tready,
 	                 main_checksum_axis_tready}),
@@ -254,7 +255,8 @@ axis_broadcaster
 	.axis_o_tlast ({      main_out_axis_tlast,
                      main_checksum_axis_tlast}),
 	.axis_o_tdata ({      main_out_axis_tdata,
-                     main_checksum_axis_tdata})
+                     main_checksum_axis_tdata}),
+	.axis_o_tuser()
 );
 
 
@@ -307,11 +309,13 @@ axis_fifo
 	.axis_i_tvalid(checksum_out_axis_tvalid),
 	.axis_i_tlast (checksum_out_axis_tlast),
 	.axis_i_tdata (checksum_out_axis_tdata),
+	.axis_i_tuser(1'b1),
 
 	.axis_o_tready(checksum_fifoed_axis_tready),
 	.axis_o_tvalid(checksum_fifoed_axis_tvalid),
 	.axis_o_tlast (checksum_fifoed_axis_tlast),
-	.axis_o_tdata (checksum_fifoed_axis_tdata)
+	.axis_o_tdata (checksum_fifoed_axis_tdata),
+	.axis_o_tuser()
 );
 
 vector_to_axis
