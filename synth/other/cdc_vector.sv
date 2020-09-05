@@ -20,7 +20,7 @@ module cdc_vector
 
 logic ack_iclk;
 
-logic i_tready_sig = 0;
+logic i_tready_sig = 1;
 assign i_tready = i_tready_sig;
 always @(posedge iclk)
 begin
@@ -64,6 +64,6 @@ begin
 	end
 end
 
-cdc_pulse #(.SYNC_STAGES(SYNC_STAGES)) ackigen (.oclk(iclk), .i(ack_oclk), .opulse(ack_iclk));
+cdc_pulse #(.SYNC_STAGES(SYNC_STAGES)) ackigen (.oclk(iclk), .i(ack_oclk), .opulse(ack_iclk), .odata());
 
 endmodule

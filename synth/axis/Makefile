@@ -27,6 +27,9 @@ CPP_SOURCES += test_axis_fifo.cpp
 VLOG_SOURCES += axis_packet_fifo.sv
 CPP_SOURCES += test_axis_packet_fifo.cpp
 
+VLOG_SOURCES += axis_packet_fifo_async.sv
+CPP_SOURCES += test_axis_packet_fifo_async.cpp
+
 VLOG_SOURCES += axis_register.sv
 CPP_SOURCES += test_axis_register.cpp
 

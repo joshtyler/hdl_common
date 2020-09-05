@@ -4,7 +4,7 @@
 
 module axis_packet_fifo_async
 #(
-	parameter AXIS_BYTES = 2,
+	parameter AXIS_BYTES = 1,
 	parameter AXIS_USER_BITS = 1,
 	parameter LOG2_DEPTH = 15
 ) (
@@ -43,8 +43,10 @@ module axis_packet_fifo_async
 	) wrptr_i_to_o (
 		.iclk(i_clk),
 		.oclk(o_clk),
+		.i_tready(),
 		.i_tvalid(1'b1),
 		.i(committed_wrptr_iclk),
+		.o_strb(),
 		.o(wrptr_oclk)
 	);
 
@@ -54,8 +56,10 @@ module axis_packet_fifo_async
 	) rdptr_o_to_i (
 		.iclk(o_clk),
 		.oclk(i_clk),
+		.i_tready(),
 		.i_tvalid(1'b1),
 		.i(rdptr_oclk),
+		.o_strb(),
 		.o(rdptr_iclk)
 	);
 
@@ -83,7 +87,10 @@ module axis_packet_fifo_async
 					if(axis_i_tlast)
 					begin
 						// We have a whole packet, commit the pointer
-						committed_wrptr_iclk <= wrptr_iclk;
+						// N.B. We commit the incremented verson of the pointer
+						// This is because the write pointer is the next location to be written
+						// NOT the last location that was written
+						committed_wrptr_iclk <= wrptr_iclk +1;
 					end
 				end
 			end
