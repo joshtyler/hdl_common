@@ -18,7 +18,7 @@ module uart_rx
 
 // Avoid metastability
 logic serial_data_reg;
-logic_cross_clock logic_cross_clock_inst (.clk(clk), .i(serial_data), .o(serial_data_reg));
+cdc_sync cdc_sync (.oclk(clk), .i(serial_data), .o(serial_data_reg));
 
 
 localparam CLKS_PER_BIT = CLK_FREQ / BAUD_RATE;

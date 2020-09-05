@@ -22,7 +22,7 @@ default: $(SYNTH_OUTPUT_NAME).bin
 
 %.asc: $(PCF_FILE) %.json
 	@echo "Begin pnr"
-	nextpnr-ice40 --hx8k --package $(PACKAGE) --json $(SYNTH_OUTPUT_NAME).json --pcf $(PCF_FILE) --asc $(SYNTH_OUTPUT_NAME).asc --pre-pack $(CLOCK_CONSTRAINTS_FILE)
+	nextpnr-ice40 --hx8k --package $(PACKAGE) --json $(SYNTH_OUTPUT_NAME).json --pcf $(PCF_FILE) --asc $(SYNTH_OUTPUT_NAME).asc --pre-pack $(CLOCK_CONSTRAINTS_FILE) 2>&1 | tee nextpnr.log
 
 %.bin: %.asc
 	icepack $< $@
@@ -41,5 +41,5 @@ obj_dir/V$(VERILATOR_TOP_NAME).mk: $(SIM_HDL_SRC_FILES) $(SIM_CPP_SRC_FILES)
 	$(VERILATOR) $(VERILATOR_FLAGS) $(SIM_HDL_SRC_FILES) --top-module $(VERILATOR_TOP_NAME) $(SIM_CPP_SRC_FILES)
 
 clean:
-	rm -f $(SYNTH_OUTPUT_NAME).bin yosys.log
+	rm -f $(SYNTH_OUTPUT_NAME).bin yosys.log nextpnr.log
 	rm -rf obj_dir

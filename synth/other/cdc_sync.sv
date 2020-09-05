@@ -1,24 +1,21 @@
-// Register and re-register a single bit onto a different clock domain
-// Avoid metastability
+// Register and re-register a single bit onto a different clock domain to avoid metastability
+// Two ffs is enough for most designs
 
-module logic_cross_clock
+module cdc_sync
 #(
 	parameter integer STAGES = 2
 ) (
-	input logic clk,
+	input logic oclk,
 	input logic i,
 	output logic o
 );
 
 logic[STAGES-1:0] tmp;
 
-always_comb
-begin
-	o = tmp[STAGES-1];
-end
+assign o = tmp[STAGES-1];
 
 // Handle first ff
-always_ff @(posedge clk)
+always_ff @(posedge oclk)
 begin
 	tmp[0] <= i;
 end
@@ -28,7 +25,7 @@ generate
 	genvar iter;
 	for(iter=1; iter<STAGES; iter++)
 	begin
-		always_ff @(posedge clk)
+		always_ff @(posedge oclk)
 		begin
 			tmp[iter] <= tmp[iter-1];
 		end
