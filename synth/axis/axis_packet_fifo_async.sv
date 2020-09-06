@@ -6,7 +6,7 @@ module axis_packet_fifo_async
 #(
 	parameter AXIS_BYTES = 1,
 	parameter AXIS_USER_BITS = 1,
-	parameter LOG2_DEPTH = 15
+	parameter LOG2_DEPTH = 8
 ) (
 	input i_clk,
 	input i_sresetn,
@@ -29,8 +29,6 @@ module axis_packet_fifo_async
 );
 	// Data is tdata+tuser+tlast
 	localparam DATA_WIDTH = 8*AXIS_BYTES+AXIS_USER_BITS+1;
-
-	logic [DATA_WIDTH-1:0] mem [2**LOG2_DEPTH-1:0];
 
 	// Extra bit allows us to detect full/empty
 	// Alternatively we can make the fifo be 2**depth-1, but that's boring
@@ -76,7 +74,6 @@ module axis_packet_fifo_async
 		end else begin
 			if(axis_i_tready && axis_i_tvalid)
 			begin
-				mem[wrptr_iclk[LOG2_DEPTH-1:0]] <= {axis_i_tlast, axis_i_tdata, axis_i_tuser};
 				wrptr_iclk <= wrptr_iclk +1;
 
 				if(axis_i_drop)
@@ -97,6 +94,8 @@ module axis_packet_fifo_async
 		end
 	end
 
+	logic read_from_ram;
+	assign read_from_ram = (rdptr_oclk != wrptr_oclk) && ((!axis_o_tvalid) || axis_o_tready);
 	always_ff @(posedge o_clk)
 	begin
 		if(!o_sresetn)
@@ -111,13 +110,32 @@ module axis_packet_fifo_async
 
 			// Read if the FIFO is not empty
 			// And either the output word is invalid, or we are reading in this cycle
-			if ((rdptr_oclk != wrptr_oclk) && ((!axis_o_tvalid) || axis_o_tready))
+			if (read_from_ram)
 			begin
-				{axis_o_tlast, axis_o_tdata, axis_o_tuser} <= mem[rdptr_oclk[LOG2_DEPTH-1:0]];
 				axis_o_tvalid <= 1;
 				rdptr_oclk <= rdptr_oclk + 1;
 			end
 		end
 	end
+
+	// Currently we are using BRAM in a separate module because of intererence problems
+	// Both in vivado and yosys(!). See git history for how this used to be
+	// Could probably inline this in the future... Ideally we would fix inference in the inline version
+	simple_dual_port_two_clocks
+	#(
+		.addr_width(LOG2_DEPTH),
+		.data_width(DATA_WIDTH)
+	) mem_inst (
+		.clka(i_clk),
+		.ena   (1'b1),
+		.wea   (axis_i_tready && axis_i_tvalid),
+		.addra (wrptr_iclk[LOG2_DEPTH-1:0]),
+		.dia   ({axis_i_tlast, axis_i_tdata, axis_i_tuser}),
+
+		.clkb(o_clk),
+		.enb   (read_from_ram),
+		.addrb (rdptr_oclk[LOG2_DEPTH-1:0]),
+		.dob   ({axis_o_tlast, axis_o_tdata, axis_o_tuser})
+	);
 
 endmodule

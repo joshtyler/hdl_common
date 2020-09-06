@@ -54,7 +54,8 @@ module axis_error_filter_async
 
 	axis_packet_fifo_async
 	#(
-		.AXIS_BYTES(AXIS_BYTES)
+		.AXIS_BYTES(AXIS_BYTES),
+		.LOG2_DEPTH(LOG2_DEPTH)
 	) fifo_inst (
 		.i_clk(i_clk),
 		.i_sresetn(i_sresetn),
