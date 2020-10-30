@@ -9,30 +9,30 @@
 
 #include <iostream>
 #include <iomanip> //setw
-#include "Vcrc.h"
+#include "Veth_crc.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 
-#include "ClockGen.hpp"
-#include "AXISSink.hpp"
-#include "AXISSource.hpp"
-#include "VerilatedModel.hpp"
-#include "ResetGen.hpp"
+#include "../../../sim/other/ClockGen.hpp"
+#include "../../../sim/axis/AXISSink.hpp"
+#include "../../../sim/axis/AXISSource.hpp"
+#include "../../../sim/verilator/VerilatedModel.hpp"
+#include "../../../sim/other/ResetGen.hpp"
 
 int main(int argc, char** argv)
 {
 	const bool recordVcd = true;
 
-	VerilatedModel<Vcrc> uut(argc,argv,recordVcd);
+	VerilatedModel<Veth_crc> uut(argc,argv,recordVcd);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
-	AXISSink<vluint32_t> outAxis(clk, uut.uut->sresetn, uut.uut->out_axis_tready,
-		uut.uut->out_axis_tvalid, uut.uut->out_axis_tlast, uut.uut->out_axis_tdata);
+	AXISSink<vluint32_t, vluint8_t> outAxis(clk, uut.uut->sresetn, uut.uut->axis_o_tready,
+		uut.uut->axis_o_tvalid, uut.uut->axis_o_tlast, uut.uut->axis_o_tdata);
 
 	std::vector<std::vector<vluint8_t>> inData = {{0x0,0x1,0x2,0x3}};
 	//std::vector<std::vector<vluint8_t>> inData = {{0x01}};
-	AXISSource<vluint8_t> inAxis(clk, uut.uut->sresetn, uut.uut->in_axis_tready,
-		uut.uut->in_axis_tvalid, uut.uut->in_axis_tlast, uut.uut->in_axis_tdata,
+	AXISSource<vluint8_t> inAxis(clk, uut.uut->sresetn, uut.uut->axis_i_tready,
+		uut.uut->axis_i_tvalid, uut.uut->axis_i_tlast, uut.uut->axis_i_tdata,
 		inData);
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);

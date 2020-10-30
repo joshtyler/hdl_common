@@ -13,11 +13,11 @@
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 
-#include "ClockGen.hpp"
-#include "AXISSink.hpp"
-#include "AXISSource.hpp"
-#include "VerilatedModel.hpp"
-#include "ResetGen.hpp"
+#include "../../../sim/other/ClockGen.hpp"
+#include "../../../sim/axis/AXISSink.hpp"
+#include "../../../sim/axis/AXISSource.hpp"
+#include "../../../sim/verilator/VerilatedModel.hpp"
+#include "../../../sim/other/ResetGen.hpp"
 
 int main(int argc, char** argv)
 {
