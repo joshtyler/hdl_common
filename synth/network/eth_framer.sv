@@ -1,8 +1,8 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Create an ethernet frame
@@ -236,11 +236,13 @@ axis_joiner
                   ethertype_axis_tdata,
                     src_mac_axis_tdata,
                     dst_mac_axis_tdata}),
+	.axis_i_tuser(4'b1),
 
-.axis_o_tready(joined_axis_tready),
-.axis_o_tvalid(joined_axis_tvalid),
-.axis_o_tlast (joined_axis_tlast),
-.axis_o_tdata (joined_axis_tdata)
+	.axis_o_tready(joined_axis_tready),
+	.axis_o_tvalid(joined_axis_tvalid),
+	.axis_o_tlast (joined_axis_tlast),
+	.axis_o_tdata (joined_axis_tdata),
+	.axis_o_tuser()
 );
 
 // Distribute framed data top joiner and CRC
@@ -255,6 +257,7 @@ axis_broadcaster
 	.axis_i_tready(joined_axis_tready),
 	.axis_i_tvalid(joined_axis_tvalid),
 	.axis_i_tlast (joined_axis_tlast),
+	.axis_i_tuser (1'b0),
 	.axis_i_tdata (joined_axis_tdata),
 
 	.axis_o_tready({ crc_in_axis_tready,
@@ -263,6 +266,7 @@ axis_broadcaster
 	                 out_joiner_in_axis_tvalid}),
 	.axis_o_tlast ({ crc_in_axis_tlast,
                    out_joiner_in_axis_tlast}),
+    .axis_o_tuser(),
 	.axis_o_tdata ({ crc_in_axis_tdata,
                    out_joiner_in_axis_tdata})
 );
@@ -328,11 +332,13 @@ axis_joiner
                    out_joiner_in_axis_tdata,
                    sof_axis_tdata,
                    preamble_axis_tdata}),
+	.axis_i_tuser(4'b1),
 
-.axis_o_tready(out_axis_tready),
-.axis_o_tvalid(out_axis_tvalid),
-.axis_o_tlast (out_axis_tlast),
-.axis_o_tdata (out_axis_tdata)
+	.axis_o_tready(out_axis_tready),
+	.axis_o_tvalid(out_axis_tvalid),
+	.axis_o_tlast (out_axis_tlast),
+	.axis_o_tdata (out_axis_tdata),
+	.axis_o_tuser()
 );
 
 endmodule

@@ -1,6 +1,8 @@
 // Filter out bad axis packets
 // Drop the remainder of the packet up until tlast if error ever goes high
 
+`include "axis.h"
+
 module axis_error_filter_async
 #(
 	parameter AXIS_BYTES = 1,
@@ -13,18 +15,10 @@ module axis_error_filter_async
 	input o_clk,
 	input o_sresetn,
 
-	output logic                      axis_i_tready,
-	input  logic                      axis_i_tvalid,
-	input  logic                      axis_i_tlast,
-	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
-	input  logic [AXIS_USER_BITS-1:0] axis_i_tuser,
-	input  logic                      axis_i_error,
+	`S_AXIS_PORT(axis_i, AXIS_BYTES, AXIS_USER_BITS),
+	input logic axis_i_error,
 
-	input  logic                      axis_o_tready,
-	output logic                      axis_o_tvalid,
-	output logic                      axis_o_tlast,
-	output logic [(AXIS_BYTES*8)-1:0] axis_o_tdata,
-	output logic [AXIS_USER_BITS-1:0] axis_o_tuser
+	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS)
 );
 
 	logic error_latch;
@@ -70,11 +64,7 @@ module axis_error_filter_async
 		.axis_i_tuser (axis_i_tuser),
 		.axis_i_drop  (axis_i_error),
 
-		.axis_o_tready(axis_o_tready),
-		.axis_o_tvalid(axis_o_tvalid),
-		.axis_o_tlast (axis_o_tlast),
-		.axis_o_tdata (axis_o_tdata),
-		.axis_o_tuser (axis_o_tuser)
+		`AXIS_MAP(axis_o, axis_o)
 	);
 
 endmodule

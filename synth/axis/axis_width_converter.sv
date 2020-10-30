@@ -1,14 +1,17 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Unpack a wide AXIS stream into a narrow one
 // Or pack a narrow stream into a wide one
 // N.B. The wider stream must be an exact multiple of the width of the smaller stream
 // (Guaranteed with standard axis widths)
+
+`include "axis.h"
+
 module axis_width_converter
 #(
 	parameter AXIS_I_BYTES = 1,
@@ -18,17 +21,8 @@ module axis_width_converter
 	input clk,
 	input sresetn,
 
-	// Input
-	output                       axis_i_tready,
-	input                        axis_i_tvalid,
-	input                        axis_i_tlast,
-	input [(AXIS_I_BYTES*8)-1:0] axis_i_tdata,
-
-	// Output
-	input                         axis_o_tready,
-	output                        axis_o_tvalid,
-	output                        axis_o_tlast,
-	output [(AXIS_O_BYTES*8)-1:0] axis_o_tdata
+	`S_AXIS_PORT_NO_USER(axis_i, AXIS_I_BYTES),
+	`M_AXIS_PORT_NO_USER(axis_o, AXIS_O_BYTES)
 );
 	generate
 		if (AXIS_I_BYTES == AXIS_O_BYTES) begin

@@ -5,6 +5,8 @@
 //  of the OHDL was not distributed with this file, You
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
+`include "axis.h"
+
 module axis_register
 #(
 	parameter AXIS_BYTES = 1,
@@ -13,19 +15,8 @@ module axis_register
 	input clk,
 	input sresetn,
 
-	// Input
-	output logic                      axis_i_tready,
-	input  logic                      axis_i_tvalid,
-	input  logic                      axis_i_tlast,
-	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
-	input  logic [AXIS_USER_BITS-1:0] axis_i_tuser ,//= '0,
-
-	// Output
-	input  logic                      axis_o_tready,
-	output logic                      axis_o_tvalid,
-	output logic                      axis_o_tlast,
-	output logic [(AXIS_BYTES*8)-1:0] axis_o_tdata,
-	output logic [AXIS_USER_BITS-1:0] axis_o_tuser
+	`S_AXIS_PORT(axis_i, AXIS_BYTES, AXIS_USER_BITS),
+	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS)
 );
 	// We are able to store data when the register is empty
 	// Or we are also clocking data out

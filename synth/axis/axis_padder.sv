@@ -1,9 +1,11 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
+
+`include "axis.h"
 
 module axis_padder
 #(
@@ -14,17 +16,8 @@ module axis_padder
 	input clk,
 	input sresetn,
 
-	// Input
-	output logic               axis_i_tready,
-	input                      axis_i_tvalid,
-	input                      axis_i_tlast,
-	input [(AXIS_BYTES*8)-1:0] axis_i_tdata,
-
-	// Output
-	input                             axis_o_tready,
-	output logic                      axis_o_tvalid,
-	output logic                      axis_o_tlast,
-	output logic [(AXIS_BYTES*8)-1:0] axis_o_tdata
+	`S_AXIS_PORT_NO_USER(axis_i, AXIS_BYTES),
+	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES)
 );
 
 	localparam integer CTR_WIDTH = $clog2(MIN_LENGTH);

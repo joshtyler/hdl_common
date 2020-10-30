@@ -1,3 +1,5 @@
+/*
+
 // Cross clock packet FIFO
 // Based on Chris cummings design (pointer passing version)
 
@@ -90,3 +92,4 @@ module sync_w2r
 		else
 			{rq2_wptr,rq1_wptr} <= {rq1_wptr,wptr};
 endmodule
+*/

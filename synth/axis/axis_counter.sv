@@ -1,11 +1,13 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // For now this is just a very simple counter, perhaps expand in the future
+
+`include "axis.h"
 
 module axis_counter
 #(
@@ -14,11 +16,7 @@ module axis_counter
 	input clk,
 	input sresetn,
 
-	// Output
-	input                             axis_tready,
-	output                            axis_tvalid,
-	output                            axis_tlast,
-	output logic [(AXIS_BYTES*8)-1:0] axis_tdata
+	`M_AXIS_PORT_NO_USER(axis, AXIS_BYTES)
 );
 
 	assign axis_tvalid = 1;

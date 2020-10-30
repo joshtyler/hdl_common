@@ -8,6 +8,8 @@
 // Repeatedly output a byte vector as an AXI stream
 // This could be replaced with axis_width converter at some point...
 
+`include "axis.h"
+
 module vector_to_axis
 #(
 	parameter VEC_BYTES = 1,
@@ -19,11 +21,7 @@ module vector_to_axis
 
 	input [(VEC_BYTES*8)-1:0] vec,
 
-	// Output
-	input                              axis_tready,
-	output logic                       axis_tvalid,
-	output logic                       axis_tlast,
-	output logic  [(AXIS_BYTES*8)-1:0] axis_tdata
+	`M_AXIS_PORT_NO_USER(axis, AXIS_BYTES)
 );
 
 // The vector must be a multiple of AXIS_BYTES

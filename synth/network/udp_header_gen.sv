@@ -1,8 +1,8 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Create a UDP header
@@ -155,11 +155,13 @@ axis_joiner
                     len_byte_wide_axis_tdata,
                          dst_port_axis_tdata,
                          src_port_axis_tdata}),
+	.axis_i_tuser(4'b1),
 
 	.axis_o_tready(axis_o_tready),
 	.axis_o_tvalid(axis_o_tvalid),
 	.axis_o_tlast (axis_o_tlast),
-	.axis_o_tdata (axis_o_tdata)
+	.axis_o_tdata (axis_o_tdata),
+	.axis_o_tuser()
 );
 
 endmodule

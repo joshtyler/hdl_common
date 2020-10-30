@@ -5,7 +5,7 @@
 //  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
-// Send on AXI stream slave input out to many masters
+`include "axis.h"
 
 module axis_broadcaster_harness
 #(
@@ -14,23 +14,9 @@ module axis_broadcaster_harness
 	input clk,
 	input sresetn,
 
-	// Input
-	output                     axis_i_tready,
-	input                      axis_i_tvalid,
-	input                      axis_i_tlast,
-	input [(AXIS_BYTES*8)-1:0] axis_i_tdata,
-
-	// Output 1
-	input                       axis_o1_tready,
-	output                      axis_o1_tvalid,
-	output                      axis_o1_tlast,
-	output [(AXIS_BYTES*8)-1:0] axis_o1_tdata,
-
-	// Output 2
-	input                       axis_o2_tready,
-	output                      axis_o2_tvalid,
-	output                      axis_o2_tlast,
-	output [(AXIS_BYTES*8)-1:0] axis_o2_tdata
+	`S_AXIS_PORT_NO_USER(axis_i, AXIS_BYTES),
+	`M_AXIS_PORT_NO_USER(axis_o1, AXIS_BYTES),
+	`M_AXIS_PORT_NO_USER(axis_o2, AXIS_BYTES)
 );
 
 axis_broadcaster
@@ -40,18 +26,8 @@ axis_broadcaster
 	) uut (
 		.clk(clk),
 		.sresetn(sresetn),
-
-		.axis_i_tready(axis_i_tready),
-		.axis_i_tvalid(axis_i_tvalid),
-		.axis_i_tlast (axis_i_tlast),
-		.axis_i_tdata (axis_i_tdata),
-		.axis_i_tuser (1'b1),
-
-		.axis_o_tready({axis_o1_tready, axis_o2_tready}),
-		.axis_o_tvalid({axis_o1_tvalid, axis_o2_tvalid}),
-		.axis_o_tlast ({axis_o1_tlast, axis_o2_tlast}),
-		.axis_o_tdata ({axis_o1_tdata, axis_o2_tdata}),
-		.axis_o_tuser ()
+		`AXIS_MAP_NULL_USER(axis_i, axis_i),
+		`AXIS_MAP_2_IGNORE_USER(axis_o, axis_o1, axis_o2)
 	);
 
 endmodule

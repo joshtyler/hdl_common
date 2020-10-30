@@ -52,7 +52,8 @@ begin
 end
 
 assign axis_tvalid = sresetn && (!done);
+/* verilator lint_off WIDTH */
 assign axis_tlast = ctr == (DEPTH-1);
-
+/* verilator lint_on WIDTH */
 
 endmodule

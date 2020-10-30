@@ -7,6 +7,8 @@
 
 // Send on AXI stream slave input out to many masters
 
+`include "axis.h"
+
 module axis_broadcaster
 #(
 	parameter AXIS_BYTES = 1,
@@ -16,19 +18,9 @@ module axis_broadcaster
 	input clk,
 	input sresetn,
 
-	// Input
-	output                     axis_i_tready,
-	input                      axis_i_tvalid,
-	input                      axis_i_tlast,
-	input [(AXIS_BYTES*8)-1:0] axis_i_tdata,
-	input [AXIS_USER_BITS-1:0] axis_i_tuser,
+	`S_AXIS_PORT(axis_i, AXIS_BYTES, AXIS_USER_BITS),
 
-	// Output
-	input  [NUM_STREAMS-1 : 0]              axis_o_tready,
-	output [NUM_STREAMS-1 : 0]              axis_o_tvalid,
-	output [NUM_STREAMS-1 : 0]              axis_o_tlast,
-	output [NUM_STREAMS*(AXIS_BYTES*8)-1:0] axis_o_tdata,
-	output [NUM_STREAMS*AXIS_USER_BITS-1:0] axis_o_tuser
+	`M_AXIS_MULTI_PORT(axis_o, NUM_STREAMS, AXIS_BYTES, AXIS_USER_BITS)
 );
 
 reg [NUM_STREAMS-1 : 0] reg_ready;

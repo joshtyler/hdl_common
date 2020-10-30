@@ -1,32 +1,27 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │                                                                                                          
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │                                                                                                          
-//  of the OHDL was not distributed with this file, You                                                     │                                                                                                          
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Join together multiple AXIS streams
 // I.e. output a packet from stream 1, then stream 2 etc.
 
+`include "axis.h"
+
 module axis_joiner
 #(
 	parameter AXIS_BYTES = 1,
+	parameter AXIS_USER_BITS = 1,
 	parameter NUM_STREAMS = 1
 ) (
 	input clk,
 	input sresetn,
 
-	// Input
-	output [NUM_STREAMS-1 : 0] axis_i_tready,
-	input  [NUM_STREAMS-1 : 0] axis_i_tvalid,
-	input  [NUM_STREAMS-1 : 0] axis_i_tlast,
-	input  [NUM_STREAMS*(AXIS_BYTES*8)-1:0] axis_i_tdata,
+	`S_AXIS_MULTI_PORT(axis_i, NUM_STREAMS, AXIS_BYTES, AXIS_USER_BITS),
 
-	// Output
-	input  axis_o_tready,
-	output axis_o_tvalid,
-	output axis_o_tlast,
-	output [(AXIS_BYTES*8)-1:0] axis_o_tdata
+	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS)
 );
 
 localparam integer CTR_WIDTH = NUM_STREAMS == 1? 1 : $clog2(NUM_STREAMS);
@@ -62,8 +57,8 @@ endgenerate
 
 assign axis_o_tvalid = axis_i_tvalid[ctr];
 assign axis_o_tlast = (ctr == CTR_MAX)? axis_i_tlast[ctr] : 0; //Only output tlast on last packet
-
 assign axis_o_tdata = axis_i_tdata[(1+ctr)*(AXIS_BYTES*8)-1 -: AXIS_BYTES*8];
+assign axis_o_tuser = axis_i_tuser[(1+ctr)*(AXIS_USER_BITS)-1 -: AXIS_USER_BITS];
 /* verilator lint_on WIDTH */
 
 endmodule
