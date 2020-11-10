@@ -37,15 +37,10 @@ std::vector<std::vector<vluint8_t>> testRegister(std::vector<std::vector<vluint8
 
 	while(true)
 	{
-		if(uut.eval() == false)
-		{
-			break;
-		}
-		// Break after a timeout
-		if(uut.getTime() == 10000)
-		{
-			break;
-		}
+        if(uut.eval() == false || uut.getTime() == 10000 || inData.size() == outAxis.getTlastCount())
+        {
+            break;
+        }
 	}
 	return outAxis.getData();
 }

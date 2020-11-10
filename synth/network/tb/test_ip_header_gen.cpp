@@ -44,15 +44,10 @@ auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std
 
 	while(true)
 	{
-		if(uut.eval() == false)
-		{
-			break;
-		}
-		// Break after a timeout
-		if(uut.getTime() == 10000)
-		{
-			break;
-		}
+        if(uut.eval() == false || uut.getTime() == 10000 || len.size() == outAxis.getTlastCount())
+        {
+            break;
+        }
 	}
 	return outAxis.getData();
 }

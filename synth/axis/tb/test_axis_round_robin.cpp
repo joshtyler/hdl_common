@@ -43,15 +43,10 @@ auto testAxisRoundRobin(std::vector<std::vector<vluint8_t>> inData)
 
 	while(true)
 	{
-		if(uut.eval() == false)
-		{
-			break;
-		}
-		// Break after a timeout
-		if(uut.getTime() == 10000)
-		{
-			break;
-		}
+        if(uut.eval() == false || uut.getTime() == 10000 || (inData.size() == outAxis1.getTlastCount() && inData.size() == outAxis2.getTlastCount()))
+        {
+            break;
+        }
 	}
 	//return outAxis.getData();
 	std::array<std::vector<std::vector<vluint8_t>>, 2> outArr;
