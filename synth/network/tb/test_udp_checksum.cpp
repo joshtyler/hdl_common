@@ -95,12 +95,9 @@ auto testUdpChecksum(std::vector<std::vector<vluint16_t>> inData)
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
-	AXISSource<vluint16_t, vluint8_t> inAxis(clk, uut.uut->sresetn, uut.uut->axis_i_tready,
-		uut.uut->axis_i_tvalid, uut.uut->axis_i_tlast, uut.uut->axis_i_tdata,
-		inData);
+	AXISSource<vluint16_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tdata = &uut.uut->axis_i_tdata}, inData);
 
-	AXISSink<vluint16_t, vluint8_t> outAxis(clk, uut.uut->sresetn, uut.uut->axis_o_tready,
-		uut.uut->axis_o_tvalid, uut.uut->axis_o_tlast, uut.uut->axis_o_tdata);
+	AXISSink<vluint16_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tdata = &uut.uut->axis_o_tdata});
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);
 

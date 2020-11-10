@@ -25,12 +25,10 @@ std::vector<std::vector<vluint8_t>> testPacketFifoAsync(std::vector<std::vector<
 	VerilatedModel<Vaxis_packet_fifo_async> uut("packet_fifo_async.vcd", true);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
-	AXISSink<vluint8_t> outAxis(clk, uut.uut->i_sresetn, uut.uut->axis_o_tready,
-		uut.uut->axis_o_tvalid, uut.uut->axis_o_tlast, uut.uut->axis_o_tdata);
+	AXISSink<vluint8_t> outAxis(&clk, &uut.uut->i_sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tdata = &uut.uut->axis_o_tdata});
 
 
-	AXISSource<vluint8_t> inAxis(clk, uut.uut->o_sresetn, uut.uut->axis_i_tready,
-		uut.uut->axis_i_tvalid, uut.uut->axis_i_tlast, uut.uut->axis_i_tdata,
+	AXISSource<vluint8_t> inAxis(&clk, &uut.uut->o_sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tdata = &uut.uut->axis_i_tdata},
 		inData);
 
 	ResetGen i_resetGen(clk,uut.uut->i_sresetn, false);

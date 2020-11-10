@@ -10,36 +10,36 @@
 #ifndef PERIPHERAL_HPP
 #define PERIPHERAL_HPP
 
-// This is a class to latch inputs to a peripheral
-// It is called just eval() is called on the verilated model
-// This saves the previous values of the inputs
-// It allows us to call eval() on our Peripheral, as if it was occuring at the same clock edge as the verilated eval()
+#include <gsl/pointers>
 
-// We have a base class to allow us to have a vector of references, without the template parameter
+// We have a base class to allow us to have a vector of pointers, without the template parameter
 class InputLatchBase
 {
 public:
 	virtual void latch(void) = 0;
 };
 
+// Class to store the value of an input when latch is called
 template <class T> class InputLatch : public InputLatchBase
 {
 public:
-	InputLatch(const T& ref) :ref(ref) {latch();};
-	~InputLatch() {};
-	void latch(void) override {saved = ref;};
-	operator T() {return saved;};
+	InputLatch(const T* ref) :ref(ref) {latch();};
+    void latch(void) override {if(ref) saved = *ref;};
+    T operator *() const {return ref? saved : T{};};
+    bool is_null(void) {return !ref;}
 private:
-	const T &ref;
+	const T* ref;
 	T saved;
 };
 
-// Virtual base class for Verilator peripherals
+// Base class for Verilator peripherals
+// Handles latching of inputs
+// Before the clock latch() is called on the verilated model, and after the clock eval() is called
+// This saves the previous values of the inputs and makes it look to the peripheral like it has the values of inputs before the clock edge
 class Peripheral
 {
 public:
-	Peripheral() {};
-	~Peripheral() {};
+    virtual ~Peripheral() = default;
 
 	// Save inputs to Peripheral
 	// The overriding class adds all its inputs to the latch queue during construction

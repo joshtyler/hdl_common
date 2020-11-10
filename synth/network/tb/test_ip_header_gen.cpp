@@ -28,12 +28,10 @@ auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std
 	uut.uut->dest_ip = dest_ip;
 	uut.uut->protocol = protocol;
 
-	AXISSource<vluint16_t,vluint8_t> lenAxis(clk, uut.uut->sresetn, uut.uut->payload_length_axis_tready,
-		uut.uut->payload_length_axis_tvalid, uut.uut->payload_length_axis_tlast, uut.uut->payload_length_axis_tdata,
-		len);
+	AXISSource<vluint16_t> lenAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->payload_length_axis_tready, .tvalid = &uut.uut->payload_length_axis_tvalid, .tlast = &uut.uut->payload_length_axis_tlast, .tdata = &uut.uut->payload_length_axis_tdata}, len);
 
-	AXISSink<vluint8_t> outAxis(clk, uut.uut->sresetn, uut.uut->axis_o_tready,
-		uut.uut->axis_o_tvalid, uut.uut->axis_o_tlast, uut.uut->axis_o_tdata);
+
+	AXISSink<vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tdata = &uut.uut->axis_o_tdata});
 
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);

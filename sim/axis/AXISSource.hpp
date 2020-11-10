@@ -17,16 +17,13 @@
 #include "../verilator/Peripheral.hpp"
 #include <vector>
 
-template <class dataT, class ctrlT=dataT>class AXISSource : public Peripheral
+template <class dataT, class keepT=dataT, class userT=dataT>class AXISSource : public Peripheral
 {
 public:
-	AXISSource(ClockGen &clk, const vluint8_t &sresetn,
-		const ctrlT &readyIn, ctrlT & valid, ctrlT &last,
-		dataT &data, std::vector<std::vector<dataT>> vec)
-		:clk(clk), sresetn(sresetn), ready(readyIn), valid(valid), last(last),
-		 data(data), inputVec(vec)
+	AXISSource(gsl::not_null<ClockGen *> clk, const gsl::not_null<vluint8_t *> sresetn, const AxisSignals<dataT, keepT, userT> &signals, std::vector<std::vector<dataT>> vec)
+		:clk(clk), sresetn(sresetn), tready(signals.tready), tvalid(signals.tvalid), tlast(signals.tlast), tkeep(signals.tkeep), tdata(signals.tdata), inputVec(vec)
 	{
-		addInput(&ready);
+		addInput(&tready);
 
 		resetState();
 	};
@@ -35,13 +32,13 @@ public:
 
 	void eval(void) override
 	{
-		if((clk.getEvent() == ClockGen::Event::RISING) and (sresetn == 1))
+		if((clk->getEvent() == ClockGen::Event::RISING) and (*sresetn == 1))
 		{
-			if(sresetn == 1)
+			if(*sresetn == 1)
 			{
-				if(ready && valid)
+				if(*tready && *tvalid)
 				{
-					last = 0; // Reset last flag
+                    *tlast = 0; // Reset last flag
 					assert(vec[0].size() != 0);
 					vec[0].erase(vec[0].begin()); //Get rid of the word we output
 
@@ -53,7 +50,7 @@ public:
 						if(vec.size() == 0)
 						{
 							// That was the last packet. We are done
-							valid = 0;
+                            *tvalid = 0;
 							return;
 						} else {
 						// It is illegal for the newly popped packet to be empty
@@ -62,8 +59,8 @@ public:
 					}
 
 					//Setup outputs
-					data = vec[0][0];
-					last = (vec[0].size() == 1);
+					*tdata = vec[0][0];
+                    *tlast = (vec[0].size() == 1);
 				}
 			} else {
 				resetState();
@@ -72,12 +69,14 @@ public:
 	}
 
 private:
-	ClockGen &clk;
-	const ctrlT &sresetn;
-	InputLatch<ctrlT> ready;
-	ctrlT &valid;
-	ctrlT &last;
-	dataT &data;
+	ClockGen *clk;
+    const vluint8_t *sresetn;
+	InputLatch<vluint8_t> tready;
+    vluint8_t *tvalid;
+    vluint8_t *tlast;
+    keepT *tkeep;
+	dataT *tdata;
+    std::vector<userT*> tusers;
 
 	std::vector<std::vector<dataT>> inputVec, vec;
 
@@ -87,10 +86,10 @@ private:
 		vec = inputVec;
 
 		//Initiailise outputs
-		valid = 1;
+		*tvalid = 1;
 		assert(vec[0].size() > 0);
-		data = vec[0][0];
-		last = (vec[0].size() == 1);
+		*tdata = vec[0][0];
+		*tlast = (vec[0].size() == 1);
 	}
 };
 

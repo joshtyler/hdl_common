@@ -12,23 +12,28 @@
 
 // Receive an AXIS stream and save it to a std::vector
 
+#include "AXIS.h"
 #include "../other/ClockGen.hpp"
 #include "../verilator/Peripheral.hpp"
+#include <gsl/pointers>
 #include <vector>
 
-template <class dataT, class ctrlT=dataT> class AXISSink : public Peripheral
+template <class dataT, class keepT=dataT, class userT=dataT> class AXISSink : public Peripheral
 {
 public:
-	AXISSink(ClockGen &clk, const ctrlT &sresetn,
-		ctrlT &ready, const ctrlT & validIn, const ctrlT &lastIn,
-		const dataT &dataIn)
-		:clk(clk), sresetn(sresetn), ready(ready), valid(validIn), last(lastIn),
-		 data(dataIn)
+	AXISSink(gsl::not_null<ClockGen *> clk, const gsl::not_null<vluint8_t *> sresetn, const AxisSignals<dataT, keepT, userT> &signals)
+		:clk(clk), sresetn(sresetn), tready(signals.tready), tvalid(signals.tvalid), tlast(signals.tlast), tkeep(signals.tkeep), tdata(signals.tdata)
 	{
-		addInput(&valid);
-		addInput(&last);
-		addInput(&data);
+		addInput(&tvalid);
+		addInput(&tlast);
+		addInput(&tdata);
+		addInput(&tkeep);
+		for(const auto &tuser : signals.tusers)
+        {
+		    tusers.push_back(tuser);
+            addInput(&tusers.back());
 
+        }
 		resetState();
 	};
 	// Data is returned as a vector of vectors
@@ -41,16 +46,17 @@ public:
 
 	void eval(void) override
 	{
-		if(clk.getEvent() == ClockGen::Event::RISING)
+		if(clk->getEvent() == ClockGen::Event::RISING)
 		{
-			if (sresetn == 1)
+			if (*sresetn == 1)
 			{
 				//std::cout << "Got clk rising edge, ready:" << (int)ready << " valid:" << (int)valid << std::endl;
-				if(ready && valid)
+				if(*tready && *tvalid)
 				{
-					//std::cout << "Pushing" << std::endl;
-					curData.push_back(data);
-					if(last)
+					if(!tdata.is_null()) {
+                        curData.push_back(*tdata);
+                    }
+					if(*tlast)
 					{
 						vec.push_back(curData);
 						curData = {};
@@ -63,12 +69,14 @@ public:
 	}
 
 private:
-	ClockGen &clk;
-	const ctrlT &sresetn;
-	ctrlT &ready;
-	InputLatch <ctrlT> valid;
-	InputLatch <ctrlT> last;
-	InputLatch <dataT> data;
+    ClockGen *clk;
+	const vluint8_t *sresetn;
+    vluint8_t *tready;
+	InputLatch <vluint8_t> tvalid;
+	InputLatch <vluint8_t> tlast;
+    InputLatch <keepT> tkeep;
+	InputLatch <dataT> tdata;
+    std::vector<InputLatch <userT>> tusers;
 
 	std::vector<std::vector<dataT>> vec;
 
@@ -76,12 +84,12 @@ private:
 
 	void resetState(void)
 	{
-		// Reset vector
+		// Reset vectors
 		vec = {};
 		curData = {};
 
 		//Always be ready
-		ready = 1;
+		*tready = 1;
 	}
 };
 
