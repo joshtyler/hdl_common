@@ -5,7 +5,7 @@
 #include <vector>
 
 // Struct of Axis signals so that we can have sane constructors
-template <class dataT, class keepT=dataT, class userT=dataT> struct AxisSignals
+template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0> struct AxisSignals
 {
     gsl::not_null<vluint8_t *> tready;
     gsl::not_null<vluint8_t *> tvalid;
@@ -13,7 +13,7 @@ template <class dataT, class keepT=dataT, class userT=dataT> struct AxisSignals
     keepT *tkeep = nullptr;
     dataT *tdata = nullptr;
     // Support having multiple user signals as multiple sideband signals are possible
-    std::vector<userT *> tusers;
+    std::array<userT *, n_users> tusers = {};
 };
 
 #endif //AXIS_H

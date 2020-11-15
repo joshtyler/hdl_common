@@ -23,13 +23,35 @@ public:
 template <class T> class InputLatch : public InputLatchBase
 {
 public:
+    InputLatch() : ref(nullptr) {}; // Allow default construction so that we can have a vector of InputLatches
 	InputLatch(const T* ref) :ref(ref) {latch();};
     void latch(void) override {if(ref) saved = *ref;};
-    T operator *() const {return ref? saved : T{};};
+    //T operator *() const {return ref? saved : T{};};
+    operator T() const {return ref? saved : T{};};
     bool is_null(void) {return !ref;}
 private:
 	const T* ref;
 	T saved;
+};
+
+// Class to wrap a raw pointer for the output
+// Writes are ignored if initialised with nullptr
+template <class T> class OutputWrapper
+{
+public:
+    OutputWrapper(T* ref) :ref(ref) {};
+    inline const T& operator=(const T& other)
+    {
+        if(ref)
+        {
+            *ref = other;
+        }
+        return other;
+    };
+    inline operator T() const {return ref? *ref : T{};};
+    bool is_null(void) {return !ref;}
+private:
+    T* ref;
 };
 
 // Base class for Verilator peripherals
