@@ -40,13 +40,13 @@ begin
 				0 :
 				begin
 					// Stored zero indexed, see above
-					ihl <= axis_i_tdata[7:4] - 1;
+					ihl <= axis_i_tdata[3:0] - 1;
 					// Payload length is total length - IHL converted to bytes
-					axis_o_length <= {axis_i_tdata[23:16],  axis_i_tdata[31:24]} - (axis_i_tdata[7:4] * 4);
+					axis_o_length <= {axis_i_tdata[23:16],  axis_i_tdata[31:24]} - (axis_i_tdata[3:0] * 4);
 				end
-				1 : axis_o_protocol <= axis_i_tdata[15:8];
-				2 : axis_o_src_ip <= axis_i_tdata;
-				3 : axis_o_dst_ip <= axis_i_tdata;
+				2 : axis_o_protocol <= axis_i_tdata[15:8];
+				3 : axis_o_src_ip <= {axis_i_tdata[7:0], axis_i_tdata[15:8], axis_i_tdata[23:16],  axis_i_tdata[31:24]};
+				4 : axis_o_dst_ip <= {axis_i_tdata[7:0], axis_i_tdata[15:8], axis_i_tdata[23:16],  axis_i_tdata[31:24]};
 				// Ignore options, and do nothing for the data segment
 			endcase
 

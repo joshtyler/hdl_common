@@ -78,16 +78,22 @@ auto testdeframer(std::vector<vluint8_t> packet, bool recordVcd=false)
 TEST_CASE("Test deframer with random UDP packet", "[ip_deframer]")
 {
     // This was captured off the wire using:
-    // echo -n "Hello" | nc -u 192.168.0.35 2115 (from 192.168.0.31)
+    // echo -n "Hello" | nc -u 192.168.0.35 2115 (from 192.168.0.37)
     std::vector<vluint8_t> packet =
-            {0x45,0x00, 0x00, 0x21, 0xA8, 0x6C, 0x40, 0x00, 0x40, 0x11, 0x10, 0xCD,
-             0xC0, 0xA8, 0x00, 0x1F, 0xC0, 0xA8, 0x00, 0x23}
+            {0x45,0x00, 0x00, 0x21, 0xe9, 0x37, 0x40, 0x00, 0x40, 0x11, 0xcf, 0xfb,
+             0xC0, 0xA8, 0x00, 0x25, 0xC0, 0xA8, 0x00, 0x23,
+             0xDC, 0x9B, 0x08, 0x43, 0x00, 0x0d, 0x81, 0xb7, 0x48, 0x65, 0x6c, 0x6c, 0x6f}
     ;
     auto result = testdeframer(packet, true);
     REQUIRE(result.protocol == 0x11); //UDP
-    REQUIRE(result.src_ip == 0xC0A8001F); //192.168.0.31
-    REQUIRE(result.dest_ip == 0xC0A80023); //192.168.0.35
-    const std::vector<uint8_t> expected_data({'H', 'e', 'l', 'l', 'o'});
-    REQUIRE(result.payload_length == expected_data.size());
+    REQUIRE(result.src_ip == 0xC0A80025); //192.168.0.37
+    REQUIRE(result.dest_ip == 0xC0A80023); //192.168.0.23
+    std::vector<uint8_t> expected_data({0xDC, 0x9B, 0x08, 0x43, 0x00, 0x0d, 0x81, 0xb7, 0x48, 0x65, 0x6c, 0x6c, 0x6f});
+    REQUIRE(result.payload_length == expected_data.size()); // Payload + UDP header
+
+    // Pad because tkeep is not yet supported...
+    expected_data.push_back(0);
+    expected_data.push_back(0);
+    expected_data.push_back(0);
     REQUIRE(result.payload == expected_data);
 }
