@@ -8,18 +8,14 @@ module ip_deframer
 	input clk,
 	input sresetn,
 
-	`S_AXIS_PORT_NO_USER(axis_framed, AXIS_BYTES),
+	`S_AXIS_PORT_NO_USER(axis_i, AXIS_BYTES),
 
-	`M_AXIS_PORT_NO_USER(axis_payload, AXIS_BYTES),
-	output logic [15:0] m_axis_payload_length,
-	output logic [7:0]  m_axis_protocol,
-	output logic [31:0] m_axis_src_ip,
-	output logic [31:0] m_axis_dst_ip
+	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES),
+	output logic [15:0] axis_o_length,
+	output logic [7:0]  axis_o_protocol,
+	output logic [31:0] axis_o_src_ip,
+	output logic [31:0] axis_o_dst_ip
 );
-
-`AXIS_INST_NO_USER(axis_header_native_width, AXIS_BYTES);
-`AXIS_INST_NO_USER(axis_header, AXIS_BYTES);
-`AXIS_INST_NO_USER(axis_options_body, AXIS_BYTES);
 
 logic [4:0] ihl_ctr, ihl;
 always_ff @(posedge clk)
@@ -28,7 +24,7 @@ begin
 	begin
 		ihl_ctr <= 0;
 	end else begin
-		if(axis_framed_tready && axis_framed_tvalid)
+		if(axis_i_tready && axis_i_tvalid)
 		begin
 			// We don't have to worry about the special case of the first word becauase the ihl_ctr is reset to zero on tlast
 			// Therefore the condition will always be true
@@ -40,22 +36,22 @@ begin
 				ihl_ctr <= ihl_ctr + 1;
 			end
 
-			case(remaining_ihl)
+			case(ihl_ctr)
 				0 :
 				begin
 					// Stored zero indexed, see above
-					ihl <= axis_header_tdata[7:4] - 1;
+					ihl <= axis_i_tdata[7:4] - 1;
 					// Payload length is total length - IHL converted to bytes
-					m_axis_payload_length <= {axis_header_tdata[23:16]  axis_header_tdata[31:24]} - (axis_header_tdata[7:4] * 4);
+					axis_o_length <= {axis_i_tdata[23:16],  axis_i_tdata[31:24]} - (axis_i_tdata[7:4] * 4);
 				end
-				1 : m_axis_protocol <= axis_header_tdata[15:8];
-				2 : m_axis_src_ip <= axis_header_tdata;
-				3 : m_axis_dst_ip <= axis_header_tdata;
+				1 : axis_o_protocol <= axis_i_tdata[15:8];
+				2 : axis_o_src_ip <= axis_i_tdata;
+				3 : axis_o_dst_ip <= axis_i_tdata;
 				// Ignore options, and do nothing for the data segment
 			endcase
-			
+
 			// If this is the last beat, the next beat will be a new frame
-			if(axis_framed_tlast)
+			if(axis_i_tlast)
 			begin
 				ihl_ctr <= 0;
 			end
@@ -63,13 +59,29 @@ begin
 	end
 end
 
+`AXIS_INST_NO_USER(axis_o_untrimmed, AXIS_BYTES);
+
 // Always be ready when data is consumed by state machine
 // Pass through to output when we are done with the header
 logic header_finished;
 assign header_finished = (ihl_ctr > ihl);
-assign axis_framed_tready  = header_finished? axis_payload_tready : 1;
-assign axis_payload_tvalid = header_finished? axis_framed_tvalid  : 0;
-assign axis_payload_tlast  = axis_framed_tlast;
-assign axis_payload_tdata  = axis_framed_tdata;
+assign axis_i_tready  = header_finished? axis_o_untrimmed_tready : 1;
+assign axis_o_untrimmed_tvalid = header_finished? axis_i_tvalid  : 0;
+assign axis_o_untrimmed_tlast  = axis_i_tlast;
+assign axis_o_untrimmed_tdata  = axis_i_tdata;
+
+axis_trimmer
+#(
+	.AXIS_BYTES(AXIS_BYTES),
+	.LENGTH_BITS(16)
+) trimmer (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	`AXIS_MAP_NULL_USER(axis_i, axis_o_untrimmed),
+	.axis_i_len_bytes(axis_o_length),
+
+	`AXIS_MAP_IGNORE_USER(axis_o, axis_o)
+);
 
 endmodule

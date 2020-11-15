@@ -18,7 +18,7 @@
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
 
-auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std::vector<vluint16_t>> len, std::string vcdName="foo.vcd", bool recordVcd=false)
+auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std::vector<vluint8_t>> len, std::string vcdName="foo.vcd", bool recordVcd=false)
 {
 	VerilatedModel<Vip_header_gen> uut(vcdName, recordVcd);
 
@@ -63,6 +63,6 @@ TEST_CASE("Test with random UDP packet", "[ip_header_gen]")
 	uint64_t src_ip = 0xC0A8001F; //192.168.0.31
 	uint64_t dest_ip = 0xC0A80023; //192.168.0.35
 	uint8_t protocol = 0x11; //UDP
-	auto result = testip(src_ip, dest_ip, protocol, {{13}}, "ip.vcd",false);
+	auto result = testip(src_ip, dest_ip, protocol, {{13,0}}, "ip.vcd",false);
 	REQUIRE(outData == result[0]);
 }

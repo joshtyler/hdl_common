@@ -18,9 +18,9 @@
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
 
-auto testBroadcaster(std::vector<std::vector<vluint8_t>> inData)
+auto testBroadcaster(std::vector<std::vector<vluint8_t>> inData, bool record_vcd)
 {
-	VerilatedModel<Vaxis_broadcaster_harness> uut;
+	VerilatedModel<Vaxis_broadcaster_harness> uut("test_broadcaster.vcd", record_vcd);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
@@ -59,6 +59,6 @@ TEST_CASE("Test all re-broadcasted streams are correct", "[axis_broadcaster]")
 {
 	std::vector<std::vector<vluint8_t>> testData = {{0x0,0x1,0x2,0x3}};
 	std::array<std::vector<std::vector<vluint8_t>>,2> outData = {testData, testData};
-	auto result = testBroadcaster(testData);
+	auto result = testBroadcaster(testData, true);
 	REQUIRE( outData == result);
 }

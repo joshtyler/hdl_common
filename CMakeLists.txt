@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(hdl_common_tests)
 
 #SET (CMAKE_CXX_COMPILER             "/usr/bin/clang++")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 
 find_package(verilator HINTS $ENV{VERILATOR_ROOT} ${VERILATOR_ROOT})
 if (NOT verilator_FOUND)

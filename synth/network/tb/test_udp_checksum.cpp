@@ -89,9 +89,9 @@ uint16_t ip_compute_csum(const void *buff, int len)
 }
 // End copied and pasted from linux/lib/checksum.c
 
-auto testUdpChecksum(std::vector<std::vector<vluint16_t>> inData)
+auto testUdpChecksum(std::vector<std::vector<uint8_t>> inData, bool record_vcd=false)
 {
-	VerilatedModel<Vudp_checksum> uut("udp.vcd", false);
+	VerilatedModel<Vudp_checksum> uut("udp.vcd", record_vcd);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
@@ -117,6 +117,25 @@ auto testUdpChecksum(std::vector<std::vector<vluint16_t>> inData)
 	return outAxis.getData();
 }
 
+template <class T> std::vector<std::vector<uint8_t>> convert_to_byte_vector_vector(std::vector<std::vector<T>> in)
+{
+    // Hack in a quick conver
+    std::vector<std::vector<uint8_t>> ret;
+    for(const auto &vec : in)
+    {
+        ret.push_back({});
+        for(auto word: vec)
+        {
+            for(size_t i=0; i<sizeof(word); i++)
+            {
+                ret.back().push_back(word&0xFF);
+                word >>= 8;
+            }
+        }
+    }
+    return ret;
+}
+
 void testChecksum(std::vector<std::vector<vluint16_t>> in)
 {
 	// UDP Checksum is same algorithm as IP checksum
@@ -125,15 +144,13 @@ void testChecksum(std::vector<std::vector<vluint16_t>> in)
 	{
 		outData.push_back({ip_compute_csum((unsigned char *)in[i].data(),in[i].size()*sizeof(in[i][0]))});
 	}
-	auto result = testUdpChecksum(in);
-	REQUIRE( result == outData);
+
+	auto result = testUdpChecksum(convert_to_byte_vector_vector(in), true);
+	REQUIRE( result == convert_to_byte_vector_vector(outData));
 }
 
 TEST_CASE("Test checksum calculator gets correct value", "[test_udp_checksum]")
 {
-	//std::vector<std::vector<vluint16_t>> testData = {{0x0,0x1,0x2,0x3}};
-	std::vector<std::vector<vluint16_t>> testData = {{0x0,0x0,0x0,0x0}};
-	//std::vector<std::vector<vluint16_t>> testData = {{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}};
 	testChecksum({{0x0,0x0,0x0,0x0}});
 	testChecksum({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
 	testChecksum({{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}}); // Should give 0xB6AE (https://www.youtube.com/watch?v=EmUuFRMJbss)

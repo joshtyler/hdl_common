@@ -5,5 +5,7 @@ verilate(network_verilated SOURCES ip_header_gen.sv INCLUDE_DIRS ../axis  TRACE)
 verilate(network_verilated SOURCES rmii_to_axis.sv TRACE)
 verilate(network_verilated SOURCES udp_checksum.sv INCLUDE_DIRS ../axis TRACE)
 verilate(network_verilated SOURCES udp_header_gen.sv INCLUDE_DIRS ../axis  TRACE)
+verilate(network_verilated SOURCES ip_deframer.sv INCLUDE_DIRS ../axis  TRACE)
+verilate(network_verilated SOURCES tb/ip_deframer_harness.sv INCLUDE_DIRS ../axis  TRACE)
 
 add_subdirectory(tb)

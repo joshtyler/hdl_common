@@ -1,0 +1,93 @@
+//  Copyright (C) 2020 Joshua Tyler
+//
+//  This library is free software; you can redistribute it and/or
+//  modify it under the terms of the GNU Lesser General Public
+//  License as published by the Free Software Foundation; either
+//  version 2.1 of the License, or (at your option) any later version.
+//  See the file LICENSE_LGPL included with this distribution for more
+//  information.
+
+#include <catch2/catch.hpp>
+#include <iostream>
+#include <verilated.h>
+#include "Vip_deframer_harness.h"
+
+#include "../../../sim/verilator/VerilatedModel.hpp"
+#include "../../../sim/other/ResetGen.hpp"
+#include "../../../sim/other/ClockGen.hpp"
+#include "../../../sim/axis/AXISSink.hpp"
+#include "../../../sim/axis/AXISSource.hpp"
+
+struct ret_data
+{
+    uint8_t protocol;
+    uint32_t src_ip;
+    uint32_t dest_ip;
+    uint16_t payload_length;
+    std::vector<vluint8_t> payload;
+};
+
+auto testdeframer(std::vector<vluint8_t> packet, bool recordVcd=false)
+{
+    VerilatedModel<Vip_deframer_harness> uut("ip_deframer.vcd", recordVcd);
+
+    ClockGen clk(uut.getTime(), 1e-9, 100e6);
+
+    AXISSource<vluint32_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t>
+        {
+            .tready = &uut.uut->axis_i_tready,
+            .tvalid = &uut.uut->axis_i_tvalid,
+            .tlast = &uut.uut->axis_i_tlast,
+            .tdata = &uut.uut->axis_i_tdata
+        }, {packet});
+
+    AXISSink<vluint32_t, vluint8_t, vluint32_t, 4> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t, vluint32_t, 4>
+            {
+                    .tready = &uut.uut->axis_o_tready,
+                    .tvalid = &uut.uut->axis_o_tvalid,
+                    .tlast = &uut.uut->axis_o_tlast,
+                    .tdata = &uut.uut->axis_o_tdata,
+                    .tusers = {&uut.uut->axis_o_protocol, &uut.uut->axis_o_src_ip, &uut.uut->axis_o_dst_ip, &uut.uut->axis_o_length}
+            });
+
+    ResetGen resetGen(clk,uut.uut->sresetn, false);
+
+    uut.addPeripheral(&inAxis);
+    uut.addPeripheral(&outAxis);
+    uut.addPeripheral(&resetGen);
+    ClockBind clkDriver(clk,uut.uut->clk);
+    uut.addClock(&clkDriver);
+
+    while(true)
+    {
+        if(uut.eval() == false || uut.getTime() == 10000 || outAxis.getTlastCount() == 1)
+        {
+            break;
+        }
+    }
+
+    auto data = outAxis.getData();
+    auto users = outAxis.getUsers();
+
+    // TODO check that users data is constant for the whole packet
+    // TODO check that length of each user is 1
+
+    return ret_data{ users.at(0).at(0).at(0), users.at(0).at(1).at(0), users.at(0).at(2).at(0), users.at(0).at(3).at(0), data.at(0)};
+}
+
+TEST_CASE("Test deframer with random UDP packet", "[ip_deframer]")
+{
+    // This was captured off the wire using:
+    // echo -n "Hello" | nc -u 192.168.0.35 2115 (from 192.168.0.31)
+    std::vector<vluint8_t> packet =
+            {0x45,0x00, 0x00, 0x21, 0xA8, 0x6C, 0x40, 0x00, 0x40, 0x11, 0x10, 0xCD,
+             0xC0, 0xA8, 0x00, 0x1F, 0xC0, 0xA8, 0x00, 0x23}
+    ;
+    auto result = testdeframer(packet, true);
+    REQUIRE(result.protocol == 0x11); //UDP
+    REQUIRE(result.src_ip == 0xC0A8001F); //192.168.0.31
+    REQUIRE(result.dest_ip == 0xC0A80023); //192.168.0.35
+    const std::vector<uint8_t> expected_data({'H', 'e', 'l', 'l', 'o'});
+    REQUIRE(result.payload_length == expected_data.size());
+    REQUIRE(result.payload == expected_data);
+}
