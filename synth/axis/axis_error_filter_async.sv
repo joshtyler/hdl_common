@@ -1,7 +1,7 @@
 // Filter out bad axis packets
 // Drop the remainder of the packet up until tlast if error ever goes high
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_error_filter_async
 #(

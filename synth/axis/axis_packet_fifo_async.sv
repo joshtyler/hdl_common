@@ -2,7 +2,7 @@
 // Works by pointer passing in both directions
 // Could modify in the future to use grey code in the reverse direction for performance
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_packet_fifo_async
 #(

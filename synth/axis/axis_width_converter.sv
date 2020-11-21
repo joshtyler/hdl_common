@@ -10,7 +10,7 @@
 // N.B. The wider stream must be an exact multiple of the width of the smaller stream
 // (Guaranteed with standard axis widths)
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_width_converter
 #(

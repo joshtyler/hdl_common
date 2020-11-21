@@ -9,7 +9,7 @@
 // The next packet to the second output
 // etc
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_round_robin
 #(

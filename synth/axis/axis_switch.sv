@@ -8,7 +8,7 @@
 // Send one slave to many masters based upon tdest
 // Support for multiple slaves may be added later
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_switch
 #(

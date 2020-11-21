@@ -1,6 +1,6 @@
 // Split an AXI stream at a certain word index
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_splitter
 #(

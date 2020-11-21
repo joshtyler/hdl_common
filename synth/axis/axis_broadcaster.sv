@@ -7,7 +7,7 @@
 
 // Send on AXI stream slave input out to many masters
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_broadcaster
 #(

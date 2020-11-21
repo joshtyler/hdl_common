@@ -22,7 +22,7 @@
                                                        ip --> switch---------------------------
 */
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module ip_header_gen
 #(

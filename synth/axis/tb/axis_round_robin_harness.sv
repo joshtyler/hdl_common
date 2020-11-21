@@ -5,7 +5,7 @@
 //  of the OHDL was not distributed with this file, You                                                     │
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_round_robin_harness
 #(

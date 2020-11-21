@@ -7,7 +7,7 @@
 
 // For now this is just a very simple counter, perhaps expand in the future
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_counter
 #(

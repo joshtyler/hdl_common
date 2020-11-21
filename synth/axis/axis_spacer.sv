@@ -7,7 +7,7 @@
 
 // Enforce a gap between packets
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_spacer
 #(

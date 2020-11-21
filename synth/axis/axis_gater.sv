@@ -7,7 +7,7 @@
 
 // Block an axi stream
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_gater
 #(

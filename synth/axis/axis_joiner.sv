@@ -8,7 +8,7 @@
 // Join together multiple AXIS streams
 // I.e. output a packet from stream 1, then stream 2 etc.
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_joiner
 #(

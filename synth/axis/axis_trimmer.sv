@@ -1,7 +1,7 @@
 // Trim an axi stream to a variable length
 // Assumes a packed stream to save logic
 
-`include "axis.h"
+`include "axis/axis.h"
 
 module axis_trimmer
 #(
