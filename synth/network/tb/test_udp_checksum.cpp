@@ -97,7 +97,7 @@ auto testUdpChecksum(std::vector<std::vector<uint8_t>> inData, bool record_vcd=f
 
 	AXISSource<vluint16_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tdata = &uut.uut->axis_i_tdata}, inData);
 
-	AXISSink<vluint16_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tdata = &uut.uut->axis_o_tdata});
+	AXISSink<vluint16_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tdata = &uut.uut->axis_o_csum});
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);
 
@@ -149,11 +149,25 @@ void testChecksum(std::vector<std::vector<vluint16_t>> in)
 	REQUIRE( result == convert_to_byte_vector_vector(outData));
 }
 
-TEST_CASE("Test checksum calculator gets correct value", "[test_udp_checksum]")
+TEST_CASE("Test checksum calculator all zeros", "[test_udp_checksum]")
 {
 	testChecksum({{0x0,0x0,0x0,0x0}});
-	testChecksum({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
-	testChecksum({{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}}); // Should give 0xB6AE (https://www.youtube.com/watch?v=EmUuFRMJbss)
-	testChecksum({{0xFFFF,0xFFFF,0xFFFF,0xFFFF},{0x0,0x1,0x2,0x3}});
+
+}
+
+TEST_CASE("Test checksum calculator incrementing", "[test_udp_checksum]")
+{
+    testChecksum({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
+
+}
+
+TEST_CASE("Test checksum known result", "[test_udp_checksum]")
+{
+    testChecksum({{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}}); // Should give 0xB6AE (https://www.youtube.com/watch?v=EmUuFRMJbss)
+}
+
+TEST_CASE("Test checksum FFFFs and incrementing", "[test_udp_checksum]")
+{
+    testChecksum({{0xFFFF,0xFFFF,0xFFFF,0xFFFF},{0x0,0x1,0x2,0x3}});
 
 }

@@ -171,15 +171,52 @@ axis_joiner
 	`AXIS_MAP_IGNORE_USER(axis_o, checksum_in_axis)
 );
 
-udp_checksum
+`AXIS_INST_NO_USER(checksum_in_2b,2);
+
+axis_width_converter
 #(
-	.AXIS_BYTES(1),
+	.AXIS_I_BYTES(1),
+	.AXIS_O_BYTES(2),
 	.MSB_FIRST(1)
-) checksum (
+) checksum_in_conv (
 	.clk(clk),
 	.sresetn(sresetn),
 
 	`AXIS_MAP_NO_USER(axis_i, checksum_in_axis),
+	`AXIS_MAP_NO_USER(axis_o, checksum_in_2b)
+);
+
+logic csum_2b_tready;
+logic csum_2b_tvalid;
+logic [15:0] csum_2b;
+
+udp_checksum
+#(
+	.AXIS_BYTES(2)
+) checksum (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	`AXIS_MAP_NO_USER(axis_i, checksum_in_2b),
+
+	.axis_o_tready(csum_2b_tready),
+	.axis_o_tvalid(csum_2b_tvalid),
+	.axis_o_csum (csum_2b)
+);
+axis_width_converter
+#(
+	.AXIS_I_BYTES(2),
+	.AXIS_O_BYTES(1),
+	.MSB_FIRST(1)
+) checksum_out_conv (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready(csum_2b_tready),
+	.axis_i_tvalid(csum_2b_tvalid),
+	.axis_i_tlast (1'b1),
+	.axis_i_tdata (csum_2b),
+
 	`AXIS_MAP_NO_USER(axis_o, checksum_out_axis)
 );
 

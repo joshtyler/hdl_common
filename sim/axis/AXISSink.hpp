@@ -75,7 +75,7 @@ public:
                         curUsers[i].push_back(tusers[i]);
                     }
 
-					if(tlast)
+					if(tlast.is_null() || tlast)
 					{
                         datas_natural_width.push_back(cur_data_natural_width);
                         datas.push_back(cur_data);
