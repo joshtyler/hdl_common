@@ -96,7 +96,7 @@ end else if (AXIS_BYTES == 4) begin
 				end
 			end
 
-			// Readd the checksum from each accumulator
+			// Add on the overflow bit from each accumulator
 			// N.B. can't overflow. See logic for axis_o_csum
 			if(axis_o_tvalid_shreg == 3'b100)
 			begin
@@ -110,12 +110,9 @@ end else if (AXIS_BYTES == 4) begin
 			begin
 				acc <= acc+acc_h;
 			end
-
 		end
 	end
 end
 endgenerate
-
-
 
 endmodule
