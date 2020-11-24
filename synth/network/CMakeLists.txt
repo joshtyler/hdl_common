@@ -4,6 +4,7 @@ verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES eth_frame
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES ip_header_gen.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES rmii_to_axis.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES udp_checksum.sv TRACE)
+verilate(network_verilated VERILATOR_ARGS "-I../" SOURCES udp_checksum.sv PREFIX Vudp_checksum_4 TRACE VERILATOR_ARGS "-GAXIS_BYTES=4")
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES udp_header_gen.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES ip_deframer.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES tb/ip_deframer_harness.sv TRACE)

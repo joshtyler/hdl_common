@@ -11,6 +11,7 @@
 #include <iostream>
 #include <verilated.h>
 #include "Vudp_checksum.h"
+#include "Vudp_checksum_4.h"
 
 #include "../../../sim/verilator/VerilatedModel.hpp"
 #include "../../../sim/other/ResetGen.hpp"
@@ -89,13 +90,13 @@ uint16_t ip_compute_csum(const void *buff, int len)
 }
 // End copied and pasted from linux/lib/checksum.c
 
-auto testUdpChecksum(std::vector<std::vector<uint8_t>> inData, bool record_vcd=false)
+template <class dataInT, class Verilated> auto testUdpChecksum(std::vector<std::vector<uint8_t>> inData, bool record_vcd=false)
 {
-	VerilatedModel<Vudp_checksum> uut("udp.vcd", record_vcd);
+	VerilatedModel<Verilated> uut("udp.vcd", record_vcd);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
-	AXISSource<vluint16_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tdata = &uut.uut->axis_i_tdata}, inData);
+	AXISSource<dataInT> inAxis(&clk, &uut.uut->sresetn, AxisSignals<dataInT>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tdata = &uut.uut->axis_i_tdata}, inData);
 
 	AXISSink<vluint16_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tdata = &uut.uut->axis_o_csum});
 
@@ -136,7 +137,7 @@ template <class T> std::vector<std::vector<uint8_t>> convert_to_byte_vector_vect
     return ret;
 }
 
-void testChecksum(std::vector<std::vector<vluint16_t>> in)
+template <class dataInT=vluint16_t, class Verilated=Vudp_checksum> void testChecksum(std::vector<std::vector<vluint16_t>> in)
 {
 	// UDP Checksum is same algorithm as IP checksum
 	std::vector<std::vector<vluint16_t>> outData;
@@ -145,20 +146,29 @@ void testChecksum(std::vector<std::vector<vluint16_t>> in)
 		outData.push_back({ip_compute_csum((unsigned char *)in[i].data(),in[i].size()*sizeof(in[i][0]))});
 	}
 
-	auto result = testUdpChecksum(convert_to_byte_vector_vector(in), true);
+	auto result = testUdpChecksum<dataInT,Verilated>(convert_to_byte_vector_vector(in), true);
 	REQUIRE( result == convert_to_byte_vector_vector(outData));
 }
 
 TEST_CASE("Test checksum calculator all zeros", "[test_udp_checksum]")
 {
 	testChecksum({{0x0,0x0,0x0,0x0}});
-
 }
+
+TEST_CASE("Test checksum calculator all zeros 4b wide", "[test_udp_checksum]")
+{
+    testChecksum<vluint32_t, Vudp_checksum_4>({{0x0,0x0,0x0,0x0}});
+}
+
 
 TEST_CASE("Test checksum calculator incrementing", "[test_udp_checksum]")
 {
     testChecksum({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
+}
 
+TEST_CASE("Test checksum calculator incrementing 4b wide", "[test_udp_checksum]")
+{
+    testChecksum<vluint32_t, Vudp_checksum_4>({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
 }
 
 TEST_CASE("Test checksum known result", "[test_udp_checksum]")
@@ -166,8 +176,17 @@ TEST_CASE("Test checksum known result", "[test_udp_checksum]")
     testChecksum({{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}}); // Should give 0xB6AE (https://www.youtube.com/watch?v=EmUuFRMJbss)
 }
 
+TEST_CASE("Test checksum known result 4b wide", "[test_udp_checksum]")
+{
+    testChecksum<vluint32_t, Vudp_checksum_4>({{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}}); // Should give 0xB6AE (https://www.youtube.com/watch?v=EmUuFRMJbss)
+}
+
 TEST_CASE("Test checksum FFFFs and incrementing", "[test_udp_checksum]")
 {
     testChecksum({{0xFFFF,0xFFFF,0xFFFF,0xFFFF},{0x0,0x1,0x2,0x3}});
+}
 
+TEST_CASE("Test checksum FFFFs and incrementing 4b wide", "[test_udp_checksum]")
+{
+    testChecksum<vluint32_t, Vudp_checksum_4>({{0xFFFF,0xFFFF,0xFFFF,0xFFFF},{0x0,0x1,0x2,0x3}});
 }

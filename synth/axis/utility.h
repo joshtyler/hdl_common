@@ -12,4 +12,13 @@ function logic[8*N_BYTES-1 :0] NAME; \
 		NAME[8*(i+1)-1 -:8] = data[8*(N_BYTES-i)-1 -:8]; \
 endfunction
 
+// Check compile time conditions
+`define STATIC_ASSERT(cond) \
+generate \
+if(!(cond)) \
+begin \
+	instantiate_module_that_doesnt_exist_to_trigger_error foo(); \
+end \
+endgenerate
+
 `endif
