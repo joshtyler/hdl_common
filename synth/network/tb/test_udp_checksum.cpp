@@ -10,8 +10,7 @@
 #include <catch2/catch.hpp>
 #include <iostream>
 #include <verilated.h>
-#include "Vudp_checksum.h"
-#include "Vudp_checksum_4.h"
+#include "udp_checksum_verilated.h"
 
 #include "../../../sim/verilator/VerilatedModel.hpp"
 #include "../../../sim/other/ResetGen.hpp"
@@ -90,8 +89,10 @@ uint16_t ip_compute_csum(const void *buff, int len)
 }
 // End copied and pasted from linux/lib/checksum.c
 
-template <class dataInT, class Verilated> auto testUdpChecksum(std::vector<std::vector<uint8_t>> inData, bool record_vcd=false)
+template <class Verilated> auto testUdpChecksum(std::vector<std::vector<uint8_t>> inData, bool record_vcd=false)
 {
+    typedef decltype(Verilated::axis_i_tdata) dataInT;
+
 	VerilatedModel<Verilated> uut("udp.vcd", record_vcd);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
@@ -137,7 +138,7 @@ template <class T> std::vector<std::vector<uint8_t>> convert_to_byte_vector_vect
     return ret;
 }
 
-template <class dataInT=vluint16_t, class Verilated=Vudp_checksum> void testChecksum(std::vector<std::vector<vluint16_t>> in)
+template <class Verilated> void testChecksum(std::vector<std::vector<vluint16_t>> in)
 {
 	// UDP Checksum is same algorithm as IP checksum
 	std::vector<std::vector<vluint16_t>> outData;
@@ -146,47 +147,30 @@ template <class dataInT=vluint16_t, class Verilated=Vudp_checksum> void testChec
 		outData.push_back({ip_compute_csum((unsigned char *)in[i].data(),in[i].size()*sizeof(in[i][0]))});
 	}
 
-	auto result = testUdpChecksum<dataInT,Verilated>(convert_to_byte_vector_vector(in), true);
+	auto result = testUdpChecksum<Verilated>(convert_to_byte_vector_vector(in));
 	REQUIRE( result == convert_to_byte_vector_vector(outData));
 }
 
-TEST_CASE("Test checksum calculator all zeros", "[test_udp_checksum]")
+TEMPLATE_TEST_CASE("udp_checksum: Test correct values", "[udp_checksum]", UDP_CHECKSUM_VERILATED_CLASSES)
 {
-	testChecksum({{0x0,0x0,0x0,0x0}});
-}
+    SECTION("All zeros")
+    {
+        testChecksum<TestType>({{0x0,0x0,0x0,0x0}});
+    }
 
-TEST_CASE("Test checksum calculator all zeros 4b wide", "[test_udp_checksum]")
-{
-    testChecksum<vluint32_t, Vudp_checksum_4>({{0x0,0x0,0x0,0x0}});
-}
+    SECTION("Incrementing")
+    {
+        testChecksum<TestType>({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
+    }
 
+    SECTION("Known result")
+    {
+        testChecksum<TestType>({{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}}); // Should give 0xB6AE (https://www.youtube.com/watch?v=EmUuFRMJbss)
+    }
 
-TEST_CASE("Test checksum calculator incrementing", "[test_udp_checksum]")
-{
-    testChecksum({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
-}
+    SECTION("FFFFs and incrementing")
+    {
+        testChecksum<TestType>({{0xFFFF,0xFFFF,0xFFFF,0xFFFF},{0x0,0x1,0x2,0x3}});
+    }
 
-TEST_CASE("Test checksum calculator incrementing 4b wide", "[test_udp_checksum]")
-{
-    testChecksum<vluint32_t, Vudp_checksum_4>({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
-}
-
-TEST_CASE("Test checksum known result", "[test_udp_checksum]")
-{
-    testChecksum({{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}}); // Should give 0xB6AE (https://www.youtube.com/watch?v=EmUuFRMJbss)
-}
-
-TEST_CASE("Test checksum known result 4b wide", "[test_udp_checksum]")
-{
-    testChecksum<vluint32_t, Vudp_checksum_4>({{0x00FE,0xC523,0xFDA1,0xD68A,0xAF02}}); // Should give 0xB6AE (https://www.youtube.com/watch?v=EmUuFRMJbss)
-}
-
-TEST_CASE("Test checksum FFFFs and incrementing", "[test_udp_checksum]")
-{
-    testChecksum({{0xFFFF,0xFFFF,0xFFFF,0xFFFF},{0x0,0x1,0x2,0x3}});
-}
-
-TEST_CASE("Test checksum FFFFs and incrementing 4b wide", "[test_udp_checksum]")
-{
-    testChecksum<vluint32_t, Vudp_checksum_4>({{0xFFFF,0xFFFF,0xFFFF,0xFFFF},{0x0,0x1,0x2,0x3}});
 }
