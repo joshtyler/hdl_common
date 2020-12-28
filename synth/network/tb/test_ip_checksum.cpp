@@ -10,7 +10,7 @@
 #include <catch2/catch.hpp>
 #include <iostream>
 #include <verilated.h>
-#include "udp_checksum_verilated.h"
+#include "ip_checksum_verilated.h"
 
 #include "../../../sim/verilator/VerilatedModel.hpp"
 #include "../../../sim/other/ResetGen.hpp"
@@ -83,13 +83,13 @@ out:
 	return result;
 }
 // This is adapted slightly to not use kernel types
-uint16_t ip_compute_csum(const void *buff, int len)
+static uint16_t ip_compute_csum(const void *buff, int len)
 {
 	return (uint16_t)~do_csum((const unsigned char *)buff, len);
 }
 // End copied and pasted from linux/lib/checksum.c
 
-template <class Verilated> auto testUdpChecksum(std::vector<std::vector<uint8_t>> inData, bool record_vcd=false)
+template <class Verilated> auto testIpChecksum(std::vector<std::vector<uint8_t>> inData, bool record_vcd=false)
 {
     typedef decltype(Verilated::axis_i_tdata) dataInT;
 
@@ -147,11 +147,11 @@ template <class Verilated> void testChecksum(std::vector<std::vector<vluint16_t>
 		outData.push_back({ip_compute_csum((unsigned char *)in[i].data(),in[i].size()*sizeof(in[i][0]))});
 	}
 
-	auto result = testUdpChecksum<Verilated>(convert_to_byte_vector_vector(in));
+	auto result = testIpChecksum<Verilated>(convert_to_byte_vector_vector(in));
 	REQUIRE( result == convert_to_byte_vector_vector(outData));
 }
 
-TEMPLATE_TEST_CASE("udp_checksum: Test correct values", "[udp_checksum]", UDP_CHECKSUM_VERILATED_CLASSES)
+TEMPLATE_TEST_CASE("ip_checksum: Test correct values", "[ip_checksum]", IP_CHECKSUM_VERILATED_CLASSES)
 {
     SECTION("All zeros")
     {

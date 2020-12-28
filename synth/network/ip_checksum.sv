@@ -1,22 +1,17 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │
-//  of the OHDL was not distributed with this file, You                                                     │
+//  This Source Code Form is subject to the terms of the
+//  Open Hardware Description License, v. 1.0. If a copy
+//  of the OHDL was not distributed with this file, You
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
-// UDP Checksum algorithm
-// "Checksum is the 16-bit one's complement
-// of the one's complement sum of a pseudo header of information from
-// the IP header, the UDP header, and the data,
-// padded with zero octets at the end (if necessary) to make a multiple of two octets"
+// IP Checksum algorithm
 
-// This module takes the data in two bytes at a time
-// And data is output two bytes at a time
+// N.B. This could be easily adapted for UDP, the only difference is that if the result is all zeros, the checksum is all ones
 
 `include "axis/utility.h"
 
-module udp_checksum
+module ip_checksum
 #(
 	// Must be 2 or 4 curently. Could expand if required.
 	parameter AXIS_BYTES = 2

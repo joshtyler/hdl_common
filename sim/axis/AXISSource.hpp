@@ -97,7 +97,7 @@ private:
             }
 
             tlast = (data[0].size() == 0);
-            if(tlast)
+            if(tlast || tlast.is_null())
             {
                 data.erase(data.begin());
             }
