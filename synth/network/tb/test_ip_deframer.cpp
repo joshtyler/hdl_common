@@ -69,9 +69,6 @@ auto testdeframer(std::vector<vluint8_t> packet, bool recordVcd=false)
     auto data = outAxis.getData();
     auto users = outAxis.getUsers();
 
-    // TODO check that users data is constant for the whole packet
-    // TODO check that length of each user is 1
-
     // Check that we only have one packet out
     assert(users.size() == 1);
     assert(data.size() == 1);
