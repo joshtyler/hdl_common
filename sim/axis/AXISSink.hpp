@@ -70,10 +70,9 @@ public:
                         }
                     }
 
-                    for(auto i=0u; i<tusers.size(); i++)
-                    {
-                        curUsers[i].push_back(tusers[i]);
-                    }
+                    std::array<userT, n_users> user_values;
+                    std::copy(tusers.begin(), tusers.end(), user_values.begin());
+                    curUsers.push_back(user_values);
 
 					if(tlast.is_null() || tlast)
 					{
@@ -103,11 +102,14 @@ private:
 
 	std::vector<std::vector<dataT>> datas_natural_width;
     std::vector<std::vector<uint8_t>> datas;
-    std::vector<std::array<std::vector<userT>, n_users>> users;
+    // Outer dimension is each packet
+    // Inner dimension is each beat
+    // Inner inner dimension is each user
+    std::vector<std::vector<std::array<userT, n_users>>> users;
 
 	std::vector<dataT> cur_data_natural_width;
     std::vector<uint8_t> cur_data;
-    std::array<std::vector<userT>, n_users> curUsers;
+    std::vector<std::array<userT, n_users>> curUsers;
 
 	void resetState(void)
 	{

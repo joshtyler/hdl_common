@@ -72,7 +72,18 @@ auto testdeframer(std::vector<vluint8_t> packet, bool recordVcd=false)
     // TODO check that users data is constant for the whole packet
     // TODO check that length of each user is 1
 
-    return ret_data{ users.at(0).at(0).at(0), users.at(0).at(1).at(0), users.at(0).at(2).at(0), users.at(0).at(3).at(0), data.at(0)};
+    // Check that we only have one packet out
+    assert(users.size() == 1);
+    assert(data.size() == 1);
+
+    // Check all beats are the same for the users (i.e. constant for whole packet)
+    for(const auto& beat : users)
+    {
+        assert(users.front() == beat);
+    }
+
+    auto first_users = users.front().front();
+    return ret_data{ static_cast<uint8_t>(first_users.at(0)), first_users.at(1), first_users.at(2), static_cast<uint16_t>(first_users.at(3)), data.front()};
 }
 
 TEST_CASE("Test deframer with random UDP packet", "[ip_deframer]")
