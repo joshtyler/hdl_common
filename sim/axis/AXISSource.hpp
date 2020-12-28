@@ -20,8 +20,8 @@
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0>class AXISSource : public Peripheral
 {
 public:
-	AXISSource(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, std::vector<std::vector<uint8_t>> vec_)
-		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), inputVec(vec_)
+	AXISSource(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, std::vector<std::vector<uint8_t>> data_)
+		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), inputData(data_)
 	{
         addInput(&sresetn);
 		addInput(&tready);
@@ -29,7 +29,7 @@ public:
 		resetState();
 	};
 	// Returns true if we are done
-	bool done(void) const {return (vec.size() == 0);};
+	bool done(void) const {return (data.size() == 0);};
 
 	void eval(void) override
 	{
@@ -60,12 +60,12 @@ private:
     // The location of each element needs to be fixed in memory since we register it as an input
     std::array<OutputWrapper<userT>, n_users> tusers;
 
-	std::vector<std::vector<uint8_t>> inputVec, vec;
+	std::vector<std::vector<uint8_t>> inputData, data;
 
 	void resetState(void)
 	{
 		// Setup vector
-		vec = inputVec;
+        data = inputData;
 
 		//It is illegal to be valid in reset
 		tvalid = 0;
@@ -78,28 +78,28 @@ private:
         tvalid = 0;
 
         // If we have data to give, present that
-	    if(vec.size())
+	    if(data.size())
         {
 	        // We shouldn't ever have null packets
-	        assert(vec[0].size());
+	        assert(data[0].size());
 
-            int num_bytes = std::min(vec[0].size(), sizeof(dataT));
+            int num_bytes = std::min(data[0].size(), sizeof(dataT));
 
             tvalid = 1;
             tdata = 0;
             tkeep = 0;
             for(int i=0; i<num_bytes; i++)
             {
-                tdata = tdata | (vec[0][0] << i*8);
-                vec[0].erase(vec[0].begin());
+                tdata = tdata | (data[0][0] << i*8);
+                data[0].erase(data[0].begin());
 
                 tkeep = tkeep | (1 << i);
             }
 
-            tlast = (vec[0].size() == 0);
+            tlast = (data[0].size() == 0);
             if(tlast)
             {
-                vec.erase(vec.begin());
+                data.erase(data.begin());
             }
         }
     }

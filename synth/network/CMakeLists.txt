@@ -49,6 +49,7 @@ verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES rmii_to_a
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES udp_header_gen.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES ip_deframer.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES tb/ip_deframer_harness.sv TRACE)
+verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES tb/tcp_deframer_harness.sv TRACE)
 
 set(UDP_CHECKSUM_BYTES_LIST 2 4)
 verilate_multi_bytes(udp_checksum "${UDP_CHECKSUM_BYTES_LIST}" network_verilated VERILATOR_ARGS "-I../" SOURCES udp_checksum.sv TRACE)
