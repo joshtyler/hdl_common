@@ -1,0 +1,184 @@
+// Copyright (C) 2019 Joshua Tyler
+//
+//  This Source Code Form is subject to the terms of the                                                    │
+//  Open Hardware Description License, v. 1.0. If a copy                                                    │
+//  of the OHDL was not distributed with this file, You                                                     │
+//  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
+
+// Receive data over a GMII Interface
+// Present to the user in a different clock domain
+// Strips preamble from input
+
+// At the moment this block assumes that the phy has been correctly configured for, and has negotiated gigabit speeds
+// Could add in the MDIO bus to check/configure this in the future
+
+`include "axis/axis.h"
+`include "axis/utility.h"
+
+module gmii_rx_mac_async
+#(
+	parameter integer AXIS_BYTES = 1
+	parameter integer MTU_SIZE = 1522 // Used to size FIFO
+)
+(
+	input logic eth_clk,
+	input logic eth_sresetn,
+
+	input  logic [7:0] eth_rxd,
+	input  logic       eth_rxdv,
+	input  logic       eth_rxer,
+
+	input logic axis_clk,
+	input logic axis_sresetn,
+
+	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES)
+);
+
+	// Delay data and valid by one cycle
+	// This lets us use the negation of valid as a last signal as a last
+	logic [7:0] rx_data;
+	logic rx_valid;
+	logic rx_error;
+	logic rx_last;
+	always_ff @ (posedge eth_rxclk)
+	begin
+		rx_data  <= eth_rxd;
+		rx_valid <= eth_rxdv;
+		rx_error <= eth_rxer;
+	end
+	assign rx_last = !eth_rxdv;
+
+
+	// Detect and strip the preamble
+	// Pack the remaining data into the width requested by the user
+	// We can't use the axis_width converter here because we need to handle the error signal
+	// But since there is no flow control, packing is quite easy
+	logic [1:0] state;
+	localparam [1:0] SM_WAIT_INVALID = 2'b00;
+	localparam [1:0] SM_PREAMBLE     = 2'b01;
+	localparam [1:0] SM_SFD          = 2'b10;
+	localparam [1:0] SM_OUTPUT       = 2'b11;
+
+	localparam REG_CTR_WIDTH = (AXIS_BYTES == 1)? 1: $clog2(AXIS_BYTES);
+	localparam [REG_CTR_WIDTH-1:0] REG_CTR_MAX;
+	logic [REG_CTR_WIDTH-1:0] ctr;
+
+	`AXIS_INST_NO_USER(axis_fifo, 1);
+	logic axis_fifo_drop;
+	logic axis_fifo_error;
+
+	always @(posedge eth_clk)
+	begin
+		if (eth_sresetn == 0)
+		begin
+			state <= SM_WAIT_INVALID;
+			axis_fifo_drop <= 0;
+			axis_fifo_valid <= 0;
+		end else begin
+			if (axis_fifo_tready && axis_fifo_tvalid)
+			begin
+				// Reset on successful transfer
+				// N.B. May be overridden below
+				axis_fifo_tvalid <= 0;
+			end
+
+			case(state)
+				SM_WAIT_INPUT_INVALID_AND_FIFO_READY:
+				begin
+					// Wait until there is space in the FIFO
+					// and input is invalid (i.e the next valid word will be preamble for a new packet)
+					ctr <= 0;
+					if(!rx_valid)
+					begin
+						state <= SM_PREAMBLE
+					end
+				end
+
+				SM_PREAMBLE:
+				begin
+					if(rx_valid)
+					begin
+						if(rx_data = 8'bAA)
+						begin
+							state <= SM_SFD
+						end else begin
+							// We didn't get what we were expecting, reset
+							state <= SM_WAIT_INVALID;
+						end
+					end
+				end
+
+				SM_SFD:
+				begin
+					if(rx_valid && (rx_data = 8'bAB))
+					begin
+						state <= SM_OUTPUT
+					end else if((!rx_valid) || (rx_data != 8'bAA)) begin
+						// We didn't get what we were expecting, reset
+						state <= SM_WAIT_INVALID;
+					end
+				end
+
+				SM_OUTPUT:
+				begin
+					axis_fifo_tdata[(ctr+1)*8-1 -: 8] <= rx_data;
+					axis_fifo_tvalid <= rx_valid;
+					axis_fifo_tlast  <= rx_last;
+					axis_fifo_error  <= rx_error;
+					if(rx_valid)
+					begin
+						if
+					end else begin
+						// It is the end of a packet, go and wait for the next preamble
+						state <= SM_PREAMBLE;
+					end
+				end
+			endcase
+
+
+		end
+	end
+
+
+
+	logic error_filter_ready;
+
+	// Register the signal for timing
+	// Stuff the drop signal into tuser
+	// On iCE40 it is hard to meet 125MHz!
+	`AXIS_INST(axis_registered, 1);
+	axis_register
+	#(
+		.AXIS_BYTES(1)
+	) in_reg (
+		.clk(eth_clk),
+		.sresetn(eth_sresetn),
+
+		.axis_i_tready(error_filter_ready),
+		.axis_i_tvalid(valid_reg),
+		.axis_i_tlast(!eth_rxdv),
+		.axis_i_tdata(dat_reg),
+		.axis_i_tuser((!error_filter_ready) || error_reg),
+
+		`AXIS_MAP(axis_o, axis_registered)
+	);
+
+	axis_packet_fifo_async
+	#(
+		.AXIS_BYTES(1),
+		.LOG2_DEPTH($clog2(MTU_SIZE))
+	) fifo (
+		.i_clk(eth_clk),
+		.i_sresetn(eth_sresetn),
+
+		.o_clk(axis_clk),
+		.o_sresetn(axis_sresetn),
+
+		`AXIS_MAP_NULL_USER(axis_i, axis_registered)
+		.axis_i_drop(axis_registered_tuser),
+
+		`AXIS_MAP_IGNORE_USER(axis_o, axis_o)
+	);
+
+
+endmodule
