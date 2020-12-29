@@ -25,27 +25,25 @@ module axis_error_filter_async
 );
 
 	`AXIS_INST(axis_i, AXIS_BYTES, AXIS_USER_BITS);
-	logic overflowed;
+	logic overflowed, next_overflowed, overflowed_reg;
 
 	always_ff @(posedge i_clk)
 	begin
 		if(!i_sresetn)
 		begin
-			error_latch <= 0;
+			overflowed_reg <= 0;
 		end else begin
-			if(axis_i_tready && axis_i_tvalid)
+			if(next_overflowed)
 			begin
-				if(axis_i_tlast)
-				begin
-					// Reset the latch on the last beat
-					error_latch <= 0;
-				end else if(axis_i_error) begin
-					// Otherwise latch any errors
-					error_latch <= 1;
-				end
+				overflowed_reg <= 1;
+			end else if(axis_i_tready && i_valid && i_last) begin
+				overflowed_reg <= 0;
 			end
 		end
 	end
+
+	assign next_overflowed = ((!axis_i_tready) && i_valid) ;
+	assign overflowed = next_overflowed || overflowed_reg;
 
 	// Pass signals through, unless we overflow
 	// In this case, discard all of the current packet

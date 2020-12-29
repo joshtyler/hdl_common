@@ -63,24 +63,18 @@ module gmii_rx_mac_async
 	localparam [REG_CTR_WIDTH-1:0] REG_CTR_MAX;
 	logic [REG_CTR_WIDTH-1:0] ctr;
 
-	`AXIS_INST_NO_USER(axis_fifo, 1);
-	logic axis_fifo_drop;
-	logic axis_fifo_error;
+	logic fifo_in_valid;
+	logic fifo_in_last;
+	logic [(8*AXIS_BYTES)-1 : 0] fifo_in_data;
+	logic fifo_in_error;
 
 	always @(posedge eth_clk)
 	begin
 		if (eth_sresetn == 0)
 		begin
 			state <= SM_WAIT_INVALID;
-			axis_fifo_drop <= 0;
-			axis_fifo_valid <= 0;
 		end else begin
-			if (axis_fifo_tready && axis_fifo_tvalid)
-			begin
-				// Reset on successful transfer
-				// N.B. May be overridden below
 				axis_fifo_tvalid <= 0;
-			end
 
 			case(state)
 				SM_WAIT_INPUT_INVALID_AND_FIFO_READY:
@@ -121,49 +115,29 @@ module gmii_rx_mac_async
 
 				SM_OUTPUT:
 				begin
-					axis_fifo_tdata[(ctr+1)*8-1 -: 8] <= rx_data;
-					axis_fifo_tvalid <= rx_valid;
-					axis_fifo_tlast  <= rx_last;
-					axis_fifo_error  <= rx_error;
-					if(rx_valid)
+					fifo_in_last  <= rx_last;
+					fifo_in_data[(ctr+1)*8-1 -: 8]  <= rx_data;
+					fifo_in_error <= rx_error;
+					fifo_in_valid <= rx_last || rx_error || (ctr == REG_CTR_MAX);
+
+					// The (!rx_valid) shouldn't be needed
+					// We have it just in case last was asserted during SM_SFD
+					if(rx_last || (!rx_valid) || rx_error) begin
 					begin
-						if
-					end else begin
 						// It is the end of a packet, go and wait for the next preamble
 						state <= SM_PREAMBLE;
 					end
+
+					if(ctr == REG_CTR_MAX)
+					begin
+						ctr <= 0;
+					end
 				end
 			endcase
-
-
 		end
 	end
 
-
-
-	logic error_filter_ready;
-
-	// Register the signal for timing
-	// Stuff the drop signal into tuser
-	// On iCE40 it is hard to meet 125MHz!
-	`AXIS_INST(axis_registered, 1);
-	axis_register
-	#(
-		.AXIS_BYTES(1)
-	) in_reg (
-		.clk(eth_clk),
-		.sresetn(eth_sresetn),
-
-		.axis_i_tready(error_filter_ready),
-		.axis_i_tvalid(valid_reg),
-		.axis_i_tlast(!eth_rxdv),
-		.axis_i_tdata(dat_reg),
-		.axis_i_tuser((!error_filter_ready) || error_reg),
-
-		`AXIS_MAP(axis_o, axis_registered)
-	);
-
-	axis_packet_fifo_async
+	axis_error_filter_async
 	#(
 		.AXIS_BYTES(1),
 		.LOG2_DEPTH($clog2(MTU_SIZE))
@@ -174,8 +148,11 @@ module gmii_rx_mac_async
 		.o_clk(axis_clk),
 		.o_sresetn(axis_sresetn),
 
-		`AXIS_MAP_NULL_USER(axis_i, axis_registered)
-		.axis_i_drop(axis_registered_tuser),
+		.i_valid(fifo_in_valid),
+		.i_last(fifo_in_last),
+		.i_data(fifo_in_data),
+		.i_user(1'b1),
+		.i_error(fifo_in_error),
 
 		`AXIS_MAP_IGNORE_USER(axis_o, axis_o)
 	);
