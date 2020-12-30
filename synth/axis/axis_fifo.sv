@@ -19,8 +19,8 @@ module axis_fifo
 	`S_AXIS_PORT(axis_i, AXIS_BYTES, AXIS_USER_BITS),
 	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS)
 );
-// Data is tdata+tuser+tlast
-localparam DATA_WIDTH = 8*AXIS_BYTES+AXIS_USER_BITS+1;
+// Data is tdata+tuser+tlast+tkeep
+localparam DATA_WIDTH = 8*AXIS_BYTES+AXIS_USER_BITS+1+AXIS_BYTES;
 
 logic [DATA_WIDTH-1:0] mem [2**LOG2_DEPTH-1:0];
 
@@ -42,7 +42,7 @@ begin
 		// Write if we are able
 		if (axis_i_tready && axis_i_tvalid)
 		begin
-			mem[wr_ptr[LOG2_DEPTH-1:0]] <= {axis_i_tlast, axis_i_tdata, axis_i_tuser};
+			mem[wr_ptr[LOG2_DEPTH-1:0]] <= {axis_i_tlast, axis_i_tdata, axis_i_tuser, axis_i_tkeep};
 			wr_ptr <= wr_ptr + 1;
 		end
 
@@ -56,7 +56,7 @@ begin
 		// And either the output word is invalid, or we are reading in this cycle
 		if ((rd_ptr != wr_ptr) && ((!axis_o_tvalid) || axis_o_tready))
 		begin
-			{axis_o_tlast, axis_o_tdata, axis_o_tuser} <= mem[rd_ptr[LOG2_DEPTH-1:0]];
+			{axis_o_tlast, axis_o_tdata, axis_o_tuser, axis_o_tkeep} <= mem[rd_ptr[LOG2_DEPTH-1:0]];
 			axis_o_tvalid <= 1;
 			rd_ptr <= rd_ptr + 1;
 		end

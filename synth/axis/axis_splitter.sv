@@ -48,11 +48,13 @@ assign axis_i_tready = ctr < CTR_MAX ? axis_o1_tready : axis_o2_tready;
 assign axis_o1_tvalid = ctr < CTR_MAX ? axis_i_tvalid : 0;
 assign axis_o1_tlast  = (ctr == CTR_MAX);
 assign axis_o1_tdata  = axis_i_tdata;
+assign axis_o1_tkeep  = axis_i_tkeep;
 assign axis_o1_tuser  = axis_i_tuser;
 
 assign axis_o2_tvalid = ctr < CTR_MAX ? 0 : axis_i_tvalid;
 assign axis_o2_tlast  = axis_o1_tlast;
 assign axis_o2_tdata  = axis_i_tdata;
+assign axis_o2_tkeep  = axis_i_tkeep;
 assign axis_o2_tuser  = axis_i_tuser;
 
 endmodule

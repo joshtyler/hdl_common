@@ -10,6 +10,7 @@
 output logic                     ``PREFIX``_tready, \
 input logic                      ``PREFIX``_tvalid, \
 input logic                      ``PREFIX``_tlast, \
+input logic [AXIS_BYTES-1:0]     ``PREFIX``_tkeep, \
 input logic [(AXIS_BYTES*8)-1:0] ``PREFIX``_tdata
 
 `define S_AXIS_PORT(PREFIX, AXIS_BYTES, AXIS_USER_BITS) \
@@ -20,6 +21,7 @@ input logic [AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 input logic                       ``PREFIX``_tready, \
 output logic                      ``PREFIX``_tvalid, \
 output logic                      ``PREFIX``_tlast, \
+output logic [AXIS_BYTES-1:0]     ``PREFIX``_tkeep, \
 output logic [(AXIS_BYTES*8)-1:0] ``PREFIX``_tdata
 
 `define M_AXIS_PORT(PREFIX, AXIS_BYTES, AXIS_USER_BITS) \
@@ -31,6 +33,7 @@ output logic  [NUM_STREAMS-1 : 0]            ``PREFIX``_tready, \
 input logic [NUM_STREAMS-1 : 0]              ``PREFIX``_tvalid, \
 input logic [NUM_STREAMS-1 : 0]              ``PREFIX``_tlast,\
 input logic [NUM_STREAMS*(AXIS_BYTES*8)-1:0] ``PREFIX``_tdata, \
+input logic [NUM_STREAMS*AXIS_BYTES-1:0]     ``PREFIX``_tkeep, \
 input logic [NUM_STREAMS*AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 
 `define M_AXIS_MULTI_PORT(PREFIX, NUM_STREAMS, AXIS_BYTES, AXIS_USER_BITS) \
@@ -38,6 +41,7 @@ input logic  [NUM_STREAMS-1 : 0]              ``PREFIX``_tready, \
 output logic [NUM_STREAMS-1 : 0]              ``PREFIX``_tvalid, \
 output logic [NUM_STREAMS-1 : 0]              ``PREFIX``_tlast, \
 output logic [NUM_STREAMS*(AXIS_BYTES*8)-1:0] ``PREFIX``_tdata, \
+output logic [NUM_STREAMS*AXIS_BYTES-1:0]     ``PREFIX``_tkeep, \
 output logic [NUM_STREAMS*AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 
 // Macros to declare an AXI stream instance
@@ -46,6 +50,7 @@ output logic [NUM_STREAMS*AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 logic ``PREFIX``_tready; \
 logic ``PREFIX``_tvalid; \
 logic ``PREFIX``_tlast; \
+logic [AXIS_BYTES-1:0]     ``PREFIX``_tkeep; \
 logic [(AXIS_BYTES*8)-1:0] ``PREFIX``_tdata
 
 `define AXIS_INST(PREFIX, AXIS_BYTES, AXIS_USER_BITS) \
@@ -63,6 +68,7 @@ logic [AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 .``MOD_PREFIX``_tready(``LOCAL_PREFIX``_tready), \
 .``MOD_PREFIX``_tvalid(``LOCAL_PREFIX``_tvalid), \
 .``MOD_PREFIX``_tlast (``LOCAL_PREFIX``_tlast), \
+.``MOD_PREFIX``_tkeep (``LOCAL_PREFIX``_tkeep), \
 .``MOD_PREFIX``_tdata (``LOCAL_PREFIX``_tdata)
 
 `define AXIS_MAP(MOD_PREFIX, LOCAL_PREFIX) \
@@ -81,6 +87,7 @@ logic [AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 .``MOD_PREFIX``_tready({``LOCAL_PREFIX_1``_tready, ``LOCAL_PREFIX_2``_tready}), \
 .``MOD_PREFIX``_tvalid({``LOCAL_PREFIX_1``_tvalid, ``LOCAL_PREFIX_2``_tvalid}), \
 .``MOD_PREFIX``_tlast ({``LOCAL_PREFIX_1``_tlast , ``LOCAL_PREFIX_2``_tlast }), \
+.``MOD_PREFIX``_tkeep ({``LOCAL_PREFIX_1``_tkeep , ``LOCAL_PREFIX_2``_tkeep }), \
 .``MOD_PREFIX``_tdata ({``LOCAL_PREFIX_1``_tdata , ``LOCAL_PREFIX_2``_tdata })
 
 `define AXIS_MAP_2_NULL_USER(MOD_PREFIX, LOCAL_PREFIX_1, LOCAL_PREFIX_2) \
@@ -95,6 +102,7 @@ logic [AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 .``MOD_PREFIX``_tready({``LOCAL_PREFIX_1``_tready, ``LOCAL_PREFIX_2``_tready, ``LOCAL_PREFIX_3``_tready}), \
 .``MOD_PREFIX``_tvalid({``LOCAL_PREFIX_1``_tvalid, ``LOCAL_PREFIX_2``_tvalid, ``LOCAL_PREFIX_3``_tvalid}), \
 .``MOD_PREFIX``_tlast ({``LOCAL_PREFIX_1``_tlast , ``LOCAL_PREFIX_2``_tlast , ``LOCAL_PREFIX_3``_tlast }), \
+.``MOD_PREFIX``_tkeep ({``LOCAL_PREFIX_1``_tkeep , ``LOCAL_PREFIX_2``_tkeep , ``LOCAL_PREFIX_3``_tkeep }), \
 .``MOD_PREFIX``_tdata ({``LOCAL_PREFIX_1``_tdata , ``LOCAL_PREFIX_2``_tdata , ``LOCAL_PREFIX_3``_tdata })
 
 `define AXIS_MAP_3_NULL_USER(MOD_PREFIX, LOCAL_PREFIX_1, LOCAL_PREFIX_2, LOCAL_PREFIX_3) \
@@ -105,6 +113,7 @@ logic [AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 .``MOD_PREFIX``_tready({``LOCAL_PREFIX_1``_tready, ``LOCAL_PREFIX_2``_tready, ``LOCAL_PREFIX_3``_tready, ``LOCAL_PREFIX_4``_tready}), \
 .``MOD_PREFIX``_tvalid({``LOCAL_PREFIX_1``_tvalid, ``LOCAL_PREFIX_2``_tvalid, ``LOCAL_PREFIX_3``_tvalid, ``LOCAL_PREFIX_4``_tvalid}), \
 .``MOD_PREFIX``_tlast ({``LOCAL_PREFIX_1``_tlast , ``LOCAL_PREFIX_2``_tlast , ``LOCAL_PREFIX_3``_tlast , ``LOCAL_PREFIX_4``_tlast }), \
+.``MOD_PREFIX``_tkeep ({``LOCAL_PREFIX_1``_tkeep , ``LOCAL_PREFIX_2``_tkeep , ``LOCAL_PREFIX_3``_tkeep , ``LOCAL_PREFIX_4``_tkeep }), \
 .``MOD_PREFIX``_tdata ({``LOCAL_PREFIX_1``_tdata , ``LOCAL_PREFIX_2``_tdata , ``LOCAL_PREFIX_3``_tdata , ``LOCAL_PREFIX_4``_tdata })
 
 `define AXIS_MAP_4_NULL_USER(MOD_PREFIX, LOCAL_PREFIX_1, LOCAL_PREFIX_2, LOCAL_PREFIX_3, LOCAL_PREFIX_4) \

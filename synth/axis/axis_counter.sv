@@ -21,6 +21,7 @@ module axis_counter
 
 	assign axis_tvalid = 1;
 	assign axis_tlast = 1;
+	assign axis_tkeep = '1;
 
 	always @(posedge clk)
 		if (sresetn == 0)

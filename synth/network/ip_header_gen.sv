@@ -103,6 +103,7 @@ end
 
 assign axis_checksum_i_tvalid = axis_i_tvalid && checksum_ctr <= CTR_MAX;
 assign axis_checksum_i_tlast = (checksum_ctr == CTR_MAX);
+assign axis_checksum_i_tkeep = '1;
 assign axis_checksum_o_tready = (output_ctr == CTR_CHECKSUM_IDX);
 
 
@@ -110,6 +111,7 @@ assign axis_i_tready = axis_o_tready && axis_o_tlast;
 // We know that axis_i_tvalid is true when output_ctr == CTR_CHECKSUM_IDX, so can save some LUTs
 assign axis_o_tvalid = (output_ctr == CTR_CHECKSUM_IDX)? axis_checksum_o_tvalid : axis_i_tvalid;
 assign axis_o_tlast = (output_ctr == CTR_MAX);
+assign axis_o_tkeep = '1;
 
 always_comb
 begin

@@ -17,6 +17,7 @@ module axis_error_filter_async
 
 	input logic i_valid,
 	input logic i_last,
+	input logic [AXIS_BYTES-1:0] i_keep,
 	input logic [AXIS_BYTES*8-1:0] i_data,
 	input logic [AXIS_USER_BITS-1:0] i_user,
 	input logic i_error,
@@ -50,6 +51,7 @@ module axis_error_filter_async
 	logic axis_i_drop;
 	assign axis_i_tvalid = i_valid || overflowed;
 	assign axis_i_tlast  = i_last;
+	assign axis_i_tkeep  = i_keep;
 	assign axis_i_tdata  = i_data;
 	assign axis_i_tuser  = i_user;
 	assign axis_i_drop  = i_error || overflowed;

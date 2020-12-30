@@ -18,6 +18,8 @@
 	// Payload
 	// CRC
 
+`include "axis/axis.h"
+
 module eth_framer
 #(
 	localparam integer PREAMBLE_OCTETS = 7,
@@ -33,72 +35,23 @@ module eth_framer
 	input [(ETHERTYPE_OCTETS*8)-1:0] ethertype, //Ethertype MAC
 
 	// Payload input
-	output      payload_axis_tready,
-	input       payload_axis_tvalid,
-	input       payload_axis_tlast,
-	input [7:0] payload_axis_tdata,
+	`S_AXIS_PORT_NO_USER(payload_axis, 1),
 
 	// Output
-	input out_axis_tready,
-	output out_axis_tvalid,
-	output out_axis_tlast,
-	output [7:0] out_axis_tdata
+	`M_AXIS_PORT_NO_USER(out_axis, 1)
 );
 
-logic       preamble_axis_tready;
-logic       preamble_axis_tvalid;
-logic       preamble_axis_tlast;
-logic [7:0] preamble_axis_tdata;
-
-logic       sof_axis_tready;
-logic       sof_axis_tvalid;
-logic       sof_axis_tlast;
-logic [7:0] sof_axis_tdata;
-
-logic       dst_mac_axis_tready;
-logic       dst_mac_axis_tvalid;
-logic       dst_mac_axis_tlast;
-logic [7:0] dst_mac_axis_tdata;
-
-logic       src_mac_axis_tready;
-logic       src_mac_axis_tvalid;
-logic       src_mac_axis_tlast;
-logic [7:0] src_mac_axis_tdata;
-
-logic       ethertype_axis_tready;
-logic       ethertype_axis_tvalid;
-logic       ethertype_axis_tlast;
-logic [7:0] ethertype_axis_tdata;
-
-logic       joined_axis_tready;
-logic       joined_axis_tvalid;
-logic       joined_axis_tlast;
-logic [7:0] joined_axis_tdata;
-
-logic       crc_in_axis_tready;
-logic       crc_in_axis_tvalid;
-logic       crc_in_axis_tlast;
-logic [7:0] crc_in_axis_tdata;
-
-logic       out_joiner_in_axis_tready;
-logic       out_joiner_in_axis_tvalid;
-logic       out_joiner_in_axis_tlast;
-logic [7:0] out_joiner_in_axis_tdata;
-
-logic        crc_out_axis_tready;
-logic        crc_out_axis_tvalid;
-logic        crc_out_axis_tlast;
-logic [31:0] crc_out_axis_tdata;
-
-logic       crc_unpacked_axis_tready;
-logic       crc_unpacked_axis_tvalid;
-logic       crc_unpacked_axis_tlast;
-logic [7:0] crc_unpacked_axis_tdata;
-
-logic       payload_axis_padded_tready;
-logic       payload_axis_padded_tvalid;
-logic       payload_axis_padded_tlast;
-logic [7:0] payload_axis_padded_tdata;
+`AXIS_INST_NO_USER(preamble_axis, 1);
+`AXIS_INST_NO_USER(sof_axis, 1);
+`AXIS_INST_NO_USER(dst_mac_axis, 1);
+`AXIS_INST_NO_USER(src_mac_axis, 1);
+`AXIS_INST_NO_USER(ethertype_axis, 1);
+`AXIS_INST_NO_USER(joined_axis, 1);
+`AXIS_INST_NO_USER(crc_in_axis, 1);
+`AXIS_INST_NO_USER(out_joiner_in_axis, 1);
+`AXIS_INST_NO_USER(crc_out_axis, 4);
+`AXIS_INST_NO_USER(crc_unpacked_axis, 1);
+`AXIS_INST_NO_USER(payload_axis_padded, 1);
 
 // Preamble Stream
 vector_to_axis
@@ -112,10 +65,7 @@ vector_to_axis
 
 		.vec({PREAMBLE_OCTETS{8'h55}}),
 
-		.axis_tready(preamble_axis_tready),
-		.axis_tvalid(preamble_axis_tvalid),
-		.axis_tlast (preamble_axis_tlast),
-		.axis_tdata (preamble_axis_tdata)
+		`AXIS_MAP_NO_USER(axis, preamble_axis)
 	);
 
 // SoF Stream
@@ -130,10 +80,7 @@ vector_to_axis
 
 		.vec(8'hD5),
 
-		.axis_tready(sof_axis_tready),
-		.axis_tvalid(sof_axis_tvalid),
-		.axis_tlast (sof_axis_tlast),
-		.axis_tdata (sof_axis_tdata)
+		`AXIS_MAP_NO_USER(axis, sof_axis)
 	);
 
 // DEST MAC Stream
@@ -148,10 +95,7 @@ vector_to_axis
 
 		.vec(dst_mac),
 
-		.axis_tready(dst_mac_axis_tready),
-		.axis_tvalid(dst_mac_axis_tvalid),
-		.axis_tlast (dst_mac_axis_tlast),
-		.axis_tdata (dst_mac_axis_tdata)
+		`AXIS_MAP_NO_USER(axis, dst_mac_axis)
 	);
 
 // SRC MAC Stream
@@ -166,10 +110,7 @@ vector_to_axis
 
 		.vec(src_mac),
 
-		.axis_tready(src_mac_axis_tready),
-		.axis_tvalid(src_mac_axis_tvalid),
-		.axis_tlast (src_mac_axis_tlast),
-		.axis_tdata (src_mac_axis_tdata)
+		`AXIS_MAP_NO_USER(axis, src_mac_axis)
 	);
 
 //Ethertype stream
@@ -184,10 +125,7 @@ vector_to_axis
 
 		.vec(ethertype),
 
-		.axis_tready(ethertype_axis_tready),
-		.axis_tvalid(ethertype_axis_tvalid),
-		.axis_tlast (ethertype_axis_tlast),
-		.axis_tdata (ethertype_axis_tdata)
+		`AXIS_MAP_NO_USER(axis, ethertype_axis)
 	);
 
 // Pad input to minimum size with zeros
@@ -200,15 +138,9 @@ axis_padder
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.axis_i_tready(payload_axis_tready),
-	.axis_i_tvalid(payload_axis_tvalid),
-	.axis_i_tlast (payload_axis_tlast),
-	.axis_i_tdata (payload_axis_tdata),
+	`AXIS_MAP_NO_USER(axis_i, payload_axis),
 
-	.axis_o_tready(payload_axis_padded_tready),
-	.axis_o_tvalid(payload_axis_padded_tvalid),
-	.axis_o_tlast (payload_axis_padded_tlast),
-	.axis_o_tdata (payload_axis_padded_tdata)
+	`AXIS_MAP_NO_USER(axis_o, payload_axis_padded)
 );
 
 // Join streams together
@@ -220,29 +152,9 @@ axis_joiner
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.axis_i_tready({  payload_axis_padded_tready,
-	                ethertype_axis_tready,
-	                  src_mac_axis_tready,
-	                  dst_mac_axis_tready}),
-	.axis_i_tvalid({  payload_axis_padded_tvalid,
-	                ethertype_axis_tvalid,
-	                  src_mac_axis_tvalid,
-	                  dst_mac_axis_tvalid}),
-	.axis_i_tlast ({  payload_axis_padded_tlast,
-                  ethertype_axis_tlast,
-                    src_mac_axis_tlast,
-                    dst_mac_axis_tlast}),
-	.axis_i_tdata ({  payload_axis_padded_tdata,
-                  ethertype_axis_tdata,
-                    src_mac_axis_tdata,
-                    dst_mac_axis_tdata}),
-	.axis_i_tuser(4'b1),
+	`AXIS_MAP_4_NULL_USER(axis_i, payload_axis_padded, ethertype_axis, src_mac_axis, dst_mac_axis),
 
-	.axis_o_tready(joined_axis_tready),
-	.axis_o_tvalid(joined_axis_tvalid),
-	.axis_o_tlast (joined_axis_tlast),
-	.axis_o_tdata (joined_axis_tdata),
-	.axis_o_tuser()
+	`AXIS_MAP_IGNORE_USER(axis_o, joined_axis)
 );
 
 // Distribute framed data top joiner and CRC
@@ -254,21 +166,9 @@ axis_broadcaster
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.axis_i_tready(joined_axis_tready),
-	.axis_i_tvalid(joined_axis_tvalid),
-	.axis_i_tlast (joined_axis_tlast),
-	.axis_i_tuser (1'b0),
-	.axis_i_tdata (joined_axis_tdata),
+	`AXIS_MAP_NULL_USER(axis_i, joined_axis),
 
-	.axis_o_tready({ crc_in_axis_tready,
-	                 out_joiner_in_axis_tready}),
-	.axis_o_tvalid({ crc_in_axis_tvalid,
-	                 out_joiner_in_axis_tvalid}),
-	.axis_o_tlast ({ crc_in_axis_tlast,
-                   out_joiner_in_axis_tlast}),
-    .axis_o_tuser(),
-	.axis_o_tdata ({ crc_in_axis_tdata,
-                   out_joiner_in_axis_tdata})
+	`AXIS_MAP_2_IGNORE_USER(axis_o, crc_in_axis, out_joiner_in_axis)
 );
 
 // CRC calculation
@@ -276,15 +176,8 @@ eth_crc crc_gen (
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.axis_i_tready(crc_in_axis_tready),
-	.axis_i_tvalid(crc_in_axis_tvalid),
-	.axis_i_tlast (crc_in_axis_tlast),
-	.axis_i_tdata (crc_in_axis_tdata),
-
-	.axis_o_tready(crc_out_axis_tready),
-	.axis_o_tvalid(crc_out_axis_tvalid),
-	.axis_o_tlast (crc_out_axis_tlast),
-	.axis_o_tdata (crc_out_axis_tdata)
+	`AXIS_MAP_NO_USER(axis_i, crc_in_axis),
+	`AXIS_MAP_NO_USER(axis_o, crc_out_axis)
 );
 
 // Unpack crc
@@ -296,15 +189,8 @@ axis_width_converter
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.axis_i_tready(crc_out_axis_tready),
-	.axis_i_tvalid(crc_out_axis_tvalid),
-	.axis_i_tlast (crc_out_axis_tlast),
-	.axis_i_tdata (crc_out_axis_tdata),
-
-	.axis_o_tready(crc_unpacked_axis_tready),
-	.axis_o_tvalid(crc_unpacked_axis_tvalid),
-	.axis_o_tlast (crc_unpacked_axis_tlast),
-	.axis_o_tdata (crc_unpacked_axis_tdata)
+	`AXIS_MAP_NO_USER(axis_i, crc_out_axis),
+	`AXIS_MAP_NO_USER(axis_o, crc_unpacked_axis)
 );
 
 // Final output
@@ -316,29 +202,8 @@ axis_joiner
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.axis_i_tready({ crc_unpacked_axis_tready,
-	                 out_joiner_in_axis_tready,
-                   sof_axis_tready,
-                   preamble_axis_tready}),
-	.axis_i_tvalid({ crc_unpacked_axis_tvalid,
-	                 out_joiner_in_axis_tvalid,
-                   sof_axis_tvalid,
-                   preamble_axis_tvalid}),
-	.axis_i_tlast ({ crc_unpacked_axis_tlast,
-                   out_joiner_in_axis_tlast,
-                   sof_axis_tlast,
-                   preamble_axis_tlast}),
-	.axis_i_tdata ({ crc_unpacked_axis_tdata,
-                   out_joiner_in_axis_tdata,
-                   sof_axis_tdata,
-                   preamble_axis_tdata}),
-	.axis_i_tuser(4'b1),
-
-	.axis_o_tready(out_axis_tready),
-	.axis_o_tvalid(out_axis_tvalid),
-	.axis_o_tlast (out_axis_tlast),
-	.axis_o_tdata (out_axis_tdata),
-	.axis_o_tuser()
+	`AXIS_MAP_4_NULL_USER(axis_i, crc_unpacked_axis, out_joiner_in_axis, sof_axis, preamble_axis),
+	`AXIS_MAP_IGNORE_USER(axis_o, out_axis)
 );
 
 endmodule

@@ -32,11 +32,12 @@ namespace {
 
         ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
-        AXISSource<vluint32_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t>
+        AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
                 {
                         .tready = &uut.uut->axis_i_tready,
                         .tvalid = &uut.uut->axis_i_tvalid,
                         .tlast = &uut.uut->axis_i_tlast,
+                        .tkeep = &uut.uut->axis_i_tkeep,
                         .tdata = &uut.uut->axis_i_tdata
                 }, {packet});
 
@@ -46,6 +47,7 @@ namespace {
                                                                                .tready = &uut.uut->axis_o_tready,
                                                                                .tvalid = &uut.uut->axis_o_tvalid,
                                                                                .tlast = &uut.uut->axis_o_tlast,
+                                                                               .tkeep = &uut.uut->axis_o_tkeep,
                                                                                .tdata = &uut.uut->axis_o_tdata,
                                                                                .tusers = {&uut.uut->axis_o_protocol,
                                                                                           &uut.uut->axis_o_src_ip,
@@ -100,10 +102,6 @@ namespace {
                 {0xDC, 0x9B, 0x08, 0x43, 0x00, 0x0d, 0x81, 0xb7, 0x48, 0x65, 0x6c, 0x6c, 0x6f});
         REQUIRE(result.payload_length == expected_data.size()); // Payload + UDP header
 
-        // Pad because tkeep is not yet supported...
-        expected_data.push_back(0);
-        expected_data.push_back(0);
-        expected_data.push_back(0);
         REQUIRE(result.payload == expected_data);
     }
 

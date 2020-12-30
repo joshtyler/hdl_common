@@ -57,6 +57,7 @@ endgenerate
 assign axis_i_tready = pass? axis_o_tready : 0;
 assign axis_o_tvalid = pass? axis_i_tvalid : 0;
 assign axis_o_tlast  = axis_i_tlast;
+assign axis_o_tkeep  = axis_i_tkeep;
 assign axis_o_tdata  = axis_i_tdata;
 assign axis_o_tuser  = axis_i_tuser;
 endmodule

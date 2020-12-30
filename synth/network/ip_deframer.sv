@@ -65,6 +65,7 @@ assign header_finished = (ihl_ctr > ihl);
 assign axis_i_tready  = header_finished? axis_o_untrimmed_tready : 1;
 assign axis_o_untrimmed_tvalid = header_finished? axis_i_tvalid  : 0;
 assign axis_o_untrimmed_tlast  = axis_i_tlast;
+assign axis_o_untrimmed_tkeep  = axis_i_tkeep;
 assign axis_o_untrimmed_tdata  = axis_i_tdata;
 
 axis_trimmer

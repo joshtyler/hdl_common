@@ -93,13 +93,13 @@ template <class Verilated> auto testIpChecksum(std::vector<std::vector<uint8_t>>
 {
     typedef decltype(Verilated::axis_i_tdata) dataInT;
 
-	VerilatedModel<Verilated> uut("udp.vcd", record_vcd);
+	VerilatedModel<Verilated> uut("checksum.vcd", record_vcd);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
-	AXISSource<dataInT> inAxis(&clk, &uut.uut->sresetn, AxisSignals<dataInT>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tdata = &uut.uut->axis_i_tdata}, inData);
+	AXISSource<dataInT, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<dataInT, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, inData);
 
-	AXISSink<vluint16_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tdata = &uut.uut->axis_o_csum});
+	AXISSink<vluint16_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tdata = &uut.uut->axis_o_csum});
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);
 
@@ -138,7 +138,7 @@ template <class T> std::vector<std::vector<uint8_t>> convert_to_byte_vector_vect
     return ret;
 }
 
-template <class Verilated> void testChecksum(std::vector<std::vector<vluint16_t>> in)
+template <class Verilated> void testChecksum(std::vector<std::vector<vluint16_t>> in, bool record=false)
 {
 	// UDP Checksum is same algorithm as IP checksum
 	std::vector<std::vector<vluint16_t>> outData;
@@ -147,7 +147,7 @@ template <class Verilated> void testChecksum(std::vector<std::vector<vluint16_t>
 		outData.push_back({ip_compute_csum((unsigned char *)in[i].data(),in[i].size()*sizeof(in[i][0]))});
 	}
 
-	auto result = testIpChecksum<Verilated>(convert_to_byte_vector_vector(in));
+	auto result = testIpChecksum<Verilated>(convert_to_byte_vector_vector(in), record);
 	REQUIRE( result == convert_to_byte_vector_vector(outData));
 }
 
@@ -160,7 +160,7 @@ TEMPLATE_TEST_CASE("ip_checksum: Test correct values", "[ip_checksum]", IP_CHECK
 
     SECTION("Incrementing")
     {
-        testChecksum<TestType>({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}});
+        testChecksum<TestType>({{0x0,0x1,0x2,0x3},{0x0,0x1,0x2,0x3}}, true);
     }
 
     SECTION("Known result")

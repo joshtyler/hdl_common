@@ -6,6 +6,8 @@
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
 // Create a UDP header
+`include "axis/axis.h"
+
 module udp_header_gen
 #(
 	localparam integer PORT_OCTETS = 2,
@@ -22,36 +24,16 @@ module udp_header_gen
 
 	// The length input has an AXI stream interface
 	// This allows it to easily be calculated and passed to the block on the fly
-	output       payload_length_axis_tready,
-	input        payload_length_axis_tvalid,
-	input        payload_length_axis_tlast,
-	input [15:0] payload_length_axis_tdata,
+	`S_AXIS_PORT_NO_USER(payload_length_axis, 2),
 
-	input        axis_o_tready,
-	output       axis_o_tvalid,
-	output       axis_o_tlast,
-	output [7:0] axis_o_tdata
+	`M_AXIS_PORT_NO_USER(axis_o, 1)
 );
 
-logic       src_port_axis_tready;
-logic       src_port_axis_tvalid;
-logic       src_port_axis_tlast;
-logic [7:0] src_port_axis_tdata;
+`AXIS_INST_NO_USER(src_port_axis, 1);
+`AXIS_INST_NO_USER(dst_port_axis, 1);
+`AXIS_INST_NO_USER(len_byte_wide_axis, 1);
+`AXIS_INST_NO_USER(checksum_axis, 1);
 
-logic       dst_port_axis_tready;
-logic       dst_port_axis_tvalid;
-logic       dst_port_axis_tlast;
-logic [7:0] dst_port_axis_tdata;
-
-logic       len_byte_wide_axis_tready;
-logic       len_byte_wide_axis_tvalid;
-logic       len_byte_wide_axis_tlast;
-logic [7:0] len_byte_wide_axis_tdata;
-
-logic       checksum_axis_tready;
-logic       checksum_axis_tvalid;
-logic       checksum_axis_tlast;
-logic [7:0] checksum_axis_tdata;
 
 vector_to_axis
 #(
@@ -64,10 +46,7 @@ vector_to_axis
 
 	.vec(src_port),
 
-	.axis_tready(src_port_axis_tready),
-	.axis_tvalid(src_port_axis_tvalid),
-	.axis_tlast (src_port_axis_tlast),
-	.axis_tdata (src_port_axis_tdata)
+	`AXIS_MAP_NO_USER(axis, src_port_axis)
 );
 
 vector_to_axis
@@ -81,10 +60,7 @@ vector_to_axis
 
 	.vec(dest_port),
 
-	.axis_tready(dst_port_axis_tready),
-	.axis_tvalid(dst_port_axis_tvalid),
-	.axis_tlast (dst_port_axis_tlast),
-	.axis_tdata (dst_port_axis_tdata)
+	`AXIS_MAP_NO_USER(axis, dst_port_axis)
 );
 
 // We don't actually implement checksum - it is optional for ipv4
@@ -99,10 +75,7 @@ vector_to_axis
 
 	.vec(16'h0000),
 
-	.axis_tready(checksum_axis_tready),
-	.axis_tvalid(checksum_axis_tvalid),
-	.axis_tlast (checksum_axis_tlast),
-	.axis_tdata (checksum_axis_tdata)
+	`AXIS_MAP_NO_USER(axis, checksum_axis)
 );
 
 // Generate length axis. This includes the header, so we need to add that on to the payload
@@ -120,12 +93,10 @@ axis_width_converter
 	.axis_i_tready(payload_length_axis_tready),
 	.axis_i_tvalid(payload_length_axis_tvalid),
 	.axis_i_tlast (payload_length_axis_tlast),
+	.axis_i_tkeep (payload_length_axis_tkeep),
 	.axis_i_tdata (payload_length_axis_tdata + UDP_HEADER_LEN),
 
-	.axis_o_tready(len_byte_wide_axis_tready),
-	.axis_o_tvalid(len_byte_wide_axis_tvalid),
-	.axis_o_tlast (len_byte_wide_axis_tlast),
-	.axis_o_tdata (len_byte_wide_axis_tdata)
+	`AXIS_MAP_NO_USER(axis_o, len_byte_wide_axis)
 );
 
 axis_joiner
@@ -136,32 +107,9 @@ axis_joiner
 	.clk(clk),
 	.sresetn(sresetn),
 
-	.axis_i_tready({      checksum_axis_tready,
-	                 len_byte_wide_axis_tready,
-	                      dst_port_axis_tready,
-	                      src_port_axis_tready}),
+	`AXIS_MAP_4_NULL_USER(axis_i, checksum_axis, len_byte_wide_axis, dst_port_axis, src_port_axis),
 
-	.axis_i_tvalid({      checksum_axis_tvalid,
-	                 len_byte_wide_axis_tvalid,
-	                      dst_port_axis_tvalid,
-	                      src_port_axis_tvalid}),
-
-	.axis_i_tlast({       checksum_axis_tlast,
-	                 len_byte_wide_axis_tlast,
-	                      dst_port_axis_tlast,
-	                      src_port_axis_tlast}),
-
-	.axis_i_tdata({      checksum_axis_tdata,
-                    len_byte_wide_axis_tdata,
-                         dst_port_axis_tdata,
-                         src_port_axis_tdata}),
-	.axis_i_tuser(4'b1),
-
-	.axis_o_tready(axis_o_tready),
-	.axis_o_tvalid(axis_o_tvalid),
-	.axis_o_tlast (axis_o_tlast),
-	.axis_o_tdata (axis_o_tdata),
-	.axis_o_tuser()
+	`AXIS_MAP_IGNORE_USER(axis_o, axis_o)
 );
 
 endmodule

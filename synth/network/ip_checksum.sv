@@ -23,6 +23,7 @@ module ip_checksum
 	output logic        axis_i_tready,
 	input  logic        axis_i_tvalid,
 	input  logic        axis_i_tlast,
+	input  logic [AXIS_BYTES-1:0] axis_i_tkeep, // Assumed to be packed
 	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
 
 	// Output
@@ -52,7 +53,9 @@ begin
 			if(axis_i_tready && axis_i_tvalid)
 			begin
 				// Create 16 bit sum. Add on overflow bit from prevoius calculation
-				acc <= axis_i_tdata + acc[15:0] + {15'b0, acc[16]};
+				/* verilator lint_off WIDTH */ // TEMPORARY. Seems to be verilator bug
+				acc <= (axis_i_tdata & {{8{axis_i_tkeep[1]}}, {8{axis_i_tkeep[0]}}}) + acc[15:0] + {15'b0, acc[16]};
+				/* verilator lint_on WIDTH */
 
 				// If tlast was asserted, result will be valid on the next clock cycle
 				if (axis_i_tlast) begin
@@ -82,8 +85,10 @@ end else if (AXIS_BYTES == 4) begin
 			if(axis_i_tready && axis_i_tvalid)
 			begin
 				// Add sum for both halves of the data separately
-				acc   <= axis_i_tdata[15:0]  + acc[15:0]   + {15'b0,   acc[16]};
-				acc_h <= axis_i_tdata[31:16] + acc_h[15:0] + {15'b0, acc_h[16]};
+				/* verilator lint_off WIDTH */ // TEMPORARY. Seems to be verilator bug
+				acc   <= (axis_i_tdata[15:0] & {{8{axis_i_tkeep[1]}}, {8{axis_i_tkeep[0]}}})  + acc[15:0]   + {15'b0,   acc[16]};
+				acc_h <= (axis_i_tdata[31:16] & {{8{axis_i_tkeep[3]}}, {8{axis_i_tkeep[2]}}}) + acc_h[15:0] + {15'b0, acc_h[16]};
+				/* verilator lint_on WIDTH */
 
 				// If tlast was asserted, begin output process
 				if (axis_i_tlast) begin
