@@ -15,10 +15,10 @@ module axis_error_filter_async
 	input o_clk,
 	input o_sresetn,
 
-	input logic i_valid;
-	input logic i_last;
-	input logic [AXIS_BYTES*8-1:0] i_data;
-	input logic [AXIS_USER_BITS-1:0] i_user;
+	input logic i_valid,
+	input logic i_last,
+	input logic [AXIS_BYTES*8-1:0] i_data,
+	input logic [AXIS_USER_BITS-1:0] i_user,
 	input logic i_error,
 
 	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS)
@@ -47,12 +47,12 @@ module axis_error_filter_async
 
 	// Pass signals through, unless we overflow
 	// In this case, discard all of the current packet
-	logic axis_i_tdrop;
-	assign axis_i_tvalid = i_tvalid || overflowed;
+	logic axis_i_drop;
+	assign axis_i_tvalid = i_valid || overflowed;
 	assign axis_i_tlast  = i_last;
 	assign axis_i_tdata  = i_data;
 	assign axis_i_tuser  = i_user;
-	assign axis_i_tdrop  = i_error || overflowed;
+	assign axis_i_drop  = i_error || overflowed;
 
 	axis_packet_fifo_async
 	#(

@@ -77,10 +77,9 @@ module gmii_rx_mac_async
 				axis_fifo_tvalid <= 0;
 
 			case(state)
-				SM_WAIT_INPUT_INVALID_AND_FIFO_READY:
+				// Wait until input is invalid (i.e the next valid word will be preamble for a new packet)
+				SM_WAIT_INVALID:
 				begin
-					// Wait until there is space in the FIFO
-					// and input is invalid (i.e the next valid word will be preamble for a new packet)
 					ctr <= 0;
 					if(!rx_valid)
 					begin
@@ -88,6 +87,7 @@ module gmii_rx_mac_async
 					end
 				end
 
+				// Waits for a packet to begin, and enforces that the first word is preamble
 				SM_PREAMBLE:
 				begin
 					if(rx_valid)
@@ -102,6 +102,8 @@ module gmii_rx_mac_async
 					end
 				end
 
+				// Enforces that every beat is valid and is preamble
+				// Waits for the start of frame delimiter
 				SM_SFD:
 				begin
 					if(rx_valid && (rx_data = 8'bAB))
@@ -113,6 +115,7 @@ module gmii_rx_mac_async
 					end
 				end
 
+				// Outputs data (packed into the user requested size)
 				SM_OUTPUT:
 				begin
 					fifo_in_last  <= rx_last;
@@ -136,6 +139,8 @@ module gmii_rx_mac_async
 			endcase
 		end
 	end
+
+	// TODO: Check CRC
 
 	axis_error_filter_async
 	#(
