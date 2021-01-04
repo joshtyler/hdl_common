@@ -17,11 +17,16 @@
 #include "../verilator/Peripheral.hpp"
 #include <vector>
 
+struct AXISSourceConfig
+{
+    bool packed = false;
+};
+
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0>class AXISSource : public Peripheral
 {
 public:
-	AXISSource(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, std::vector<std::vector<uint8_t>> data_)
-		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), inputData(data_)
+	AXISSource(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, std::vector<std::vector<uint8_t>> data_, AXISSourceConfig _config=AXISSourceConfig{})
+		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), output_packed(_config.packed), inputData(data_)
 	{
         addInput(&sresetn);
 		addInput(&tready);
@@ -56,6 +61,10 @@ private:
     OutputWrapper<keepT> tkeep;
     OutputWrapper<dataT> tdata;
 
+    bool output_packed;
+
+private:
+
     // Do not be tempted to make this a vector
     // The location of each element needs to be fixed in memory since we register it as an input
     std::array<OutputWrapper<userT>, n_users> tusers;
@@ -83,17 +92,20 @@ private:
 	        // We shouldn't ever have null packets
 	        assert(data[0].size());
 
-            int num_bytes = std::min(data[0].size(), sizeof(dataT));
+            int max_num_bytes = std::min(data[0].size(), sizeof(dataT));
 
             tvalid = 1;
             tdata = 0;
             tkeep = 0;
-            for(int i=0; i<num_bytes; i++)
+            for(int i=0; i<max_num_bytes; i++)
             {
-                tdata = tdata | (data[0][0] << i*8);
-                data[0].erase(data[0].begin());
 
-                tkeep = tkeep | (1 << i);
+                if(output_packed || (rand() > (RAND_MAX / 2)))
+                {
+                    tdata = tdata | (data[0][0] << i * 8);
+                    data[0].erase(data[0].begin());
+                    tkeep = tkeep | (1 << i);
+                }
             }
 
             tlast = (data[0].size() == 0);

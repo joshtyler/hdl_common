@@ -57,6 +57,16 @@ logic [(AXIS_BYTES*8)-1:0] ``PREFIX``_tdata
 `AXIS_INST_NO_USER(PREFIX, AXIS_BYTES); \
 logic [AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 
+`define AXIS_MULTI_INST_NO_USER(PREFIX, NUM_STREAMS, AXIS_BYTES) \
+logic [NUM_STREAMS-1 : 0]              ``PREFIX``_tready; \
+logic [NUM_STREAMS-1 : 0]              ``PREFIX``_tvalid; \
+logic [NUM_STREAMS-1 : 0]              ``PREFIX``_tlast; \
+logic [NUM_STREAMS*(AXIS_BYTES*8)-1:0] ``PREFIX``_tdata; \
+logic [NUM_STREAMS*AXIS_BYTES-1:0]     ``PREFIX``_tkeep
+
+`define AXIS_MULTI_INST(PREFIX, NUM_STREAMS, AXIS_BYTES, AXIS_USER_BITS) \
+`AXIS_MULTI_INST_NO_USER(PREFIX, NUM_STREAMS, AXIS_BYTES); \
+logic [NUM_STREAMS*AXIS_USER_BITS-1:0] ``PREFIX``_tuser
 
 // Macros which expand to port maps:
 	// Single stream or packed

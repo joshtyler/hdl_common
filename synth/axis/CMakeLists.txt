@@ -18,6 +18,7 @@ verilate(axis_verilated VERILATOR_ARGS "-I../" SOURCES axis_width_converter.sv P
 verilate(axis_verilated VERILATOR_ARGS "-I../" SOURCES axis_width_converter.sv PREFIX Vaxis_width_converter_2i_1o TRACE VERILATOR_ARGS "-GAXIS_I_BYTES=2" "-GAXIS_O_BYTES=1")
 verilate(axis_verilated VERILATOR_ARGS "-I../" SOURCES rom_to_axis.sv  TRACE)
 verilate(axis_verilated VERILATOR_ARGS "-I../" SOURCES vector_to_axis.sv TRACE)
+verilate(axis_verilated VERILATOR_ARGS "-I../" SOURCES axis_packer.sv TRACE)
 
 verilate(axis_verilated VERILATOR_ARGS "-I../" SOURCES tb/axis_broadcaster_harness.sv TRACE)
 verilate(axis_verilated VERILATOR_ARGS "-I../" SOURCES tb/axis_round_robin_harness.sv TRACE)
