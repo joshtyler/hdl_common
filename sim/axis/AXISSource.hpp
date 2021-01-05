@@ -19,7 +19,7 @@
 
 struct AXISSourceConfig
 {
-    bool packed = false;
+    bool packed = true;
 };
 
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0>class AXISSource : public Peripheral

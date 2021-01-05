@@ -39,7 +39,8 @@ for(i=0; i< NUM_STREAMS; i++)
 begin
 	axis_register
 	#(
-		.AXIS_BYTES(AXIS_BYTES)
+		.AXIS_BYTES(AXIS_BYTES),
+		.AXIS_USER_BITS(AXIS_USER_BITS)
 	) register (
 		.clk(clk),
 		.sresetn(sresetn),

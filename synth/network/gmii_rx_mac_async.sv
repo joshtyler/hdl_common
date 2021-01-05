@@ -66,6 +66,7 @@ module gmii_rx_mac_async
 	logic fifo_in_valid;
 	logic fifo_in_last;
 	logic [(8*AXIS_BYTES)-1 : 0] fifo_in_data;
+	logic [AXIS_BYTES-1 : 0] fifo_in_keep;
 	logic fifo_in_error;
 
 	always @(posedge eth_clk)
@@ -123,6 +124,13 @@ module gmii_rx_mac_async
 					fifo_in_error <= rx_error;
 					fifo_in_valid <= rx_last || rx_error || (ctr == REG_CTR_MAX);
 
+					// On a new word, clear out the whole keep, otherwise just set the appropriate bit
+					if ctr == 0 begin
+						fifo_in_keep <= 1;
+					end else begin
+						fifo_in_keep[ctr] <= 1'b1;
+					end
+
 					// The (!rx_valid) shouldn't be needed
 					// We have it just in case last was asserted during SM_SFD
 					if(rx_last || (!rx_valid) || rx_error) begin
@@ -155,6 +163,7 @@ module gmii_rx_mac_async
 
 		.i_valid(fifo_in_valid),
 		.i_last(fifo_in_last),
+		.i_keep(fifo_in_keep),
 		.i_data(fifo_in_data),
 		.i_user(1'b1),
 		.i_error(fifo_in_error),

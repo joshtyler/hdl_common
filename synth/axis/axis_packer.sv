@@ -18,7 +18,7 @@
 
 module axis_packer
 #(
-	parameter AXIS_BYTES = 4 // Doesn't really make sense to pack one...
+	parameter AXIS_BYTES = 4 
 ) (
 	input clk,
 	input sresetn,

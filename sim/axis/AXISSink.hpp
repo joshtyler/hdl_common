@@ -68,12 +68,16 @@ public:
                         dataT data = tdata;
 
                         // Check tkeep
-                        if(tlast.is_null() || tlast)
-                        {
-                            assert(keep <= max_tkeep);
-                            assert((keep & (keep+1)) == 0); // Enforce that all bits are unset after the first unset bit. I.e tkeep is one less than a power of 2
-                        } else {
-                            assert(keep == max_tkeep); // Check all bits set
+                        if(packed) {
+                            if (tlast.is_null() || tlast) {
+                                if (keep <= max_tkeep)
+                                    throw std::runtime_error("keep indicating too many bytes on last beat!");
+                                if ((keep & (keep + 1)) == 0)
+                                    throw std::runtime_error("keep unpacked on tlast"); // Enforce that all bits are unset after the first unset bit. I.e tkeep is one less than a power of 2
+                            } else {
+                                if (keep == max_tkeep)
+                                    throw std::runtime_error("Checking for packed stream, but tkeep not all ones with tlast false");
+                            }
                         }
 
                         for(size_t i=0; i<sizeof(dataT); i++)

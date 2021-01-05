@@ -24,7 +24,7 @@ std::vector<std::vector<vluint8_t>> testPacker(std::vector<std::vector<vluint8_t
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
     AXISSinkConfig sinkConfig;
-    sinkConfig.packed = true;
+    sinkConfig.packed = false;
 
 	AXISSink<vluint32_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, sinkConfig);
 
