@@ -15,6 +15,7 @@
 // This is provided by the MAC
 
 `include "axis/axis.h"
+`include "utility.h"
 
 module eth_framer
 #(
@@ -30,8 +31,12 @@ module eth_framer
 	input logic [(2*8)-1:0] axis_i_ethertype,
 
 	// Unpacked if AXIS_BYTES
-	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES),
+	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES)
 );
+
+`BYTE_SWAP_FUNCTION(byte_swap_2, 2);
+`BYTE_SWAP_FUNCTION(byte_swap_6, 6);
+
 logic [0:0] state;
 localparam [0:0] SM_HEADER = 1'b0;
 localparam [0:0] SM_DATA = 1'b1;
@@ -39,8 +44,10 @@ localparam [0:0] SM_DATA = 1'b1;
 logic header_ready, header_valid;
 assign header_valid = axis_i_tvalid && (state == SM_HEADER);
 
+`AXIS_INST_NO_USER(axis_i_gated, AXIS_BYTES);
+
 assign axis_i_tready = (state == SM_DATA) && axis_i_gated_tready;
-assign axis_i_gated_tavlid = (state == SM_DATA) && axis_i_tvalid;
+assign axis_i_gated_tvalid = (state == SM_DATA) && axis_i_tvalid;
 assign axis_i_gated_tlast = axis_i_tlast;
 assign axis_i_gated_tkeep = axis_i_tkeep;
 assign axis_i_gated_tdata = axis_i_tdata;
@@ -60,7 +67,7 @@ begin
 				end
 			end
 			SM_DATA: begin
-				if (axis_i_tready and axis_i_tvalid and axis_i_last)
+				if (axis_i_tready && axis_i_tvalid && axis_i_tlast)
 				begin
 					state <= SM_HEADER;
 				end
@@ -70,6 +77,7 @@ begin
 end
 
 
+`AXIS_INST_NO_USER(ethernet_header_native, AXIS_BYTES);
 
 axis_width_converter
 #(
@@ -81,13 +89,13 @@ axis_width_converter
 
 	.axis_i_tready(header_ready),
 	.axis_i_tvalid(header_valid),
-	.axis_i_last(1'b1),
+	.axis_i_tlast(1'b1),
 	.axis_i_tkeep('1),
-	.axis_i_tdata({byte_swap_2(axis_i_ethertype), byte_swap_6(axis_i_src_mac), byte_swap_6(axis_i_dst_mac)})
+	.axis_i_tdata({byte_swap_2(axis_i_ethertype), byte_swap_6(axis_i_src_mac), byte_swap_6(axis_i_dst_mac)}),
 	`AXIS_MAP_NO_USER(axis_o, ethernet_header_native)
 );
 
-`AXIS_INST(axis_unpacked_o, AXIS_BYTES);
+`AXIS_INST_NO_USER(axis_unpacked_o, AXIS_BYTES);
 axis_joiner
 #(
 	.AXIS_BYTES(AXIS_BYTES),
@@ -97,11 +105,11 @@ axis_joiner
 	.sresetn(sresetn),
 
 	`AXIS_MAP_2_NULL_USER(axis_i, axis_i_gated, ethernet_header_native),
-	`AXIS_MAP_IGNORE_USER(axis_unpacked_o, out_axis)
+	`AXIS_MAP_IGNORE_USER(axis_o, axis_unpacked_o)
 );
 
 generate
-	if(REQUIRE_PACKED_OUTPUT && ((HEADER_LENGTH_BYTES % AXIS_BYTES) != 0))
+	if(REQUIRE_PACKED_OUTPUT && ((14 % AXIS_BYTES) != 0))
 	begin
 		axis_packer
 		#(
@@ -111,7 +119,7 @@ generate
 			.sresetn(sresetn),
 
 			`AXIS_MAP_NO_USER(axis_i, axis_unpacked_o),
-			`AXIS_MAP_NO_USER(axis_o, axis_o),
+			`AXIS_MAP_NO_USER(axis_o, axis_o)
 		);
 	end else begin
 		assign axis_unpacked_o_tready = axis_o_tready;
@@ -119,7 +127,6 @@ generate
 		assign axis_o_tlast  = axis_unpacked_o_tlast;
 		assign axis_o_tkeep  = axis_unpacked_o_tkeep;
 		assign axis_o_tdata  = axis_unpacked_o_tdata;
-		assign axis_o_tuser  = axis_unpacked_o_tuesr;
 	end
 endgenerate
 

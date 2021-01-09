@@ -12,37 +12,80 @@
 
 // Output an AXI Stream from a vector of vectors
 // N.B. Currently this does not support any kind of reset
-
+#include <vector>
 #include "../other/ClockGen.hpp"
 #include "../verilator/Peripheral.hpp"
-#include <vector>
+#include "../other/PacketSource.hpp"
 
 struct AXISSourceConfig
 {
     bool packed = true;
 };
 
+struct AXISSourceException : std::runtime_error
+{
+    using std::runtime_error::runtime_error;
+};
+
+// Helper class to handle the sideband tuser signal
+template <class userT> class AxisSourceUserHandler
+{
+    AxisSourceUserHandler(userT *tuser_, gsl::not_null<PacketSource<userT> *> source_)
+    :tuser(tuser_), source(source_)
+    {
+    }
+
+    // Call this to output the next value i.e. when tready and tvalid
+    void output(bool last)
+    {
+        if(last && iter != current_packet.end()) throw("AxisSource output last, but tuser packet wasn't empty");
+        if(iter == current_packet.end())
+        {
+            auto maybe_new_packet = source->get_packet();
+            if(!maybe_new_packet) throw AXISSourceException("tuser packet source couldn't provide packet when required");
+            current_packet = *maybe_new_packet;
+            iter = current_packet.begin();
+        }
+        tuser = *(iter++);
+    }
+
+    std::vector<userT> current_packet;
+    typename std::vector<userT>::const_iterator iter = current_packet.end();
+
+private:
+    OutputWrapper<userT> tuser;
+    PacketSource<userT> *source;
+
+};
+
+// Due to the way that we are structured, we mandate that a data source is provided
+// This is required because the data and the data only is responsible for setting packet length, total number of packets etc.
+// If there truly is no data source, a dummy one needs to be provided externally (if tdata is null this is no problem, the data will be silently discarded)
+// As a side effect, tusers must always be able to produce data when data is valid
+
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0>class AXISSource : public Peripheral
 {
 public:
-	AXISSource(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, std::vector<std::vector<uint8_t>> data_, AXISSourceConfig _config=AXISSourceConfig{})
-		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), output_packed(_config.packed), inputData(data_)
+	AXISSource(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, gsl::not_null<PacketSource<uint8_t> *> data_source_, std::array<PacketSource<userT>*, n_users> users_source_=std::array<PacketSource<userT>*, n_users>{}, AXISSourceConfig _config=AXISSourceConfig{})
+		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), data_source(data_source_), output_packed(_config.packed)
 	{
+	    for(size_t i=0; i < n_users; i++)
+        {
+            users.at(i) = AxisSourceUserHandler(signals_.tusers.at(i), users_source_.at(i));
+        }
+
         addInput(&sresetn);
 		addInput(&tready);
 
-		resetState();
+		tvalid = 0;
 	};
-	// Returns true if we are done
-	bool done(void) const {return (data.size() == 0);};
-
 	void eval(void) override
 	{
 		if((clk->getEvent() == ClockGen::Event::RISING))
 		{
 			if(sresetn == 0)
 			{
-                resetState();
+                tvalid = 0;
             } else {
 				if((tready && tvalid) || (!tvalid))
 				{
@@ -61,57 +104,54 @@ private:
     OutputWrapper<keepT> tkeep;
     OutputWrapper<dataT> tdata;
 
+    std::array<AxisSourceUserHandler<userT>, n_users> users;
+
     bool output_packed;
 
-private:
+    PacketSource<uint8_t> *data_source;
+    std::vector<uint8_t> current_packet;
+    typename std::vector<userT>::const_iterator iter = current_packet.end();
 
-    // Do not be tempted to make this a vector
-    // The location of each element needs to be fixed in memory since we register it as an input
-    std::array<OutputWrapper<userT>, n_users> tusers;
-
-	std::vector<std::vector<uint8_t>> inputData, data;
-
-	void resetState(void)
-	{
-		// Setup vector
-        data = inputData;
-
-		//It is illegal to be valid in reset
-		tvalid = 0;
-	}
-
-	//TODO: Add tuser support
 	void setupNextData(void)
     {
 	    // Setup no data
         tvalid = 0;
 
-        // If we have data to give, present that
-	    if(data.size())
+        // If we have run out of data, try and get more
+        if(iter == current_packet.end())
         {
-	        // We shouldn't ever have null packets
-	        assert(data[0].size());
+            auto maybe_new_packet = data_source->get_packet();
+            if(maybe_new_packet) {
+                current_packet = *maybe_new_packet;
+                iter = current_packet.begin();
+            }
+        }
 
-            int max_num_bytes = std::min(data[0].size(), sizeof(dataT));
+        // If we have data to give, present that
+	    if(iter != current_packet.end())
+        {
+
+            int max_num_bytes = std::min(current_packet.end()-iter, sizeof(dataT));
 
             tvalid = 1;
             tdata = 0;
             tkeep = 0;
+
             for(int i=0; i<max_num_bytes; i++)
             {
 
                 if(output_packed || (rand() > (RAND_MAX / 2)))
                 {
-                    tdata = tdata | (data[0][0] << i * 8);
-                    data[0].erase(data[0].begin());
+                    tdata = tdata | (*(iter++) << i * 8);
                     tkeep = tkeep | (1 << i);
                 }
             }
 
-            tlast = (data[0].size() == 0);
-            if(tlast || tlast.is_null())
+            tlast = (iter == current_packet.end());
+            for(auto &user : users)
             {
-                data.erase(data.begin());
+                if(!output_packed) throw(AXISSourceException("tdata requested to be sent unpacked, whilst tusers also being used"));
+                user.output(tlast);
             }
         }
     }
