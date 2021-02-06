@@ -17,6 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
+#include "../../../sim/other/SimplePacketSource.hpp"
 
 auto testAxisRoundRobin(std::vector<std::vector<vluint8_t>> inData)
 {
@@ -24,8 +25,9 @@ auto testAxisRoundRobin(std::vector<std::vector<vluint8_t>> inData)
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
+    SimplePacketSource<uint8_t> inAxisSource(inData);
 	AXISSource<vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
-		inData);
+                                 &inAxisSource);
 
 	AXISSink<vluint8_t> outAxis1(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o1_tready, .tvalid = &uut.uut->axis_o1_tvalid, .tlast = &uut.uut->axis_o1_tlast, .tkeep = &uut.uut->axis_o1_tkeep, .tdata = &uut.uut->axis_o1_tdata});
 

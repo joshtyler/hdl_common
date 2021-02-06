@@ -30,6 +30,7 @@ struct AXISSourceException : std::runtime_error
 // Helper class to handle the sideband tuser signal
 template <class userT> class AxisSourceUserHandler
 {
+public:
     AxisSourceUserHandler(userT *tuser_, gsl::not_null<PacketSource<userT> *> source_)
     :tuser(tuser_), source(source_)
     {
@@ -71,7 +72,7 @@ public:
 	{
 	    for(size_t i=0; i < n_users; i++)
         {
-            users.at(i) = AxisSourceUserHandler(signals_.tusers.at(i), users_source_.at(i));
+            users.at(i) = AxisSourceUserHandler<userT>(signals_.tusers.at(i), users_source_.at(i));
         }
 
         addInput(&sresetn);
@@ -110,7 +111,7 @@ private:
 
     PacketSource<uint8_t> *data_source;
     std::vector<uint8_t> current_packet;
-    typename std::vector<userT>::const_iterator iter = current_packet.end();
+    typename std::vector<uint8_t>::const_iterator iter = current_packet.end();
 
 	void setupNextData(void)
     {
@@ -131,7 +132,7 @@ private:
 	    if(iter != current_packet.end())
         {
 
-            int max_num_bytes = std::min(current_packet.end()-iter, sizeof(dataT));
+            int max_num_bytes = std::min<int>(current_packet.end()-iter, sizeof(dataT));
 
             tvalid = 1;
             tdata = 0;

@@ -17,6 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
+#include "../../../sim/other/SimplePacketSource.hpp"
 
 std::vector<std::vector<vluint8_t>> testPacker(std::vector<std::vector<vluint8_t>> inData)
 {
@@ -30,7 +31,8 @@ std::vector<std::vector<vluint8_t>> testPacker(std::vector<std::vector<vluint8_t
 
     AXISSourceConfig sourceConfig;
     sourceConfig.packed = true;
-	AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, inData, sourceConfig);
+    SimplePacketSource<uint8_t> inAxisSource(inData);
+	AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, &inAxisSource, std::array<PacketSource<vluint32_t>*, 0>{}, sourceConfig);
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);
 

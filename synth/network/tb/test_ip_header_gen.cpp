@@ -17,6 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
+#include "../../../sim/other/SimplePacketSource.hpp"
 
 static inline unsigned short from32to16(unsigned int x)
 {
@@ -97,8 +98,8 @@ auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std
 	uut.uut->axis_i_dst_ip = dest_ip;
 	uut.uut->axis_i_protocol = protocol;
 
-	AXISSource<vluint16_t, vluint8_t> lenAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tdata = &uut.uut->axis_i_length_bytes}, len);
-
+    SimplePacketSource<uint8_t> lenSource(len);
+	AXISSource<vluint16_t, vluint8_t> lenAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tdata = &uut.uut->axis_i_length_bytes}, &lenSource);
 
 	AXISSink<vluint32_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata});
 

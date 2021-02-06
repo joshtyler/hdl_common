@@ -17,6 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
+#include "../../../sim/other/SimplePacketSource.hpp"
 
 namespace {
     struct ret_data {
@@ -32,6 +33,7 @@ namespace {
 
         ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
+        SimplePacketSource<uint8_t> inAxisSource({packet});
         AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
                 {
                         .tready = &uut.uut->axis_i_tready,
@@ -39,7 +41,7 @@ namespace {
                         .tlast = &uut.uut->axis_i_tlast,
                         .tkeep = &uut.uut->axis_i_tkeep,
                         .tdata = &uut.uut->axis_i_tdata
-                }, {packet});
+                }, &inAxisSource);
 
         AXISSink<vluint32_t, vluint8_t, vluint32_t, 4> outAxis(&clk, &uut.uut->sresetn,
                                                                AxisSignals<vluint32_t, vluint8_t, vluint32_t, 4>

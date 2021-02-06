@@ -1,4 +1,4 @@
-q//  Copyright (C) 2020 Joshua Tyler
+//  Copyright (C) 2020 Joshua Tyler
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,7 @@ q//  Copyright (C) 2020 Joshua Tyler
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
+#include "../../../sim/other/SimplePacketSource.hpp"
 
 namespace {
     struct ret_data {
@@ -39,6 +40,7 @@ namespace {
         ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
         uut.uut->axis_i_length_bytes = packet.size(); // Hack because AXISSource doesn't support user
+        SimplePacketSource<uint8_t> inAxisSource({packet});
         AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
                 {
                         .tready = &uut.uut->axis_i_tready,
@@ -46,7 +48,7 @@ namespace {
                         .tlast = &uut.uut->axis_i_tlast,
                         .tkeep = &uut.uut->axis_i_tkeep,
                         .tdata = &uut.uut->axis_i_tdata
-                }, {packet});
+                }, &inAxisSource);
 
         AXISSink<vluint32_t, vluint8_t, vluint32_t, 10> outAxis(&clk, &uut.uut->sresetn,
                                                                 AxisSignals<vluint32_t, vluint8_t, vluint32_t, 10>

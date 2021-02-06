@@ -17,6 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
+#include "../../../sim/other/SimplePacketSource.hpp"
 
 std::vector<std::vector<vluint8_t>> testFifo(std::vector<std::vector<vluint8_t>> inData)
 {
@@ -25,9 +26,9 @@ std::vector<std::vector<vluint8_t>> testFifo(std::vector<std::vector<vluint8_t>>
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 	AXISSink<vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep,  .tdata = &uut.uut->axis_o_tdata});
 
-
+    SimplePacketSource<uint8_t> inAxisSource(inData);
 	AXISSource<vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
-		inData);
+                                 &inAxisSource);
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);
 
