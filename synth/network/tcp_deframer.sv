@@ -31,7 +31,7 @@ module tcp_deframer
 logic [4:0] data_offset_ctr, data_offset;
 always_ff @(posedge clk)
 begin
-	if ((!sresetn) or axis_i_tlast)
+	if ((!sresetn) or (axis_i_tready && axis_i_tvalid && axis_i_tlast))
 	begin
 		data_offset_ctr <= 0;
 		data_offset <= 3;
