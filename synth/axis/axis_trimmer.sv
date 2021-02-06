@@ -2,6 +2,7 @@
 // Assumes a packed stream to save logic
 
 `include "axis/axis.h"
+`include "axis/utility.h"
 
 module axis_trimmer
 #(
@@ -13,7 +14,6 @@ module axis_trimmer
 	input sresetn,
 
 	`S_AXIS_PORT(axis_i, AXIS_BYTES, AXIS_USER_BITS),
-	// Need to add keep to properly support trim to arbitrary byte length
 	input logic [LENGTH_BITS-1:0] axis_i_len_bytes, // Valid alongside data
 
 	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS)
@@ -31,7 +31,9 @@ begin
 		begin
 			if(ctr < axis_i_len_bytes)
 			begin
-				ctr <= ctr + AXIS_BYTES[LENGTH_BITS-1:0];
+				/* verilator lint_off WIDTH */
+				ctr <= ctr + $countones(axis_i_tkeep);
+				/* verilator lint_on WIDTH */
 			end
 
 			if(axis_i_tlast)
@@ -49,5 +51,24 @@ assign axis_o_tlast  = axis_i_tlast || (ctr+AXIS_BYTES[LENGTH_BITS-1:0] >= axis_
 assign axis_o_tdata  = axis_i_tdata;
 assign axis_o_tuser  = axis_i_tuser;
 
+// Handle tkeep
+logic [AXIS_BYTES-1:0] tkeep_mask;
+assign axis_o_tkeep = axis_i_tkeep & tkeep_mask;
+logic [LENGTH_BITS-1:0] bytes_remaining;
+assign bytes_remaining = (ctr - axis_i_len_bytes);
+
+always_comb
+begin
+	tkeep_mask = 0;
+	if (bytes_remaining > AXIS_BYTES)
+	begin
+		tkeep_mask = '1;
+	end else begin
+		for(int i=0; i < bytes_remaining; i++)
+		begin
+			tkeep_mask[i] = 1'b1;
+		end
+	end
+end
 
 endmodule

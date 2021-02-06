@@ -8,5 +8,6 @@ add_library(axis_object OBJECT
         test_axis_register.cpp
         test_axis_round_robin.cpp
         test_axis_width_converter.cpp
+        test_axis_packer.cpp
         )
 target_link_libraries(axis_object PUBLIC axis_verilated)

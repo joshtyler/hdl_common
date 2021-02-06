@@ -18,11 +18,16 @@
 #include <gsl/pointers>
 #include <vector>
 
+struct AXISSinkConfig
+{
+    bool packed = false;
+};
+
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0> class AXISSink : public Peripheral
 {
 public:
-	AXISSink(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_)
-		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata)
+	AXISSink(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, AXISSinkConfig _config=AXISSinkConfig{})
+		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), packed(_config.packed)
 	{
         addInput(&sresetn);
 		addInput(&tvalid);
@@ -44,7 +49,7 @@ public:
     auto getUsers(void){return users;};
 
 	//Return number of times tlast has been received
-	unsigned int getTlastCount(void) const {return datas.size() - 1;};
+	unsigned int getTlastCount(void) const {return datas.size();};
 
 	void eval(void) override
 	{
@@ -57,8 +62,24 @@ public:
 				{
 					if(!tdata.is_null()) {
                         cur_data_natural_width.push_back(tdata);
-                        keepT keep = tkeep.is_null()? (~keepT{}) : tkeep;
+                        const keepT max_tkeep = static_cast<keepT>((1 << sizeof(dataT))-1);
+
+                        keepT keep = tkeep.is_null()? max_tkeep : tkeep;
                         dataT data = tdata;
+
+                        // Check tkeep
+                        if(packed) {
+                            if (tlast.is_null() || tlast) {
+                                if (keep <= max_tkeep)
+                                    throw std::runtime_error("keep indicating too many bytes on last beat!");
+                                if ((keep & (keep + 1)) == 0)
+                                    throw std::runtime_error("keep unpacked on tlast"); // Enforce that all bits are unset after the first unset bit. I.e tkeep is one less than a power of 2
+                            } else {
+                                if (keep == max_tkeep)
+                                    throw std::runtime_error("Checking for packed stream, but tkeep not all ones with tlast false");
+                            }
+                        }
+
                         for(size_t i=0; i<sizeof(dataT); i++)
                         {
                             if(keep & 1)
@@ -70,10 +91,9 @@ public:
                         }
                     }
 
-                    for(auto i=0u; i<tusers.size(); i++)
-                    {
-                        curUsers[i].push_back(tusers[i]);
-                    }
+                    std::array<userT, n_users> user_values;
+                    std::copy(tusers.begin(), tusers.end(), user_values.begin());
+                    curUsers.push_back(user_values);
 
 					if(tlast.is_null() || tlast)
 					{
@@ -103,11 +123,16 @@ private:
 
 	std::vector<std::vector<dataT>> datas_natural_width;
     std::vector<std::vector<uint8_t>> datas;
-    std::vector<std::array<std::vector<userT>, n_users>> users;
+    // Outer dimension is each packet
+    // Inner dimension is each beat
+    // Inner inner dimension is each user
+    std::vector<std::vector<std::array<userT, n_users>>> users;
 
 	std::vector<dataT> cur_data_natural_width;
     std::vector<uint8_t> cur_data;
-    std::array<std::vector<userT>, n_users> curUsers;
+    std::vector<std::array<userT, n_users>> curUsers;
+
+    bool packed;
 
 	void resetState(void)
 	{

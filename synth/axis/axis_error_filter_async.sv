@@ -15,36 +15,46 @@ module axis_error_filter_async
 	input o_clk,
 	input o_sresetn,
 
-	`S_AXIS_PORT(axis_i, AXIS_BYTES, AXIS_USER_BITS),
-	input logic axis_i_error,
+	input logic i_valid,
+	input logic i_last,
+	input logic [AXIS_BYTES-1:0] i_keep,
+	input logic [AXIS_BYTES*8-1:0] i_data,
+	input logic [AXIS_USER_BITS-1:0] i_user,
+	input logic i_error,
 
 	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS)
 );
 
-	logic error_latch;
-	logic axis_i_tvalid_gated;
+	`AXIS_INST(axis_i, AXIS_BYTES, AXIS_USER_BITS);
+	logic overflowed, next_overflowed, overflowed_reg;
 
 	always_ff @(posedge i_clk)
 	begin
 		if(!i_sresetn)
 		begin
-			error_latch <= 0;
+			overflowed_reg <= 0;
 		end else begin
-			if(axis_i_tready && axis_i_tvalid)
+			if(next_overflowed)
 			begin
-				if(axis_i_tlast)
-				begin
-					// Reset the latch on the last beat
-					error_latch <= 0;
-				end else if(axis_i_error) begin
-					// Otherwise latch any errors
-					error_latch <= 1;
-				end
+				overflowed_reg <= 1;
+			end else if(axis_i_tready && i_valid && i_last) begin
+				overflowed_reg <= 0;
 			end
 		end
 	end
 
-	assign axis_i_tvalid_gated = axis_i_tvalid && (!error_latch);
+	assign next_overflowed = ((!axis_i_tready) && i_valid) ;
+	assign overflowed = next_overflowed || overflowed_reg;
+
+	// Pass signals through, unless we overflow
+	// In this case, discard all of the current packet
+	logic axis_i_drop;
+	assign axis_i_tvalid = i_valid || overflowed;
+	assign axis_i_tlast  = i_last;
+	assign axis_i_tkeep  = i_keep;
+	assign axis_i_tdata  = i_data;
+	assign axis_i_tuser  = i_user;
+	assign axis_i_drop  = i_error || overflowed;
 
 	axis_packet_fifo_async
 	#(
@@ -57,13 +67,8 @@ module axis_error_filter_async
 		.o_clk(o_clk),
 		.o_sresetn(o_sresetn),
 
-		.axis_i_tready(axis_i_tready),
-		.axis_i_tvalid(axis_i_tvalid_gated),
-		.axis_i_tlast (axis_i_tlast),
-		.axis_i_tdata (axis_i_tdata),
-		.axis_i_tuser (axis_i_tuser),
-		.axis_i_drop  (axis_i_error),
-
+		`AXIS_MAP(axis_i, axis_i),
+		.axis_i_drop(axis_i_drop),
 		`AXIS_MAP(axis_o, axis_o)
 	);
 

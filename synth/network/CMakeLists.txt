@@ -24,10 +24,10 @@ function(write_verilated_header BASE_NAME SUFFIX_LIST)
     math(EXPR SUFFIX_LIST_END "${SUFFIX_LIST_END}-1")
     list(SUBLIST SUFFIX_LIST 0 ${SUFFIX_LIST_END} SUFFIX_LIST_WITHOUT_END)
     foreach(SUFFIX ${SUFFIX_LIST_WITHOUT_END})
-        file(APPEND ${FILE_NAME} "Vudp_checksum_${SUFFIX}, ")
+        file(APPEND ${FILE_NAME} "V${BASE_NAME}_${SUFFIX}, ")
     endforeach(SUFFIX)
     list(GET SUFFIX_LIST -1 LAST_SUFFIX)
-    file(APPEND ${FILE_NAME} "Vudp_checksum_${LAST_SUFFIX}\n")
+    file(APPEND ${FILE_NAME} "V${BASE_NAME}_${LAST_SUFFIX}\n")
 
     # Close off the include guard
     file(APPEND ${FILE_NAME} "#endif //${INCLUDE_GUARD}\n")
@@ -49,9 +49,10 @@ verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES rmii_to_a
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES udp_header_gen.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES ip_deframer.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES tb/ip_deframer_harness.sv TRACE)
+verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES tb/tcp_deframer_harness.sv TRACE)
 
-set(UDP_CHECKSUM_BYTES_LIST 2 4)
-verilate_multi_bytes(udp_checksum "${UDP_CHECKSUM_BYTES_LIST}" network_verilated VERILATOR_ARGS "-I../" SOURCES udp_checksum.sv TRACE)
+set(IP_CHECKSUM_BYTES_LIST 2 4)
+verilate_multi_bytes(ip_checksum "${IP_CHECKSUM_BYTES_LIST}" network_verilated VERILATOR_ARGS "-I../" SOURCES ip_checksum.sv TRACE)
 
 
 add_subdirectory(tb)

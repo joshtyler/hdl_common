@@ -33,6 +33,7 @@ for(i=0; i < NUM_SLAVE_STREAMS; i=i+1)
 begin
 	assign axis_o_tlast[i] = axis_i_tlast;
 	assign axis_o_tdata[((i+1)*AXIS_BYTES*8)-1 -: AXIS_BYTES*8] = axis_i_tdata;
+	assign axis_o_tkeep[((i+1)*AXIS_BYTES)-1   -: AXIS_BYTES] = axis_i_tkeep;
 	assign axis_o_tuser[((i+1)*AXIS_USER_BITS)-1 -: AXIS_USER_BITS] = axis_i_tuser;
 
 	always @(*)

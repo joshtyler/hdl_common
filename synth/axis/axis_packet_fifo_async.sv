@@ -21,8 +21,8 @@ module axis_packet_fifo_async
 
 	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS)
 );
-	// Data is tdata+tuser+tlast
-	localparam DATA_WIDTH = 8*AXIS_BYTES+AXIS_USER_BITS+1;
+	// Data is tdata+tuser+tlast+tkeep
+	localparam DATA_WIDTH = 8*AXIS_BYTES+AXIS_USER_BITS+1+AXIS_BYTES;
 
 	// Extra bit allows us to detect full/empty
 	// Alternatively we can make the fifo be 2**depth-1, but that's boring
@@ -124,12 +124,12 @@ module axis_packet_fifo_async
 		.ena   (1'b1),
 		.wea   (axis_i_tready && axis_i_tvalid),
 		.addra (wrptr_iclk[LOG2_DEPTH-1:0]),
-		.dia   ({axis_i_tlast, axis_i_tdata, axis_i_tuser}),
+		.dia   ({axis_i_tlast, axis_i_tdata, axis_i_tuser, axis_i_tkeep}),
 
 		.clkb(o_clk),
 		.enb   (read_from_ram),
 		.addrb (rdptr_oclk[LOG2_DEPTH-1:0]),
-		.dob   ({axis_o_tlast, axis_o_tdata, axis_o_tuser})
+		.dob   ({axis_o_tlast, axis_o_tdata, axis_o_tuser, axis_o_tkeep})
 	);
 
 endmodule

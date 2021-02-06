@@ -23,14 +23,18 @@ module eth_crc(
 	output      axis_i_tready,
 	input       axis_i_tvalid,
 	input       axis_i_tlast,
+	input [0:0] axis_i_tkeep,
 	input [7:0] axis_i_tdata,
 
 	// Output
 	input         axis_o_tready,
 	output        axis_o_tvalid,
 	output        axis_o_tlast,
+	output [3:0]  axis_o_tkeep,
 	output [31:0] axis_o_tdata
 );
+
+	assign axis_o_tkeep = '1;
 
 	reg [31:0] lfsr_q, lfsr_c, lfsr_c_rev;
 	reg [7:0] data_in;
@@ -63,7 +67,7 @@ assign axis_o_tdata = ~lfsr_c_rev;
 			lfsr_q <= {32{1'b1}};
 		end
 		else begin
-			lfsr_q <= axis_i_tvalid ? lfsr_c : lfsr_q;
+			lfsr_q <= (axis_i_tvalid && axis_i_tkeep[0]) ? lfsr_c : lfsr_q;
 		end
 	end
 

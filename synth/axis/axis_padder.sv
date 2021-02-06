@@ -10,7 +10,7 @@
 module axis_padder
 #(
 	parameter AXIS_BYTES = 1,
-	parameter MIN_LENGTH = 50,
+	parameter MIN_LENGTH = 50, // Beats not bytes
 	parameter [(AXIS_BYTES*8)-1:0] PAD_VALUE = 0
 ) (
 	input clk,
@@ -61,6 +61,7 @@ module axis_padder
 
 	assign axis_i_tready = (state == SM_PASSTHROUGH)? axis_o_tready : 0;
 	assign axis_o_tvalid = (state == SM_PASSTHROUGH)? axis_i_tvalid : 1;
+	assign axis_o_tkeep  = (state == SM_PASSTHROUGH)? axis_i_tkeep : '1;
 	assign axis_o_tdata  = (state == SM_PASSTHROUGH)? axis_i_tdata : PAD_VALUE;
 
 	// tlast

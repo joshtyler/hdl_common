@@ -33,6 +33,7 @@ module axis_register
 				// Fill the register if we are able
 				axis_o_tvalid <= axis_i_tvalid;
 				axis_o_tlast <= axis_i_tlast;
+				axis_o_tkeep <= axis_i_tkeep;
 				axis_o_tdata <= axis_i_tdata;
 				axis_o_tuser <= axis_i_tuser;
 			end else if (axis_o_tready)

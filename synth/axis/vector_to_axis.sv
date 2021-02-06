@@ -9,6 +9,7 @@
 // This could be replaced with axis_width converter at some point...
 
 `include "axis/axis.h"
+`include "axis/utility.h"
 
 module vector_to_axis
 #(
@@ -24,8 +25,7 @@ module vector_to_axis
 	`M_AXIS_PORT_NO_USER(axis, AXIS_BYTES)
 );
 
-// The vector must be a multiple of AXIS_BYTES
-//assert VEC_BYTES % AXIS_BYTES = 0;
+`STATIC_ASSERT(VEC_BYTES % AXIS_BYTES == 0);
 
 localparam integer CTR_MAX = (VEC_BYTES/AXIS_BYTES) -1;
 
@@ -63,5 +63,6 @@ assign axis_tlast = (ctr == CTR_LAST);
 /* verilator lint_off WIDTH */
 assign axis_tdata = vec[ ((ctr+1)*AXIS_BYTES*8)-1 -: AXIS_BYTES*8];
 /* verilator lint_on WIDTH */
+assign axis_tkeep = '1;
 
 endmodule

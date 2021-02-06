@@ -1,22 +1,17 @@
 // Copyright (C) 2019 Joshua Tyler
 //
-//  This Source Code Form is subject to the terms of the                                                    │
-//  Open Hardware Description License, v. 1.0. If a copy                                                    │
-//  of the OHDL was not distributed with this file, You                                                     │
+//  This Source Code Form is subject to the terms of the
+//  Open Hardware Description License, v. 1.0. If a copy
+//  of the OHDL was not distributed with this file, You
 //  can obtain one at http://juliusbaxter.net/ohdl/ohdl.txt
 
-// UDP Checksum algorithm
-// "Checksum is the 16-bit one's complement
-// of the one's complement sum of a pseudo header of information from
-// the IP header, the UDP header, and the data,
-// padded with zero octets at the end (if necessary) to make a multiple of two octets"
+// IP Checksum algorithm
 
-// This module takes the data in two bytes at a time
-// And data is output two bytes at a time
+// N.B. This could be easily adapted for UDP, the only difference is that if the result is all zeros, the checksum is all ones
 
 `include "axis/utility.h"
 
-module udp_checksum
+module ip_checksum
 #(
 	// Must be 2 or 4 curently. Could expand if required.
 	parameter AXIS_BYTES = 2
@@ -28,6 +23,7 @@ module udp_checksum
 	output logic        axis_i_tready,
 	input  logic        axis_i_tvalid,
 	input  logic        axis_i_tlast,
+	input  logic [AXIS_BYTES-1:0] axis_i_tkeep, // Assumed to be packed
 	input  logic [(AXIS_BYTES*8)-1:0] axis_i_tdata,
 
 	// Output
@@ -57,7 +53,9 @@ begin
 			if(axis_i_tready && axis_i_tvalid)
 			begin
 				// Create 16 bit sum. Add on overflow bit from prevoius calculation
-				acc <= axis_i_tdata + acc[15:0] + {15'b0, acc[16]};
+				/* verilator lint_off WIDTH */ // TEMPORARY. Seems to be verilator bug
+				acc <= (axis_i_tdata & {{8{axis_i_tkeep[1]}}, {8{axis_i_tkeep[0]}}}) + acc[15:0] + {15'b0, acc[16]};
+				/* verilator lint_on WIDTH */
 
 				// If tlast was asserted, result will be valid on the next clock cycle
 				if (axis_i_tlast) begin
@@ -87,8 +85,10 @@ end else if (AXIS_BYTES == 4) begin
 			if(axis_i_tready && axis_i_tvalid)
 			begin
 				// Add sum for both halves of the data separately
-				acc   <= axis_i_tdata[15:0]  + acc[15:0]   + {15'b0,   acc[16]};
-				acc_h <= axis_i_tdata[31:16] + acc_h[15:0] + {15'b0, acc_h[16]};
+				/* verilator lint_off WIDTH */ // TEMPORARY. Seems to be verilator bug
+				acc   <= (axis_i_tdata[15:0] & {{8{axis_i_tkeep[1]}}, {8{axis_i_tkeep[0]}}})  + acc[15:0]   + {15'b0,   acc[16]};
+				acc_h <= (axis_i_tdata[31:16] & {{8{axis_i_tkeep[3]}}, {8{axis_i_tkeep[2]}}}) + acc_h[15:0] + {15'b0, acc_h[16]};
+				/* verilator lint_on WIDTH */
 
 				// If tlast was asserted, begin output process
 				if (axis_i_tlast) begin

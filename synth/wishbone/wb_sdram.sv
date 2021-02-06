@@ -59,16 +59,16 @@ module wb_sdram
 	output logic                     ram_cke
 );
 
-localparam FIFO_DEPTH = 128;
+localparam LOG2_FIFO_DEPTH = 7;
 logic sdram_dat_to_user_valid;
 
 logic addr_cmd_fifo_i_tready;
 logic addr_cmd_fifo_i_tvalid;
 
-logic cmd_ready;
-logic cmd_valid;
-logic [WB_ADDR_BITS-1:0] cmd_addr;
-logic cmd_we;
+logic cmd_ready, cmd_ready_unbuf;
+logic cmd_valid, cmd_valid_unbuf;
+logic [WB_ADDR_BITS-1:0] cmd_addr, cmd_addr_unbuf;
+logic cmd_we, cmd_we_unbuf;
 
 // The reverse channel on wb is not flow controlled
 assign s_wb_dat_s2m = ram_dq_i;
@@ -91,7 +91,7 @@ axis_fifo
 #(
 	.AXIS_BYTES(1), // Not used
 	.AXIS_USER_BITS(WB_ADDR_BITS+1),
-	.DEPTH(FIFO_DEPTH)
+	.LOG2_DEPTH(LOG2_FIFO_DEPTH)
 ) addr_cmd_fifo (
 	.clk(clk),
 	.sresetn(sresetn),
@@ -101,6 +101,27 @@ axis_fifo
 	.axis_i_tlast(1'b0),
 	.axis_i_tdata({8{1'b1}}),
 	.axis_i_tuser({s_wb_we, s_wb_addr}),
+
+	.axis_o_tready(cmd_ready_unbuf),
+	.axis_o_tvalid(cmd_valid_unbuf),
+	.axis_o_tlast(),
+	.axis_o_tdata(),
+	.axis_o_tuser({cmd_we_unbuf, cmd_addr_unbuf})
+);
+
+axis_register
+#(
+	.AXIS_BYTES(1), // Not used
+	.AXIS_USER_BITS(WB_ADDR_BITS+1)
+) addr_cmd_fifo_reg (
+	.clk(clk),
+	.sresetn(sresetn),
+
+	.axis_i_tready(cmd_ready_unbuf),
+	.axis_i_tvalid(cmd_valid_unbuf),
+	.axis_i_tlast(1'b0),
+	.axis_i_tdata({8{1'b1}}),
+	.axis_i_tuser({cmd_we_unbuf, cmd_addr_unbuf}),
 
 	.axis_o_tready(cmd_ready),
 	.axis_o_tvalid(cmd_valid),
@@ -114,7 +135,7 @@ assign wr_dat_fifo_i_tvalid = addr_cmd_fifo_i_tvalid && s_wb_we;
 axis_fifo
 #(
 	.AXIS_BYTES(DATA_BYTES),
-	.DEPTH(FIFO_DEPTH)
+	.LOG2_DEPTH(LOG2_FIFO_DEPTH)
 ) wr_dat_fifo (
 	.clk(clk),
 	.sresetn(sresetn),

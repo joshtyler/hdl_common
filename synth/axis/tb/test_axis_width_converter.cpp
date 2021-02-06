@@ -26,9 +26,9 @@ template <class model_t, class data_in_t, class data_out_t> auto testWidthConver
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
-	AXISSource<data_in_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<data_in_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tdata = &uut.uut->axis_i_tdata}, inData);
+	AXISSource<data_in_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<data_in_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, inData);
 
-	AXISSink<data_out_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<data_out_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tdata = &uut.uut->axis_o_tdata});
+	AXISSink<data_out_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<data_out_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata});
 
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);

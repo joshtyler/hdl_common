@@ -57,6 +57,7 @@ endgenerate
 
 assign axis_o_tvalid = axis_i_tvalid[ctr];
 assign axis_o_tlast = (ctr == CTR_MAX)? axis_i_tlast[ctr] : 0; //Only output tlast on last packet
+assign axis_o_tkeep = axis_i_tkeep[(1+ctr)*(AXIS_BYTES)-1 -: AXIS_BYTES];
 assign axis_o_tdata = axis_i_tdata[(1+ctr)*(AXIS_BYTES*8)-1 -: AXIS_BYTES*8];
 assign axis_o_tuser = axis_i_tuser[(1+ctr)*(AXIS_USER_BITS)-1 -: AXIS_USER_BITS];
 /* verilator lint_on WIDTH */

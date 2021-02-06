@@ -204,7 +204,7 @@ logic [BYTES*8-1:0] axis_o_wide_tdata;
 axis_fifo
 #(
 	.AXIS_BYTES(BYTES),
-	.DEPTH(255)
+	.LOG2_DEPTH(8)
 ) fifo_inst (
 	.clk(clk),
 	.sresetn(sresetn),

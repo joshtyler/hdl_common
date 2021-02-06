@@ -39,7 +39,8 @@ for(i=0; i< NUM_STREAMS; i++)
 begin
 	axis_register
 	#(
-		.AXIS_BYTES(AXIS_BYTES)
+		.AXIS_BYTES(AXIS_BYTES),
+		.AXIS_USER_BITS(AXIS_USER_BITS)
 	) register (
 		.clk(clk),
 		.sresetn(sresetn),
@@ -47,12 +48,14 @@ begin
 		.axis_i_tready(reg_ready[i]),
 		.axis_i_tvalid(reg_valid),
 		.axis_i_tlast (axis_i_tlast),
+		.axis_i_tkeep (axis_i_tkeep),
 		.axis_i_tdata (axis_i_tdata),
 		.axis_i_tuser (axis_i_tuser),
 
 		.axis_o_tready(axis_o_tready[i]),
 		.axis_o_tvalid(axis_o_tvalid[i]),
 		.axis_o_tlast (axis_o_tlast[i]),
+		.axis_o_tkeep (axis_o_tkeep[(1+i)*(AXIS_BYTES)-1 -: (AXIS_BYTES)]),
 		.axis_o_tdata (axis_o_tdata[(1+i)*(AXIS_BYTES*8)-1 -: (AXIS_BYTES*8)]),
 		.axis_o_tuser (axis_o_tuser[(1+i)*AXIS_USER_BITS-1 -: AXIS_USER_BITS])
 	);

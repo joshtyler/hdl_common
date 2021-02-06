@@ -30,6 +30,7 @@ module axis_width_converter
 			assign axis_i_tready = axis_o_tready;
 			assign axis_o_tvalid = axis_i_tvalid;
 			assign axis_o_tlast = axis_i_tlast;
+			assign axis_o_tkeep = axis_i_tkeep;
 			assign axis_o_tdata = axis_i_tdata;
 		end else begin
 			//assert property (@(posedge clk) AXIS_I_BYTES >= AXIS_O_BYTES);
@@ -53,6 +54,7 @@ module axis_width_converter
 
 			reg axis_i_tlast_latch;
 			reg [(AXIS_W_BYTES*8)-1:0] axis_i_tdata_latch;
+			reg [AXIS_W_BYTES-1:0] axis_i_tkeep_latch;
 
 			assign axis_i_tready = (state == CAPTURE);
 			assign axis_o_tvalid = (state == OUTPUT);
@@ -63,8 +65,10 @@ module axis_width_converter
 				// Unpacker
 				if (MSB_FIRST) begin
 					assign axis_o_tdata = axis_i_tdata_latch[((CTR_HIGH-ctr)+1)*(AXIS_O_BYTES*8)-1 -: (AXIS_O_BYTES*8)];
+					assign axis_o_tkeep = axis_i_tkeep_latch[((CTR_HIGH-ctr)+1)*(AXIS_O_BYTES)-1 -: (AXIS_O_BYTES)];
 				end else begin
 					assign axis_o_tdata = axis_i_tdata_latch[(ctr+1)*(AXIS_O_BYTES*8)-1 -: (AXIS_O_BYTES*8)];
+					assign axis_o_tkeep = axis_i_tkeep_latch[(ctr+1)*(AXIS_O_BYTES)-1 -: (AXIS_O_BYTES)];
 				end
 
 				always @(posedge clk)
@@ -79,6 +83,7 @@ module axis_width_converter
 									state <= OUTPUT;
 									ctr <= 0;
 									axis_i_tdata_latch <= axis_i_tdata;
+									axis_i_tkeep_latch <= axis_i_tkeep;
 									axis_i_tlast_latch <= axis_i_tlast;
 								end
 							end
@@ -98,6 +103,7 @@ module axis_width_converter
 			end else begin
 				// Packer
 				assign axis_o_tdata = axis_i_tdata_latch;
+				assign axis_o_tkeep = axis_i_tkeep_latch;
 
 				always @(posedge clk)
 				begin
@@ -106,6 +112,7 @@ module axis_width_converter
 						state <= CAPTURE;
 						ctr <= 0;
 						axis_i_tdata_latch <= 0;
+						axis_i_tkeep_latch <= 0;
 					end else begin
 						case(state)
 							CAPTURE: begin
@@ -117,8 +124,10 @@ module axis_width_converter
 									end
 									if (MSB_FIRST) begin
 										axis_i_tdata_latch[((CTR_HIGH-ctr)+1)*(AXIS_I_BYTES*8)-1 -: (AXIS_I_BYTES*8)] <= axis_i_tdata;
+										axis_i_tkeep_latch[((CTR_HIGH-ctr)+1)*(AXIS_I_BYTES)-1 -: (AXIS_I_BYTES)] <= axis_i_tkeep;
 									end else begin
 										axis_i_tdata_latch[(ctr+1)*(AXIS_I_BYTES*8)-1 -: (AXIS_I_BYTES*8)] <= axis_i_tdata;
+										axis_i_tkeep_latch[(ctr+1)*(AXIS_I_BYTES)-1 -: (AXIS_I_BYTES)] <= axis_i_tkeep;
 									end
 									// The special case is if we get tlast early
 									// If this is the case, we go to output anyway, the upper bits will be zeroes

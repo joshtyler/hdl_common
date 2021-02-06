@@ -10,10 +10,10 @@ module tcp_deframer
 	input sresetn,
 
 	`S_AXIS_PORT_NO_USER(axis_i, AXIS_BYTES),
-	output logic [15:0] axis_o_length_bytes, // From IP header
+	input logic [15:0] axis_i_length_bytes, // From IP header
 
 	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES),
-	output logic [15:0] axis_o_length_bytes,
+	output logic [15:0] axis_o_length_bytes, // Of payload
 	output logic [15:0] axis_o_src_port,
 	output logic [15:0] axis_o_dst_port,
 	output logic [31:0] axis_o_seq_num,
@@ -28,13 +28,13 @@ module tcp_deframer
 `BYTE_SWAP_FUNCTION(byte_swap_4, 4)
 `BYTE_SWAP_FUNCTION(byte_swap_2, 2)
 
-logic [4:0] data_offset_ctr, data_offset;
+logic [3:0] data_offset_ctr, data_offset;
 always_ff @(posedge clk)
 begin
-	if ((!sresetn) or (axis_i_tready && axis_i_tvalid && axis_i_tlast))
+	if ((!sresetn) || (axis_i_tready && axis_i_tvalid && axis_i_tlast))
 	begin
 		data_offset_ctr <= 0;
-		data_offset <= 3;
+		data_offset <= '1; // Reset to arbitrarily high number so that we progress to word 3 and set the real value
 	end else begin
 		if(axis_i_tready && axis_i_tvalid)
 		begin
@@ -57,12 +57,13 @@ begin
 				2 : axis_o_ack_num  <= byte_swap_4(axis_i_tdata);
 				3 :
 				begin
-					data_offset <= axis_i_tdata[7:4];
+					data_offset <= axis_i_tdata[7:4] - 1; // Zero indexed
+					axis_o_length_bytes <= axis_i_length_bytes - axis_i_tdata[7:4]*4;
 					axis_o_ack <= axis_i_tdata[11];
 					axis_o_rst <= axis_i_tdata[10];
 					axis_o_syn <= axis_i_tdata[9];
 					axis_o_fin <= axis_i_tdata[8];
-					axis_o_window_size <= byte_swap_2(axis_i_tdata[31:15]);
+					axis_o_window_size <= byte_swap_2(axis_i_tdata[31:16]);
 				end
 				// Ignore checksum/urgent pointer/options, and do nothing for the data segment
 			endcase
@@ -78,5 +79,6 @@ assign axis_i_tready  = header_finished? axis_o_tready : 1;
 assign axis_o_tvalid = header_finished? axis_i_tvalid  : 0;
 assign axis_o_tlast  = axis_i_tlast;
 assign axis_o_tdata  = axis_i_tdata;
+assign axis_o_tkeep = axis_i_tkeep;
 
 endmodule

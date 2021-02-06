@@ -27,8 +27,8 @@ module axis_packet_fifo
 // N.B. We currenly lock up if we fill up. This is different to the Xilinx core
 // We also offer the ability to invalidate a packet, in this case we reset to the previous pointer
 
-// Data is tdata+tuser+tlast
-localparam DATA_WIDTH = 8*AXIS_BYTES+AXIS_USER_BITS+1;
+// Data is tdata+tuser+tlast+tkeep
+localparam DATA_WIDTH = 8*AXIS_BYTES+AXIS_USER_BITS+1+AXIS_BYTES;
 
 logic [DATA_WIDTH-1:0] mem [2**LOG2_DEPTH-1:0];
 
@@ -64,7 +64,7 @@ begin
 			begin
 				wr_ptr <= committed_wr_ptr;
 			end else begin
-				mem[wr_ptr[LOG2_DEPTH-1:0]] <= {axis_i_tlast, axis_i_tdata, axis_i_tuser};
+				mem[wr_ptr[LOG2_DEPTH-1:0]] <= {axis_i_tlast, axis_i_tdata, axis_i_tuser, axis_i_tkeep};
 				wr_ptr <= wr_ptr + 1;
 
 				if(axis_i_tlast)
@@ -90,7 +90,7 @@ begin
 		// And either the output word is invalid, or we are reading in this cycle
 		if ((rd_ptr != committed_wr_ptr) && ((!axis_o_tvalid) || axis_o_tready))
 		begin
-			{axis_o_tlast, axis_o_tdata, axis_o_tuser} <= mem[rd_ptr[LOG2_DEPTH-1:0]];
+			{axis_o_tlast, axis_o_tdata, axis_o_tuser, axis_o_tkeep} <= mem[rd_ptr[LOG2_DEPTH-1:0]];
 			axis_o_tvalid <= 1;
 			rd_ptr <= rd_ptr + 1;
 		end
