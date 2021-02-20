@@ -14,6 +14,7 @@
 
 #include "AXIS.h"
 #include "../other/ClockGen.hpp"
+#include "../other/PacketSourceSink.hpp"
 #include "../verilator/Peripheral.hpp"
 #include <gsl/pointers>
 #include <vector>
@@ -26,8 +27,8 @@ struct AXISSinkConfig
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0> class AXISSink : public Peripheral
 {
 public:
-	AXISSink(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, AXISSinkConfig _config=AXISSinkConfig{})
-		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), packed(_config.packed)
+	AXISSink(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, PacketSink<uint8_t> *data_sink_, std::array<PacketSink<userT>*, n_users> users_sink_=std::array<PacketSink<userT>*, n_users>{}, AXISSinkConfig _config=AXISSinkConfig{})
+		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), data_sink(data_sink_), users_sink(users_sink_), packed(_config.packed)
 	{
         addInput(&sresetn);
 		addInput(&tvalid);
@@ -42,14 +43,6 @@ public:
         }
 		resetState();
 	};
-	// Data is returned as a vector of vectors
-	// Each element in the base vector is a packet
-	// Each element in the subvector is a word
-    auto getData(void){return datas;};
-    auto getUsers(void){return users;};
-
-	//Return number of times tlast has been received
-	unsigned int getTlastCount(void) const {return datas.size();};
 
 	void eval(void) override
 	{
@@ -61,7 +54,6 @@ public:
 				if(tready && tvalid)
 				{
 					if(!tdata.is_null()) {
-                        cur_data_natural_width.push_back(tdata);
                         const keepT max_tkeep = static_cast<keepT>((1 << sizeof(dataT))-1);
 
                         keepT keep = tkeep.is_null()? max_tkeep : tkeep;
@@ -90,17 +82,26 @@ public:
                             data >>= 8;
                         }
                     }
-
-                    std::array<userT, n_users> user_values;
-                    std::copy(tusers.begin(), tusers.end(), user_values.begin());
-                    curUsers.push_back(user_values);
+                    for(size_t i=0; i < curUsers.size(); i++)
+                    {
+                        curUsers.at(i).push_back(tusers.at(i));
+                    }
 
 					if(tlast.is_null() || tlast)
 					{
-                        datas_natural_width.push_back(cur_data_natural_width);
-                        datas.push_back(cur_data);
-                        users.push_back(curUsers);
-                        resetPacket();
+					    if(data_sink)
+					    {
+                            data_sink->send(cur_data);
+                        }
+                        cur_data = {};
+					    for(size_t i=0; i < curUsers.size(); i++)
+                        {
+					        if(users_sink.at(i))
+                            {
+                                users_sink.at(i)->send(curUsers[i]);
+                            }
+                            curUsers.at(i) = {};
+                        }
 					}
 				}
 			} else {
@@ -121,36 +122,21 @@ private:
     // The location of each element needs to be fixed in memory since we register it as an input
     std::array<InputLatch<userT>, n_users> tusers;
 
-	std::vector<std::vector<dataT>> datas_natural_width;
-    std::vector<std::vector<uint8_t>> datas;
-    // Outer dimension is each packet
-    // Inner dimension is each beat
-    // Inner inner dimension is each user
-    std::vector<std::vector<std::array<userT, n_users>>> users;
-
-	std::vector<dataT> cur_data_natural_width;
     std::vector<uint8_t> cur_data;
-    std::vector<std::array<userT, n_users>> curUsers;
+    std::array<std::vector<userT>, n_users> curUsers;
+
+    PacketSink<uint8_t> *data_sink;
+    std::array<PacketSink<userT>*, n_users> users_sink;
 
     bool packed;
 
 	void resetState(void)
 	{
-		// Reset vectors
-		datas = {};
-        users = {};
-        resetPacket();
-
-		//Always be ready
+        cur_data = {};
+        curUsers = {};
 		tready = 1;
 	}
 
-	void resetPacket(void)
-    {
-        cur_data = {};
-        cur_data_natural_width = {};
-        curUsers = {};
-    }
 };
 
 #endif

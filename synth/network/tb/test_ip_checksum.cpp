@@ -17,7 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
-#include "../../../sim/other/SimplePacketSource.hpp"
+#include "../../../sim/other/PacketSourceSink.hpp"
 
 //#define __LITTLE_ENDIAN
 // Begin copied and pasted from linux/lib/checksum.c
@@ -101,7 +101,8 @@ template <class Verilated> auto testIpChecksum(std::vector<std::vector<uint8_t>>
     SimplePacketSource<uint8_t> inAxisSource(inData);
 	AXISSource<dataInT, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<dataInT, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, &inAxisSource);
 
-	AXISSink<vluint16_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tdata = &uut.uut->axis_o_csum});
+    SimplePacketSink<uint8_t> outAxisSink;
+	AXISSink<vluint16_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tdata = &uut.uut->axis_o_csum}, &outAxisSink);
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);
 
@@ -113,12 +114,12 @@ template <class Verilated> auto testIpChecksum(std::vector<std::vector<uint8_t>>
 
 	while(true)
 	{
-        if(uut.eval() == false || uut.getTime() == 10000 || inData.size() == outAxis.getTlastCount())
+        if(uut.eval() == false || uut.getTime() == 10000 || inData.size() == outAxisSink.getNumPackets())
         {
             break;
         }
 	}
-	return outAxis.getData();
+    return outAxisSink.getData();
 }
 
 template <class T> std::vector<std::vector<uint8_t>> convert_to_byte_vector_vector(std::vector<std::vector<T>> in)

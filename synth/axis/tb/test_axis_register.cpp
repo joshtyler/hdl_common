@@ -17,14 +17,15 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
-#include "../../../sim/other/SimplePacketSource.hpp"
+#include "../../../sim/other/PacketSourceSink.hpp"
 
 std::vector<std::vector<vluint8_t>> testRegister(std::vector<std::vector<vluint8_t>> inData)
 {
 	VerilatedModel<Vaxis_register> uut;
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
-	AXISSink<vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata});
+    SimplePacketSink<uint8_t> outAxisSink;
+	AXISSink<vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink);
 
 	SimplePacketSource<uint8_t> inAxisSource(inData);
 	AXISSource<vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, &inAxisSource);
@@ -39,12 +40,12 @@ std::vector<std::vector<vluint8_t>> testRegister(std::vector<std::vector<vluint8
 
 	while(true)
 	{
-        if(uut.eval() == false || uut.getTime() == 10000 || inData.size() == outAxis.getTlastCount())
+        if(uut.eval() == false || uut.getTime() == 10000 || inData.size() == outAxisSink.getNumPackets())
         {
             break;
         }
 	}
-	return outAxis.getData();
+    return outAxisSink.getData();
 }
 
 TEST_CASE("Test data comes out of Register", "[axis_register]")

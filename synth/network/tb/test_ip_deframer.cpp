@@ -17,7 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
-#include "../../../sim/other/SimplePacketSource.hpp"
+#include "../../../sim/other/PacketSourceSink.hpp"
 
 namespace {
     struct ret_data {
@@ -43,6 +43,12 @@ namespace {
                         .tdata = &uut.uut->axis_i_tdata
                 }, &inAxisSource);
 
+        SimplePacketSink<uint8_t> outAxisDataSink;
+        SimplePacketSink<uint32_t> outAxisProtocolSink;
+        SimplePacketSink<uint32_t> outAxisSrcIpSink;
+        SimplePacketSink<uint32_t> outAxisDstIpSink;
+        SimplePacketSink<uint32_t> outAxisLenBytesSink;
+
         AXISSink<vluint32_t, vluint8_t, vluint32_t, 4> outAxis(&clk, &uut.uut->sresetn,
                                                                AxisSignals<vluint32_t, vluint8_t, vluint32_t, 4>
                                                                        {
@@ -55,7 +61,14 @@ namespace {
                                                                                           &uut.uut->axis_o_src_ip,
                                                                                           &uut.uut->axis_o_dst_ip,
                                                                                           &uut.uut->axis_o_length_bytes}
-                                                                       });
+                                                                       },
+                                                                       &outAxisDataSink,
+                                                               {
+                                                                    &outAxisProtocolSink,
+                                                                    &outAxisSrcIpSink,
+                                                                    &outAxisDstIpSink,
+                                                                    &outAxisLenBytesSink
+                                                               });
 
         ResetGen resetGen(clk, uut.uut->sresetn, false);
 
@@ -66,26 +79,38 @@ namespace {
         uut.addClock(&clkDriver);
 
         while (true) {
-            if (uut.eval() == false || uut.getTime() == 10000 || outAxis.getTlastCount() == 1) {
+            if (uut.eval() == false || uut.getTime() == 10000 || outAxisDataSink.getNumPackets() == 1) {
                 break;
             }
         }
 
-        auto data = outAxis.getData();
-        auto users = outAxis.getUsers();
-
         // Check that we only have one packet out
-        assert(users.size() == 1);
-        assert(data.size() == 1);
+        assert(outAxisDataSink.getNumPackets() == 1);
+        assert(outAxisProtocolSink.getNumPackets() == 1);
+        assert(outAxisSrcIpSink.getNumPackets() == 1);
+        assert(outAxisDstIpSink.getNumPackets() == 1);
+        assert(outAxisLenBytesSink.getNumPackets() == 1);
 
         // Check all beats are the same for the users (i.e. constant for whole packet)
-        for (const auto &beat : users) {
-            assert(users.front() == beat);
-        }
+        auto check_data_same = [](const auto &packet)
+        {
+            for (const auto &beat : packet.getData().at(0)) {
+                assert(packet.getData().front().front() == beat);
+            }
+        };
+        check_data_same(outAxisProtocolSink);
+        check_data_same(outAxisSrcIpSink);
+        check_data_same(outAxisDstIpSink);
+        check_data_same(outAxisLenBytesSink);
 
-        auto first_users = users.front().front();
-        return ret_data{static_cast<uint8_t>(first_users.at(0)), first_users.at(1), first_users.at(2),
-                        static_cast<uint16_t>(first_users.at(3)), data.front()};
+
+        return ret_data{
+            static_cast<uint8_t>(outAxisProtocolSink.getData().front().front()),
+            outAxisSrcIpSink.getData().front().front(),
+            outAxisDstIpSink.getData().front().front(),
+            static_cast<uint16_t>(outAxisLenBytesSink.getData().front().front()),
+            outAxisDataSink.getData().front()
+        };
     }
 
     TEST_CASE("Test deframer with random UDP packet", "[ip_deframer]")

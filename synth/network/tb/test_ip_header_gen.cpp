@@ -17,7 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
-#include "../../../sim/other/SimplePacketSource.hpp"
+#include "../../../sim/other/PacketSourceSink.hpp"
 
 static inline unsigned short from32to16(unsigned int x)
 {
@@ -101,7 +101,8 @@ auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std
     SimplePacketSource<uint8_t> lenSource(len);
 	AXISSource<vluint16_t, vluint8_t> lenAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint16_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tdata = &uut.uut->axis_i_length_bytes}, &lenSource);
 
-	AXISSink<vluint32_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata});
+    SimplePacketSink<uint8_t> outAxisSink;
+	AXISSink<vluint32_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink);
 
 
 	ResetGen resetGen(clk,uut.uut->sresetn, false);
@@ -114,12 +115,12 @@ auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std
 
 	while(true)
 	{
-        if(uut.eval() == false || uut.getTime() == 10000 || len.size() == outAxis.getTlastCount())
+        if(uut.eval() == false || uut.getTime() == 10000 || len.size() == outAxisSink.getNumPackets())
         {
             break;
         }
 	}
-	return outAxis.getData();
+    return outAxisSink.getData();
 }
 
 TEST_CASE("Test with random UDP packet", "[ip_header_gen]")

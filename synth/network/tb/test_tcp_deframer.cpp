@@ -17,7 +17,7 @@
 #include "../../../sim/other/ClockGen.hpp"
 #include "../../../sim/axis/AXISSink.hpp"
 #include "../../../sim/axis/AXISSource.hpp"
-#include "../../../sim/other/SimplePacketSource.hpp"
+#include "../../../sim/other/PacketSourceSink.hpp"
 
 namespace {
     struct ret_data {
@@ -50,6 +50,17 @@ namespace {
                         .tdata = &uut.uut->axis_i_tdata
                 }, &inAxisSource);
 
+        SimplePacketSink<uint8_t> outAxisDataSink;
+        SimplePacketSink<uint32_t> outAxisLengthSink;
+        SimplePacketSink<uint32_t> outAxisSrcPortSink;
+        SimplePacketSink<uint32_t> outAxisDstPortSink;
+        SimplePacketSink<uint32_t> outAxisSeqNumSink;
+        SimplePacketSink<uint32_t> outAxisAckNumSink;
+        SimplePacketSink<uint32_t> outAxisAckSink;
+        SimplePacketSink<uint32_t> outAxisRstSink;
+        SimplePacketSink<uint32_t> outAxisSynSink;
+        SimplePacketSink<uint32_t> outAxisFinSink;
+        SimplePacketSink<uint32_t> outAxisWindowSink;
         AXISSink<vluint32_t, vluint8_t, vluint32_t, 10> outAxis(&clk, &uut.uut->sresetn,
                                                                 AxisSignals<vluint32_t, vluint8_t, vluint32_t, 10>
                                                                         {
@@ -71,7 +82,20 @@ namespace {
                                                                                                 &uut.uut->axis_o_fin,
                                                                                                 &uut.uut->axis_o_window_size
                                                                                         }
-                                                                        });
+                                                                        },
+                                                                        &outAxisDataSink,
+                                                                {
+                                                                    &outAxisLengthSink,
+                                                                    &outAxisSrcPortSink,
+                                                                    &outAxisDstPortSink,
+                                                                    &outAxisSeqNumSink,
+                                                                    &outAxisAckNumSink,
+                                                                    &outAxisAckSink,
+                                                                    &outAxisRstSink,
+                                                                    &outAxisSynSink,
+                                                                    &outAxisFinSink,
+                                                                    &outAxisWindowSink
+                                                                });
 
         ResetGen resetGen(clk, uut.uut->sresetn, false);
 
@@ -82,37 +106,56 @@ namespace {
         uut.addClock(&clkDriver);
 
         while (true) {
-            if (uut.eval() == false || uut.getTime() == 10000 || outAxis.getTlastCount() == 1) {
+            if (uut.eval() == false || uut.getTime() == 10000 || outAxisDataSink.getNumPackets() == 1) {
                 break;
             }
         }
 
-        auto data = outAxis.getData();
-        auto users = outAxis.getUsers();
 
         // Check that we only have one packet out
-        assert(users.size() == 1);
-        assert(data.size() == 1);
+        assert(outAxisDataSink.getNumPackets() == 1);
+        assert(outAxisLengthSink.getNumPackets() == 1);
+        assert(outAxisSrcPortSink.getNumPackets() == 1);
+        assert(outAxisDstPortSink.getNumPackets() == 1);
+        assert(outAxisSeqNumSink.getNumPackets() == 1);
+        assert(outAxisAckNumSink.getNumPackets() == 1);
+        assert(outAxisAckSink.getNumPackets() == 1);
+        assert(outAxisRstSink.getNumPackets() == 1);
+        assert(outAxisSynSink.getNumPackets() == 1);
+        assert(outAxisFinSink.getNumPackets() == 1);
+        assert(outAxisWindowSink.getNumPackets() == 1);
 
         // Check all beats are the same for the users (i.e. constant for whole packet)
-        for (const auto &beat : users) {
-            assert(users.front() == beat);
-        }
+        auto check_data_same = [](const auto &packet)
+        {
+            for (const auto &beat : packet.getData().at(0)) {
+                assert(packet.getData().front().front() == beat);
+            }
+        };
+        check_data_same(outAxisLengthSink);
+        check_data_same(outAxisSrcPortSink);
+        check_data_same(outAxisDstPortSink);
+        check_data_same(outAxisSeqNumSink);
+        check_data_same(outAxisAckNumSink);
+        check_data_same(outAxisAckSink);
+        check_data_same(outAxisRstSink);
+        check_data_same(outAxisSynSink);
+        check_data_same(outAxisFinSink);
+        check_data_same(outAxisWindowSink);
 
-        auto first_users = users.front().front();
         return ret_data
                 {
-                        static_cast<uint16_t>(first_users.at(0)),
-                        static_cast<uint16_t>( first_users.at(1)),
-                        static_cast<uint16_t>(first_users.at(2)),
-                        first_users.at(3),
-                        first_users.at(4),
-                        static_cast<bool>(first_users.at(5)),
-                        static_cast<bool>(first_users.at(6)),
-                        static_cast<bool>(first_users.at(7)),
-                        static_cast<bool>(first_users.at(8)),
-                        static_cast<uint16_t>(first_users.at(9)),
-                        data.front()
+                        static_cast<uint16_t>(outAxisLengthSink.getData().front().front()),
+                        static_cast<uint16_t>(outAxisSrcPortSink.getData().front().front()),
+                        static_cast<uint16_t>(outAxisDstPortSink.getData().front().front()),
+                        outAxisSeqNumSink.getData().front().front(),
+                        outAxisAckNumSink.getData().front().front(),
+                        static_cast<bool>(outAxisAckSink.getData().front().front()),
+                        static_cast<bool>(outAxisRstSink.getData().front().front()),
+                        static_cast<bool>(outAxisSynSink.getData().front().front()),
+                        static_cast<bool>(outAxisFinSink.getData().front().front()),
+                        static_cast<uint16_t>(outAxisWindowSink.getData().front().front()),
+                        outAxisDataSink.getData().front()
                 };
     }
 

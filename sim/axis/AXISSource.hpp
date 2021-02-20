@@ -15,7 +15,7 @@
 #include <vector>
 #include "../other/ClockGen.hpp"
 #include "../verilator/Peripheral.hpp"
-#include "../other/PacketSource.hpp"
+#include "../other/PacketSourceSink.hpp"
 
 struct AXISSourceConfig
 {
@@ -42,7 +42,7 @@ public:
         if(last && iter != current_packet.end()) throw("AxisSource output last, but tuser packet wasn't empty");
         if(iter == current_packet.end())
         {
-            auto maybe_new_packet = source->get_packet();
+            auto maybe_new_packet = source->receive();
             if(!maybe_new_packet) throw AXISSourceException("tuser packet source couldn't provide packet when required");
             current_packet = *maybe_new_packet;
             iter = current_packet.begin();
@@ -121,7 +121,7 @@ private:
         // If we have run out of data, try and get more
         if(iter == current_packet.end())
         {
-            auto maybe_new_packet = data_source->get_packet();
+            auto maybe_new_packet = data_source->receive();
             if(maybe_new_packet) {
                 current_packet = *maybe_new_packet;
                 iter = current_packet.begin();
