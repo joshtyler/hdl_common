@@ -16,13 +16,13 @@ module axis_header_tagger
 	// Assumed to be packed
 	`S_AXIS_PORT(axis_i, AXIS_BYTES, AXIS_USER_BITS),
 
-	// Will be unpacked if HEADER_LENGTH % AXIS_BYTES != 0
+	// Will be unpacked if HEADER_LENGTH % AXIS_BYTES != 0 and REQUIRE_PACKED_OUTPUT != 0
 	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS),
 	output logic [HEADER_LENGTH_BYTES-1 : 0] axis_o_header
 );
 
-`AXIS_INST(axis_header, AXIS_BYTES);
-`AXIS_INST(axis_o_gated, AXIS_BYTES);
+`AXIS_INST_NO_USER(axis_header, AXIS_BYTES);
+`AXIS_INST(axis_o_gated, AXIS_BYTES, AXIS_USER_BITS);
 
 axis_splitter
 #(
@@ -35,34 +35,36 @@ axis_splitter
 
 	`AXIS_MAP(axis_i, axis_i),
 
-	`AXIS_MAP(axis_o1, axis_header),
+	`AXIS_MAP_IGNORE_USER(axis_o1, axis_header),
 	`AXIS_MAP(axis_o2, axis_o_gated)
 );
+
+logic header_ready, header_valid;
 
 axis_width_converter
 #(
 	.AXIS_I_BYTES(AXIS_BYTES),
 	.AXIS_O_BYTES(HEADER_LENGTH_BYTES)
-) splitter (
+) width_converter (
 	.clk(clk),
 	.sresetn(sresetn),
 
-	`AXIS_MAP(axis_i, axis_i),
+	`AXIS_MAP_NO_USER(axis_i, axis_header),
 	.axis_o_tready(axis_o_tvalid && axis_o_tlast), // Accept the header on the last beat of the real output
 	.axis_o_tvalid(header_valid),
-	.axis_o_tlast()
+	.axis_o_tlast(),
 	.axis_o_tkeep(),
 	.axis_o_tdata(axis_o_header)
 );
 
-`AXIS_INST(axis_unpacked_o, AXIS_BYTES);
+`AXIS_INST(axis_unpacked_o, AXIS_BYTES, AXIS_USER_BITS);
 
-assign axis_o_tready_gated    = header_valid && axis_unpacked_o_tready;
+assign axis_o_gated_tready    = header_valid && axis_unpacked_o_tready;
 assign axis_unpacked_o_tvalid = header_valid && axis_o_gated_tvalid;
 assign axis_unpacked_o_tlast  = axis_o_gated_tlast;
 assign axis_unpacked_o_tkeep  = axis_o_gated_tkeep;
 assign axis_unpacked_o_tdata  = axis_o_gated_tdata;
-assign axis_unpacked_o_tuser  = axis_o_gated_tuesr;
+assign axis_unpacked_o_tuser  = axis_o_gated_tuser;
 
 generate
 	if(REQUIRE_PACKED_OUTPUT && ((HEADER_LENGTH_BYTES % AXIS_BYTES) != 0))
@@ -75,7 +77,7 @@ generate
 			.sresetn(sresetn),
 
 			`AXIS_MAP_NO_USER(axis_i, axis_unpacked_o),
-			`AXIS_MAP_NO_USER(axis_o, axis_o),
+			`AXIS_MAP_NO_USER(axis_o, axis_o)
 		);
 	end else begin
 		assign axis_unpacked_o_tready = axis_o_tready;
@@ -83,7 +85,7 @@ generate
 		assign axis_o_tlast  = axis_unpacked_o_tlast;
 		assign axis_o_tkeep  = axis_unpacked_o_tkeep;
 		assign axis_o_tdata  = axis_unpacked_o_tdata;
-		assign axis_o_tuser  = axis_unpacked_o_tuesr;
+		assign axis_o_tuser  = axis_unpacked_o_tuser;
 	end
 endgenerate
 

@@ -27,7 +27,7 @@ localparam [AXIS_BYTES-1:0] O2_LAST_KEEP_MASK = ~O1_LAST_KEEP_MASK;
 
 localparam integer CTR_WIDTH = SPLIT_WORD_INDEX < 1? 1 : $clog2(SPLIT_WORD_INDEX);
 
-localparam logic [CTR_WIDTH-1:0] CTR_MAX = SPLIT_WORD_INDEX;
+localparam logic [CTR_WIDTH-1:0] CTR_MAX = SPLIT_WORD_INDEX[CTR_WIDTH-1:0];
 logic [CTR_WIDTH-1:0] ctr;
 
 always_ff @(posedge clk)
@@ -101,7 +101,7 @@ axis_register
 #(
 	.AXIS_BYTES(AXIS_BYTES),
 	.AXIS_USER_BITS(AXIS_USER_BITS)
-) o1_reg (
+) o2_reg (
 	.clk(clk),
 	.sresetn(sresetn),
 
