@@ -8,7 +8,7 @@
 
 #include "TunTap.hpp"
 
-TunTapInterface::TunTapInterface(Type t, const char *dev_name=nullptr)
+TunTapInterface::TunTapInterface(Type t, const char *dev_name)
 {
     const char *clonedev = "/dev/net/tun";
     fd = open(clonedev, O_RDWR);
@@ -23,7 +23,10 @@ TunTapInterface::TunTapInterface(Type t, const char *dev_name=nullptr)
     // Don't prepend optional protocol header
     ifr.ifr_flags |= IFF_NO_PI;
 
-    strncpy(ifr.ifr_name, dev_name, IFNAMSIZ);
+    if(dev_name)
+    {
+        strncpy(ifr.ifr_name, dev_name, IFNAMSIZ);
+    }
 
     // Create device
     int err = ioctl(fd, TUNSETIFF, reinterpret_cast<void *>(&ifr));
@@ -35,7 +38,7 @@ TunTapInterface::TunTapInterface(Type t, const char *dev_name=nullptr)
     }
 
     mtu = ifr.ifr_mtu;
-    name = std::string(ifr.name);
+    name = std::string(ifr.ifr_name);
 }
 
 void TunTapInterface::send(std::span<uint8_t> data)
@@ -53,5 +56,5 @@ std::optional<std::vector<uint8_t>> TunTapInterface::receive()
     }
     ret.resize(n_read);
 
-    return ret.size()? ret : std::nullopt;
+    return ret.size()? std::optional<std::vector<uint8_t>>(ret) : std::nullopt;
 }

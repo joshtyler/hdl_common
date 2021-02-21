@@ -19,6 +19,10 @@ module axis_splitter
 	// Will be unpacked if SPLIT_BYTE_INDEX % AXIS_BYTES != 0
 	`M_AXIS_PORT(axis_o2, AXIS_BYTES, AXIS_USER_BITS)
 );
+// Untested - this needs to be thought about
+// Was made for axis_header_tagger, but since the header wasn't really an independent stream, it wasn't needed
+// The relevant logic was integrated inline
+/*
 
 localparam SPLIT_WORD_INDEX = `INTEGER_DIV_CEIL(SPLIT_BYTE_INDEX,AXIS_BYTES);
 localparam LAST_WORD_REMAINDER = SPLIT_BYTE_INDEX % AXIS_BYTES;
@@ -114,5 +118,5 @@ axis_register
 
 	`AXIS_MAP(axis_o, axis_o2)
 );
-
+*/
 endmodule

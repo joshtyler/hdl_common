@@ -18,53 +18,47 @@ module axis_header_tagger
 
 	// Will be unpacked if HEADER_LENGTH % AXIS_BYTES != 0 and REQUIRE_PACKED_OUTPUT != 0
 	`M_AXIS_PORT(axis_o, AXIS_BYTES, AXIS_USER_BITS),
-	output logic [HEADER_LENGTH_BYTES-1 : 0] axis_o_header
+	output logic [HEADER_LENGTH_BYTES*8-1 : 0] axis_o_header
 );
 
-`AXIS_INST_NO_USER(axis_header, AXIS_BYTES);
-`AXIS_INST(axis_o_gated, AXIS_BYTES, AXIS_USER_BITS);
+localparam SPLIT_WORD_INDEX = `INTEGER_DIV_CEIL(HEADER_LENGTH_BYTES-1,AXIS_BYTES);
+localparam LAST_WORD_REMAINDER = HEADER_LENGTH_BYTES-1 % AXIS_BYTES;
+localparam [AXIS_BYTES-1:0] HEADER_LAST_KEEP_MASK = (LAST_WORD_REMAINDER==0)? '1 : (2**LAST_WORD_REMAINDER)-1;
+localparam [AXIS_BYTES-1:0] DATA_LAST_KEEP_MASK = ~HEADER_LAST_KEEP_MASK;
 
-axis_splitter
-#(
-	.AXIS_BYTES(AXIS_BYTES),
-	.AXIS_USER_BITS(AXIS_USER_BITS),
-	.SPLIT_BYTE_INDEX(HEADER_LENGTH_BYTES)
-) splitter (
-	.clk(clk),
-	.sresetn(sresetn),
+localparam integer CTR_WIDTH = SPLIT_WORD_INDEX < 1? 1 : $clog2(SPLIT_WORD_INDEX+1);
+localparam logic [CTR_WIDTH-1:0] CTR_MAX = SPLIT_WORD_INDEX[CTR_WIDTH-1:0];
+logic [CTR_WIDTH-1:0] ctr;
 
-	`AXIS_MAP(axis_i, axis_i),
+// Have a dummy header output variable so that we don't run past the end
+logic [(SPLIT_WORD_INDEX+1)*AXIS_BYTES*8-1:0] axis_o_header_widened;
+assign axis_o_header = axis_o_header_widened[$high(axis_o_header):0];
 
-	`AXIS_MAP_IGNORE_USER(axis_o1, axis_header),
-	`AXIS_MAP(axis_o2, axis_o_gated)
-);
-
-logic header_ready, header_valid;
-
-axis_width_converter
-#(
-	.AXIS_I_BYTES(AXIS_BYTES),
-	.AXIS_O_BYTES(HEADER_LENGTH_BYTES)
-) width_converter (
-	.clk(clk),
-	.sresetn(sresetn),
-
-	`AXIS_MAP_NO_USER(axis_i, axis_header),
-	.axis_o_tready(axis_o_tvalid && axis_o_tlast), // Accept the header on the last beat of the real output
-	.axis_o_tvalid(header_valid),
-	.axis_o_tlast(),
-	.axis_o_tkeep(),
-	.axis_o_tdata(axis_o_header)
-);
+always_ff @(posedge clk)
+begin
+	if (!sresetn || (axis_i_tready && axis_i_tvalid && axis_i_tlast))
+	begin
+		ctr <= 0;
+	end else begin
+		if (axis_i_tready && axis_i_tvalid)
+		begin
+			if(ctr <= CTR_MAX)
+			begin
+				ctr <= ctr + 1;
+				axis_o_header_widened[ctr*AXIS_BYTES*8 +: AXIS_BYTES*8] <= axis_i_tdata;
+			end
+		end
+	end
+end
 
 `AXIS_INST(axis_unpacked_o, AXIS_BYTES, AXIS_USER_BITS);
 
-assign axis_o_gated_tready    = header_valid && axis_unpacked_o_tready;
-assign axis_unpacked_o_tvalid = header_valid && axis_o_gated_tvalid;
-assign axis_unpacked_o_tlast  = axis_o_gated_tlast;
-assign axis_unpacked_o_tkeep  = axis_o_gated_tkeep;
-assign axis_unpacked_o_tdata  = axis_o_gated_tdata;
-assign axis_unpacked_o_tuser  = axis_o_gated_tuser;
+assign axis_i_tready          = (ctr < CTR_MAX)? 1'b1 : axis_unpacked_o_tready;
+assign axis_unpacked_o_tvalid = (ctr < CTR_MAX)? 1'b0 : axis_i_tvalid;
+assign axis_unpacked_o_tlast  = axis_i_tlast;
+assign axis_unpacked_o_tkeep  = axis_i_tkeep & DATA_LAST_KEEP_MASK;
+assign axis_unpacked_o_tdata  = axis_i_tdata;
+assign axis_unpacked_o_tuser  = axis_i_tuser;
 
 generate
 	if(REQUIRE_PACKED_OUTPUT && ((HEADER_LENGTH_BYTES % AXIS_BYTES) != 0))

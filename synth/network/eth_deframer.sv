@@ -4,7 +4,7 @@
 module eth_deframer
 #(
 	// Just support four bytes wide. This makes deframing much easier
-	parameter integer AXIS_BYTES = 4
+	parameter integer AXIS_BYTES = 4,
 	parameter REQUIRE_PACKED_OUTPUT = 1
 ) (
 	input clk,
@@ -19,10 +19,10 @@ module eth_deframer
 	output logic [2*8-1:0] axis_o_ethertype
 );
 
-`BYTE_SWAP_FUNCTION(byte_swap_6, 6)
-`BYTE_SWAP_FUNCTION(byte_swap_2, 2)
+`BYTE_SWAP_FUNCTION(byte_swap_6, 6);
+`BYTE_SWAP_FUNCTION(byte_swap_2, 2);
 
-logic [14*8-1] header;
+logic [14*8-1:0] header;
 axis_header_tagger
 #(
 	.AXIS_BYTES(AXIS_BYTES),

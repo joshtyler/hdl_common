@@ -1,7 +1,11 @@
 #ifndef TUNTAP_HPP
 #define TUNTAP_HPP
 
-class TunTapException : std::runtime_error
+#include <stdexcept>
+
+#include "../other/PacketSourceSink.hpp"
+
+class TunTapException : public std::runtime_error
 {
     using std::runtime_error::runtime_error;
 };
@@ -20,7 +24,7 @@ public:
 protected:
     enum class Type
     {
-        TUN
+        TUN,
         TAP
     };
 
@@ -43,14 +47,14 @@ private:
 class Tun : public TunTapInterface
 {
 public:
-    Tun(const char *dev_name=nullptr) :TunTapInterface(Type::TUN, dev_name);
+    Tun(const char *dev_name=nullptr) :TunTapInterface(Type::TUN, dev_name) {};
 };
 
 // Ethernet level interface
 class Tap : public TunTapInterface
 {
 public:
-    Tap(const char *dev_name=nullptr) :TunTapInterface(Type::TAP, dev_name);
+    Tap(const char *dev_name=nullptr) :TunTapInterface(Type::TAP, dev_name) {};
 };
 
 #endif
