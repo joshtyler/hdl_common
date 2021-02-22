@@ -52,31 +52,31 @@ template <class model_t, class data_in_t, class data_out_t> auto testWidthConver
     return outAxisSink.getData();
 }
 
-TEST_CASE("Test width converter pass through", "[axis_width_converter]")
+TEST_CASE("width_converter: Test width converter pass through", "[axis_width_converter]")
 {
 	std::vector<std::vector<vluint8_t>> testData = {{0x0,0x1,0x2,0x3}};
 	auto result = testWidthConverter<Vaxis_width_converter_1i_1o,vluint8_t, vluint8_t>(testData);
 	REQUIRE(testData == result);
 }
 
-TEST_CASE("Test unpacker", "[axis_width_converter]")
+TEST_CASE("width_converter: Test converting wide to narrow", "[axis_width_converter]")
 {
 	const std::vector<std::vector<vluint8_t>> data = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7}};
 	auto result = testWidthConverter<Vaxis_width_converter_2i_1o,vluint16_t, vluint8_t>(data);
 	REQUIRE(data == result);
 }
 
-TEST_CASE("Test packer", "[axis_width_converter]")
+TEST_CASE("width_converter: Test converting narrow to wide", "[axis_width_converter]")
 {
     const std::vector<std::vector<vluint8_t>> data = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7}};
-	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(data, "packer.vcd", false);
+	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(data, "width_converter_narrow_to_wide.vcd", true);
 	REQUIRE(data == result);
 }
 
-TEST_CASE("Test packing with incomplete input", "[axis_width_converter]")
+TEST_CASE("width_converter: Test converting narrow to wide, but assering tkeep early", "[axis_width_converter]")
 {
     const std::vector<std::vector<vluint8_t>> data = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6}};
     const std::vector<std::vector<vluint8_t>> data_padded = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x0}};
-	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(data, "packer_uneven.vcd", false);
+	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(data, "width_converter_narrow_to_wide_early.vcd", false);
 	REQUIRE(data_padded == result);
 }

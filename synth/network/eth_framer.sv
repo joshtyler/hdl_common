@@ -35,7 +35,6 @@ module eth_framer
 );
 
 `BYTE_SWAP_FUNCTION(byte_swap_2, 2);
-`BYTE_SWAP_FUNCTION(byte_swap_6, 6);
 
 logic [0:0] state;
 localparam [0:0] SM_HEADER = 1'b0;
@@ -91,7 +90,7 @@ axis_width_converter
 	.axis_i_tvalid(header_valid),
 	.axis_i_tlast(1'b1),
 	.axis_i_tkeep('1),
-	.axis_i_tdata({byte_swap_2(axis_i_ethertype), byte_swap_6(axis_i_src_mac), byte_swap_6(axis_i_dst_mac)}),
+	.axis_i_tdata({byte_swap_2(axis_i_ethertype), axis_i_src_mac, axis_i_dst_mac}),
 	`AXIS_MAP_NO_USER(axis_o, ethernet_header_native)
 );
 

@@ -11,7 +11,7 @@
 TunTapInterface::TunTapInterface(Type t, const char *dev_name)
 {
     const char *clonedev = "/dev/net/tun";
-    fd = open(clonedev, O_RDWR);
+    fd = open(clonedev, O_RDWR | O_NONBLOCK);
     if(fd < 0)
     {
         throw TunTapException("Could not open clonedev");
@@ -34,7 +34,7 @@ TunTapInterface::TunTapInterface(Type t, const char *dev_name)
     if(err < 0)
     {
         close(fd);
-        throw TunTapException("Could not create device");
+        throw TunTapException("Could not create device. If you are creating a new device, you need to be root, or have CAP_NET_ADMIN capability set.");
     }
 
     mtu = ifr.ifr_mtu;
@@ -52,7 +52,11 @@ std::optional<std::vector<uint8_t>> TunTapInterface::receive()
     ssize_t n_read = read(fd, ret.data(), ret.size());
     if(n_read < 0)
     {
-        throw TunTapException("Read returned error");
+        if(!((errno == EAGAIN) || (errno == EWOULDBLOCK)))
+        {
+            throw TunTapException("Read returned error");
+        }
+        n_read = 0;
     }
     ret.resize(n_read);
 

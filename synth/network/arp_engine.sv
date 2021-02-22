@@ -19,8 +19,6 @@ module arp_engine
 	output logic [47:0] axis_o_dst_mac
 );
 
-`BYTE_SWAP_FUNCTION(byte_swap_6, 6)
-`BYTE_SWAP_FUNCTION(byte_swap_4, 4)
 `BYTE_SWAP_FUNCTION(byte_swap_2, 2)
 
 localparam ARP_PACKET_SIZE=28;
@@ -75,8 +73,8 @@ logic [(ARP_PACKET_SIZE-18)*8-1:0] arp_out_dynamic;
 assign arp_out = {arp_out_dynamic, arp_out_constant};
 assign arp_out_constant[18*8-1:0] =
 {
-	byte_swap_4(OUR_IP),
-	byte_swap_6(OUR_MAC),
+	OUR_IP,
+	OUR_MAC,
 	OPER_REPLY,
 	PLEN,
 	HLEN,
@@ -86,7 +84,7 @@ assign arp_out_constant[18*8-1:0] =
 
 localparam [8*8-1:0] expected_header_start =
 {
-	OPER_REPLY,
+	OPER_REQUEST,
 	PLEN,
 	HLEN,
 	PTYPE_IPV4,
@@ -113,12 +111,12 @@ begin
 			SM_RECEIVE: begin
 				// Fill in the target portion of outgoing message with sender portion of incoming
 				arp_out_dynamic <= arp_in[18*8-1:8*8];
-				axis_o_dst_mac <= byte_swap_6(arp_in[14*8-1:8*8]);
+				axis_o_dst_mac <= arp_in[14*8-1:8*8];
 				if (arp_in_valid)
 				begin
 					state <= SM_WAIT_LAST;
 					// We need to issue a reply if the boilerplate is as expected, and the request is for us
-					good  <= (arp_in[8*8-1:0] == expected_header_start) && (arp_in[28*8-1:24*8] == byte_swap_4(OUR_IP));
+					good  <= (arp_in[8*8-1:0] == expected_header_start) && (arp_in[28*8-1:24*8] == OUR_IP);
 				end
 			end
 			// Have a separate state to wait for the last word

@@ -19,7 +19,6 @@ module eth_deframer
 	output logic [2*8-1:0] axis_o_ethertype
 );
 
-`BYTE_SWAP_FUNCTION(byte_swap_6, 6);
 `BYTE_SWAP_FUNCTION(byte_swap_2, 2);
 
 logic [14*8-1:0] header;
@@ -28,7 +27,7 @@ axis_header_tagger
 	.AXIS_BYTES(AXIS_BYTES),
 	.HEADER_LENGTH_BYTES(14),
 	.REQUIRE_PACKED_OUTPUT(REQUIRE_PACKED_OUTPUT)
-) trimmer (
+) tagger (
 	.clk(clk),
 	.sresetn(sresetn),
 
@@ -38,8 +37,8 @@ axis_header_tagger
 	.axis_o_header(header)
 );
 
-assign axis_o_dst_mac   = byte_swap_6(header[6*8-1 :0]);
-assign axis_o_src_mac   = byte_swap_6(header[12*8-1:6*8]);
+assign axis_o_dst_mac   = header[6*8-1 :0];
+assign axis_o_src_mac   = header[12*8-1:6*8];
 assign axis_o_ethertype = byte_swap_2(header[14*8-1:12*8]);
 
 endmodule

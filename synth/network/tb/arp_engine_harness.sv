@@ -11,9 +11,9 @@ module arp_engine_harness
 	`M_AXIS_PORT_NO_USER(axis_o, 4)
 );
 
-	localparam [15:0] ETHERTYPE_ARP = 16'h0608;
-	localparam [47:0] OUR_MAC = 48'h0605040302;
-	localparam [31:0] OUR_IP  = {8'd10, 8'd10, 8'd168, 8'd192};
+	localparam [15:0] ETHERTYPE_ARP = 16'h0806;
+	localparam [47:0] OUR_MAC = 48'h070605040302;
+	localparam [31:0] OUR_IP  = {8'd110, 8'd0, 8'd0, 8'd10};
 
 	`AXIS_INST_NO_USER(axis_from_mac_no_eth_unpacked, 4);
 	logic [47:0] axis_from_mac_no_eth_unpacked_dst_mac;
@@ -24,7 +24,7 @@ module arp_engine_harness
 	#(
 		.AXIS_BYTES(4),
 		.REQUIRE_PACKED_OUTPUT(1)
-	) rx_mac (
+	) eth_deframer (
 		.clk(clk),
 		.sresetn(sresetn),
 

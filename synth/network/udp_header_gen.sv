@@ -7,6 +7,7 @@
 
 // Create a UDP header
 `include "axis/axis.h"
+`include "axis/utility.h"
 
 module udp_header_gen
 #(
@@ -34,6 +35,7 @@ module udp_header_gen
 `AXIS_INST_NO_USER(len_byte_wide_axis, 1);
 `AXIS_INST_NO_USER(checksum_axis, 1);
 
+`BYTE_SWAP_FUNCTION(byte_swap_2, 2);
 
 vector_to_axis
 #(
@@ -84,8 +86,7 @@ localparam [15:0] UDP_HEADER_LEN = 8;
 axis_width_converter
 #(
 	.AXIS_I_BYTES(2),
-	.AXIS_O_BYTES(1),
-	.MSB_FIRST(1)
+	.AXIS_O_BYTES(1)
 ) conv_length (
 	.clk(clk),
 	.sresetn(sresetn),
@@ -94,7 +95,7 @@ axis_width_converter
 	.axis_i_tvalid(payload_length_axis_tvalid),
 	.axis_i_tlast (payload_length_axis_tlast),
 	.axis_i_tkeep (payload_length_axis_tkeep),
-	.axis_i_tdata (payload_length_axis_tdata + UDP_HEADER_LEN),
+	.axis_i_tdata (byte_swap_2(payload_length_axis_tdata + UDP_HEADER_LEN)),
 
 	`AXIS_MAP_NO_USER(axis_o, len_byte_wide_axis)
 );

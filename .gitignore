@@ -1,5 +1,0 @@
-obj_dir/
-*.vcd
-run_unit_tests
-cmake-build-debug
-.idea

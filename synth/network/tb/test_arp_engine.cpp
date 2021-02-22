@@ -26,8 +26,11 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
     VerilatedModel<Varp_engine_harness> uut("arp_engine.vcd", true);
 
     ClockGen clk(uut.getTime(), 1e-9, 100e6);
+    ResetGen resetGen(clk,uut.uut->sresetn, false);
 
-    Tap tap;
+    // If you want to look at the data manually, run ip tuntap add name tap0 mode tap
+    // Then pass "tap0" as the argument to this constructor
+    Tap tap("tap0");
 
     AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
             {
@@ -47,6 +50,33 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
         .tdata = &uut.uut->axis_o_tdata
     }, &tap);
 
+    uut.addPeripheral(&resetGen);
+    uut.addPeripheral(&inAxis);
+    uut.addPeripheral(&outAxis);
+    ClockBind clkDriver(clk,uut.uut->clk);
+    uut.addClock(&clkDriver);
+
     std::system(std::string("ip addr add 10.0.0.100/8 dev "+tap.getName()).c_str());
+    std::system(std::string("ip link set "+tap.getName()+" up").c_str());
+    auto arping_file = popen("arping 10.0.0.110 -c 5", "r");
+
+    while(true)
+    {
+        if (uut.eval() == false)
+        {
+            std::cerr << "uut.eval() failed!\n";
+            break;
+        }
+
+        if (uut.getTime() == 10000)
+        {
+            std::cerr << "Timeout\n";
+            break;
+        }
+    }
+
+    int ret = pclose(arping_file);
+
+    REQUIRE(ret == 0);
 
 }
