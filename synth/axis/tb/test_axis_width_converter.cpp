@@ -44,8 +44,21 @@ template <class model_t, class data_in_t, class data_out_t> auto testWidthConver
 
 	while(true)
 	{
-        if(uut.eval() == false || uut.getTime() == 10000 || inData.size() == outAxisSink.getNumPackets())
+        if(uut.eval() == false)
         {
+	        std::cout << "uut.eval() failed" << std::endl;
+            break;
+        }
+
+        if(uut.getTime() == 10000)
+        {
+            std::cout << "Timeout" << std::endl;
+            break;
+        }
+
+        if(inData.size() == outAxisSink.getNumPackets())
+        {
+            std::cout << "Got all the data" << std::endl;
             break;
         }
 	}
@@ -62,21 +75,21 @@ TEST_CASE("width_converter: Test width converter pass through", "[axis_width_con
 TEST_CASE("width_converter: Test converting wide to narrow", "[axis_width_converter]")
 {
 	const std::vector<std::vector<vluint8_t>> data = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7}};
-	auto result = testWidthConverter<Vaxis_width_converter_2i_1o,vluint16_t, vluint8_t>(data);
+	auto result = testWidthConverter<Vaxis_width_converter_2i_1o,vluint16_t, vluint8_t>(data, "width_converter_wide_to_narrow.vcd", true);
 	REQUIRE(data == result);
 }
 
 TEST_CASE("width_converter: Test converting narrow to wide", "[axis_width_converter]")
 {
     const std::vector<std::vector<vluint8_t>> data = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x7}};
-	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(data, "width_converter_narrow_to_wide.vcd", true);
+	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(data, "width_converter_narrow_to_wide.vcd", false);
 	REQUIRE(data == result);
 }
 
 TEST_CASE("width_converter: Test converting narrow to wide, but assering tkeep early", "[axis_width_converter]")
 {
     const std::vector<std::vector<vluint8_t>> data = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6}};
-    const std::vector<std::vector<vluint8_t>> data_padded = {{0x0,0x1,0x2,0x3,0x4,0x5,0x6,0x0}};
 	auto result = testWidthConverter<Vaxis_width_converter_1i_2o,vluint8_t, vluint16_t>(data, "width_converter_narrow_to_wide_early.vcd", false);
-	REQUIRE(data_padded == result);
+	// No need to pad since tkeep is supported
+	REQUIRE(data == result);
 }

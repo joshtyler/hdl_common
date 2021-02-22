@@ -64,9 +64,11 @@ generate
 
 		assign axis_i_tready = ctr == CTR_HIGH? axis_o_tready : 1'b0;
 		assign axis_o_tvalid = axis_i_tvalid;
-		assign axis_o_tlast = axis_i_tlast;
-		assign axis_o_tkeep = keep_wide[ctr*(AXIS_O_BYTES)-1   +: (AXIS_O_BYTES)];
-		assign axis_o_tdata = data_wide[ctr*(AXIS_O_BYTES*8)-1 +: (AXIS_O_BYTES*8)];
+		assign axis_o_tlast  = ctr == CTR_HIGH? axis_i_tlast : 1'b0;
+		// verilator lint_off WIDTH
+		assign axis_o_tkeep = keep_wide[(ctr+1)*(AXIS_O_BYTES)-1   -: (AXIS_O_BYTES)];
+		assign axis_o_tdata = data_wide[(ctr+1)*(AXIS_O_BYTES*8)-1 -: (AXIS_O_BYTES*8)];
+		// verilator lint_on WIDTH
 
 
 		always @(posedge clk)
@@ -102,18 +104,12 @@ generate
 			data_wide = data_wide_reg;
 			keep_wide = keep_wide_reg;
 
-			/*verilator lint_off WIDTH */
+			// verilator lint_off WIDTH
 			data_wide[(ctr+1)*(AXIS_I_BYTES*8)-1 -: (AXIS_I_BYTES*8)] = axis_i_tdata;
 			keep_wide[(ctr+1)*(AXIS_I_BYTES)-1   -: (AXIS_I_BYTES)] = axis_i_tkeep;
-			/*verilator lint_on WIDTH */
-
-			if(sresetn == 0 || (axis_o_tready && axis_o_tvalid))
-			begin
-				keep_wide = 0;
-			end
+			// verilator lint_on WIDTH
 		end
 
-		always_ff @(posedge clk) keep_wide_reg <= keep_wide;
 		always_ff @(posedge clk) data_wide_reg <= data_wide;
 
 		always @(posedge clk)
@@ -121,7 +117,9 @@ generate
 			if (sresetn == 0 || (axis_o_tready && axis_o_tvalid))
 			begin
 				ctr <= 0;
+				 keep_wide_reg <= 0;
 			end else begin
+				keep_wide_reg <= keep_wide;
 				if(axis_i_tready && axis_i_tvalid)
 				begin
 					ctr <= ctr + 1;
