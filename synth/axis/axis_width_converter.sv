@@ -90,7 +90,7 @@ endgenerate
 // Combine many small input words to make a big output word
 generate
 	if (AXIS_I_BYTES < AXIS_O_BYTES) begin
-		assign axis_i_tready = 	ctr == CTR_HIGH? 1'b1 : axis_o_tready;
+		assign axis_i_tready = 	ctr == CTR_HIGH? axis_o_tready : 1'b1;
 		assign axis_o_tvalid = axis_i_tvalid && (axis_i_tlast || (ctr == CTR_HIGH)); // Finish early if we get the last beat early
 		assign axis_o_tlast = axis_i_tlast;
 		assign axis_o_tkeep = keep_wide[AXIS_O_BYTES-1:0];
