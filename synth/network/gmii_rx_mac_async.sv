@@ -17,7 +17,7 @@
 
 module gmii_rx_mac_async
 #(
-	parameter integer AXIS_BYTES = 1
+	parameter integer AXIS_BYTES = 1,
 	parameter integer MTU_SIZE = 1522 // Used to size FIFO
 )
 (
@@ -40,7 +40,7 @@ module gmii_rx_mac_async
 	logic rx_valid;
 	logic rx_error;
 	logic rx_last;
-	always_ff @ (posedge eth_rxclk)
+	always_ff @ (posedge eth_clk)
 	begin
 		rx_data  <= eth_rxd;
 		rx_valid <= eth_rxdv;
@@ -60,7 +60,9 @@ module gmii_rx_mac_async
 	localparam [1:0] SM_OUTPUT       = 2'b11;
 
 	localparam REG_CTR_WIDTH = (AXIS_BYTES == 1)? 1: $clog2(AXIS_BYTES);
-	localparam [REG_CTR_WIDTH-1:0] REG_CTR_MAX;
+	// verilator lint_off WIDTH
+	localparam [REG_CTR_WIDTH-1:0] REG_CTR_MAX = AXIS_BYTES-1;
+	// verilator lint_on WIDTH
 	logic [REG_CTR_WIDTH-1:0] ctr;
 
 	logic fifo_in_valid;
@@ -75,7 +77,7 @@ module gmii_rx_mac_async
 		begin
 			state <= SM_WAIT_INVALID;
 		end else begin
-				axis_fifo_tvalid <= 0;
+				fifo_in_valid <= 0;
 
 			case(state)
 				// Wait until input is invalid (i.e the next valid word will be preamble for a new packet)
@@ -84,7 +86,7 @@ module gmii_rx_mac_async
 					ctr <= 0;
 					if(!rx_valid)
 					begin
-						state <= SM_PREAMBLE
+						state <= SM_PREAMBLE;
 					end
 				end
 
@@ -93,9 +95,9 @@ module gmii_rx_mac_async
 				begin
 					if(rx_valid)
 					begin
-						if(rx_data = 8'bAA)
+						if(rx_data == 8'h55)
 						begin
-							state <= SM_SFD
+							state <= SM_SFD;
 						end else begin
 							// We didn't get what we were expecting, reset
 							state <= SM_WAIT_INVALID;
@@ -107,10 +109,10 @@ module gmii_rx_mac_async
 				// Waits for the start of frame delimiter
 				SM_SFD:
 				begin
-					if(rx_valid && (rx_data = 8'bAB))
+					if(rx_valid && (rx_data == 8'hD5))
 					begin
-						state <= SM_OUTPUT
-					end else if((!rx_valid) || (rx_data != 8'bAA)) begin
+						state <= SM_OUTPUT;
+					end else if((!rx_valid) || (rx_data != 8'h55)) begin
 						// We didn't get what we were expecting, reset
 						state <= SM_WAIT_INVALID;
 					end
@@ -120,12 +122,17 @@ module gmii_rx_mac_async
 				SM_OUTPUT:
 				begin
 					fifo_in_last  <= rx_last;
+					// verilator lint_off WIDTH
 					fifo_in_data[(ctr+1)*8-1 -: 8]  <= rx_data;
+					// verilator lint_on WIDTH
 					fifo_in_error <= rx_error;
 					fifo_in_valid <= rx_last || rx_error || (ctr == REG_CTR_MAX);
 
+					ctr <= ctr+1;
+
 					// On a new word, clear out the whole keep, otherwise just set the appropriate bit
-					if ctr == 0 begin
+					if (ctr == 0)
+					begin
 						fifo_in_keep <= 1;
 					end else begin
 						fifo_in_keep[ctr] <= 1'b1;
@@ -133,7 +140,7 @@ module gmii_rx_mac_async
 
 					// The (!rx_valid) shouldn't be needed
 					// We have it just in case last was asserted during SM_SFD
-					if(rx_last || (!rx_valid) || rx_error) begin
+					if(rx_last || (!rx_valid) || rx_error)
 					begin
 						// It is the end of a packet, go and wait for the next preamble
 						state <= SM_PREAMBLE;
@@ -152,8 +159,8 @@ module gmii_rx_mac_async
 
 	axis_error_filter_async
 	#(
-		.AXIS_BYTES(1),
-		.LOG2_DEPTH($clog2(MTU_SIZE))
+		.AXIS_BYTES(AXIS_BYTES),
+		.LOG2_DEPTH($clog2(`INTEGER_DIV_CEIL(MTU_SIZE, AXIS_BYTES)))
 	) fifo (
 		.i_clk(eth_clk),
 		.i_sresetn(eth_sresetn),

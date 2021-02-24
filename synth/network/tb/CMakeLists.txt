@@ -7,5 +7,7 @@ add_library(network_object OBJECT
         test_tcp_deframer.cpp
         test_arp_engine.cpp
         ../../../sim/network/TunTap.cpp
+        ../../../sim/network/GMIISource.cpp
+        ../../../sim/network/GMIISink.cpp
         )
-target_link_libraries(network_object PUBLIC network_verilated)
+target_link_libraries(network_object PUBLIC network_verilated z)

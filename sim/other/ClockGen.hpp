@@ -13,6 +13,7 @@
 // Generate a clock for verilator testbenches
 // Just takes a reference to the current time
 
+#include <string>
 #include "verilated.h"
 
 class ClockGen

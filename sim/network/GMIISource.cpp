@@ -1,5 +1,8 @@
 #include "GMIISource.hpp"
 
+#include <boost/endian/conversion.hpp>
+#include <zlib.h>
+
 void GMIISource::eval(void)
 {
     if((clk->getEvent() == ClockGen::Event::RISING))
@@ -20,7 +23,7 @@ void GMIISource::eval(void)
                 if (current_packet.size() < 60)
                 {
                     // Pad with zeros, even though actual value does not matter
-                    current_packet.resize(60 - current_packet.size(), 0);
+                    current_packet.resize(60, 0);
                 }
 
                 // Add the ethernet CRC to the front

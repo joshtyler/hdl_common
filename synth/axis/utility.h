@@ -24,6 +24,6 @@ endgenerate
 `define INTEGER_DIV_CEIL(NUM, DENOM) (((NUM - 1)/DENOM) + 1)
 
 // Not just called MAX to avoid clashes
-`define GET_MAX(X, Y) (((X)>(Y)? (X) : (Y))
+`define GET_MAX(X, Y) ((X) > (Y)? (X) : (Y))
 
 `endif

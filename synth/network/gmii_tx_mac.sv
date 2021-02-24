@@ -30,7 +30,7 @@ module gmii_tx_mac
 	`S_AXIS_PORT_NO_USER(axis_i, AXIS_BYTES),
 
 	output logic [7:0] eth_txd,
-	output logic       eth_txdv,
+	output logic       eth_txen,
 	output logic       eth_txer
 );
 
@@ -110,7 +110,7 @@ endfunction
 	//Sliced version of the counter for unpacking data
 	`STATIC_ASSERT(AXIS_BYTES <= 2**6); // Otherwise counter won't fit. No point making generic because this is outrageously wide!
 	`STATIC_ASSERT(AXIS_BYTES % 2 ==0); // Otherwise our counter slicing trick does not work
-	localparam DATA_CTR_WIDTH = `GET_MAX($clog2(AXIS_BYTES),1);
+	localparam DATA_CTR_WIDTH = `GET_MAX( $clog2(AXIS_BYTES), 1 );
 	logic[DATA_CTR_WIDTH-1:0] data_ctr;
 	assign data_ctr = ctr[DATA_CTR_WIDTH-1:0];
 
@@ -137,7 +137,9 @@ endfunction
 			// AXIS_BYTES=1 is a special case again for the same reason
 			assign current_data_slice = axis_i_tdata;
 		end else begin
+			// verilator lint_off WIDTH
 			assign current_data_slice = axis_i_tdata[(data_ctr+1)*8 -: 8];
+			//verilator lint_on WIDTH
 		end
 	endgenerate
 
@@ -149,7 +151,7 @@ endfunction
 			state <= SM_WAIT_VALID;
 		end else begin
 			state <= next_state;
-			eth_txdv <= 0;
+			eth_txen <= 0;
 
 			// Reset the counter on state transition, otherwise increment unconditoinally
 			if(next_state != state)
@@ -187,29 +189,32 @@ endfunction
 				// Send preamble bytes
 				SM_PREAMBLE:
 				begin
-					eth_txdv <= 1;
-					eth_txd <= 8'hAA;
+					eth_txen <= 1;
+					eth_txd <= 8'h55;
 				end
 				// Send SFD
 				SM_SFD:
 				begin
-					eth_txdv <= 1;
-					eth_txd <= 8'hAB;
+					eth_txen <= 1;
+					eth_txd <= 8'hD5;
 				end
 				// Send data bytes
 				SM_DATA:
 				begin
-					eth_txdv <= 1;
+					eth_txen <= 1;
 					eth_txd <= current_data_slice;
 					crc <= crc32(crc, current_data_slice);
 				end
 				// Send the CRC
 				SM_CRC:
 				begin
-					eth_txdv <= 1;
-					eth_txd <= crc[(ctr[1:0]+1)*8 -: 8]
+					eth_txen <= 1;
+					// verilator lint_off WIDTH
+					eth_txd <= crc[(ctr[1:0]+1)*8 -: 8];
+					// verilator lint_on WIDTH
 				end
 				// SM_IPG is here and waits for the IPG before going back around the loop
+				default: eth_txen <= 0; // Do nothing, but empty default is illegal
 			endcase
 		end
 	end
@@ -221,17 +226,18 @@ endfunction
 			SM_WAIT_VALID: if(axis_i_tvalid) next_state = SM_PREAMBLE;
 			// There are 7 bytes of preamble, but we send 1 on zero, so count up to 6
 			SM_PREAMBLE: if(ctr[2:0] == 6) next_state = SM_SFD;
-			SM_SFD: next_state <= SM_DATA;
+			SM_SFD: next_state = SM_DATA;
 			// Progress to CRC when we have sent at least the minimum number of bytes and either:
 				// We previously send the last byte (we are currently padding)
 				// This is currently the last byte (no padding needed)
-			SM_DATA: if(length_ok && (last_byte_sent || (axis_i_tready && axis_i_last))) next_state = SM_CRC;
+			SM_DATA: if(length_ok && (last_byte_sent || (axis_i_tready && axis_i_tlast))) next_state = SM_CRC;
 			SM_CRC: if(ctr[1:0] == '1) next_state = SM_IPG;
 			// The standard IPG is 96 bit times == 12 clock periods (since we are synchronous to the phy at one byte wide)
 			// We check against 10 because we have a zero indexed counter and we will wait for one more clock cycle in SM_WAIT_VALID
 			SM_IPG:	if(ctr[3:0] == 10) next_state = SM_WAIT_VALID;
+			// Unreachable
+			default: next_state = SM_WAIT_VALID;
 		endcase
-		end
 	end
 
 endmodule

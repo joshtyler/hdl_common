@@ -10,14 +10,10 @@
 #ifndef GMIISOURCE_HPP
 #define GMIISOURCE_HPP
 
-// Output an AXI Stream from a vector of vectors
-// N.B. Currently this does not support any kind of reset
 #include <vector>
 #include "../other/ClockGen.hpp"
 #include "../verilator/Peripheral.hpp"
 #include "../other/PacketSourceSink.hpp"
-#include <zlib.h>
-
 
 class GMIISource : public Peripheral
 {
@@ -39,12 +35,13 @@ private:
     OutputWrapper<vluint8_t> eth_rxer;
 
     PacketSource<uint8_t> *data_source;
+
     std::vector<uint8_t> current_packet;
     typename std::vector<uint8_t>::const_iterator iter = current_packet.end();
 
     unsigned int ipg_counter{0};
 
-    constexpr std::array<uint8_t,8> preamble = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0xD5};
+    static constexpr std::array<uint8_t,8> preamble = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0xD5};
 };
 
 #endif

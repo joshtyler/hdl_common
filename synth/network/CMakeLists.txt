@@ -51,6 +51,7 @@ verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES ip_defram
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES tb/ip_deframer_harness.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES tb/tcp_deframer_harness.sv TRACE)
 verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" SOURCES tb/arp_engine_harness.sv TRACE)
+verilate(network_verilated VERILATOR_ARGS "-I../" "-I../axis/" "-I../other/" SOURCES tb/arp_engine_harness_with_mac.sv TRACE)
 
 set(IP_CHECKSUM_BYTES_LIST 2 4)
 verilate_multi_bytes(ip_checksum "${IP_CHECKSUM_BYTES_LIST}" network_verilated VERILATOR_ARGS "-I../" SOURCES ip_checksum.sv TRACE)
