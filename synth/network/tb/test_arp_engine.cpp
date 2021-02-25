@@ -71,7 +71,7 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
             break;
         }
 
-        if (uut.getTime() == 10000)
+        if (uut.getTime() == 100000)
         {
             std::cerr << "Timeout\n";
             break;
@@ -118,7 +118,7 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests (with ethernet M
             break;
         }
 
-        if (uut.getTime() == 10000)
+        if (uut.getTime() == 100000)
         {
             std::cerr << "Timeout\n";
             break;

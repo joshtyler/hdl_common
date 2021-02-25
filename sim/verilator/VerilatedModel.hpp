@@ -109,6 +109,7 @@ public:
 		if (tfp != NULL)
 		{
 		    tfp->dump(time);
+            tfp->flush();
 		}
 
 		return (!Verilated::gotFinish());

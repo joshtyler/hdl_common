@@ -118,9 +118,21 @@ endfunction
 	logic length_ok;
 	logic last_byte_sent;
 
-	logic [31:0] crc;
-
 	logic [7:0] current_data_slice;
+
+	logic [31:0] crc;
+	// TODO: Can we modify the poly to do away with this silly bit reversal and inversion?
+	logic [31:0] crc_inv_rev;
+	generate
+		for(genvar i=0; i<32; i++)
+			assign crc_inv_rev[i] = ~crc[31-i];
+	endgenerate
+	logic [7:0] current_data_slice_rev;
+	generate
+		for(genvar i=0; i<8; i++)
+			assign current_data_slice_rev[i] = current_data_slice[7-i];
+	endgenerate
+
 	generate
 		if(AXIS_BYTES == 1)
 		begin
@@ -138,7 +150,7 @@ endfunction
 			assign current_data_slice = axis_i_tdata;
 		end else begin
 			// verilator lint_off WIDTH
-			assign current_data_slice = axis_i_tdata[(data_ctr+1)*8 -: 8];
+			assign current_data_slice = axis_i_tdata[(data_ctr+1)*8-1 -: 8];
 			//verilator lint_on WIDTH
 		end
 	endgenerate
@@ -203,14 +215,14 @@ endfunction
 				begin
 					eth_txen <= 1;
 					eth_txd <= current_data_slice;
-					crc <= crc32(crc, current_data_slice);
+					crc <= crc32(crc, current_data_slice_rev);
 				end
 				// Send the CRC
 				SM_CRC:
 				begin
 					eth_txen <= 1;
 					// verilator lint_off WIDTH
-					eth_txd <= crc[(ctr[1:0]+1)*8 -: 8];
+					eth_txd <= crc_inv_rev[(data_ctr+1)*8-1 -: 8];
 					// verilator lint_on WIDTH
 				end
 				// SM_IPG is here and waits for the IPG before going back around the loop
