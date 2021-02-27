@@ -34,7 +34,7 @@ module eth_framer
 	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES)
 );
 
-`BYTE_SWAP_FUNCTION(byte_swap_2, 2);
+`BYTE_SWAP_FUNCTION(byte_swap_2, 2)
 
 logic [0:0] state;
 localparam [0:0] SM_HEADER = 1'b0;
@@ -113,7 +113,7 @@ generate
 		axis_packer
 		#(
 			.AXIS_BYTES(AXIS_BYTES)
-		) rx_mac (
+		) packer (
 			.clk(clk),
 			.sresetn(sresetn),
 

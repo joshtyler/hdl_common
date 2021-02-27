@@ -19,7 +19,7 @@ module eth_deframer
 	output logic [2*8-1:0] axis_o_ethertype
 );
 
-`BYTE_SWAP_FUNCTION(byte_swap_2, 2);
+`BYTE_SWAP_FUNCTION(byte_swap_2, 2)
 
 logic [14*8-1:0] header;
 axis_header_tagger

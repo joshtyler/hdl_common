@@ -7,7 +7,7 @@ module axis_header_tagger
 #(
 	parameter AXIS_BYTES = 1,
 	parameter AXIS_USER_BITS = 1,
-	parameter HEADER_LENGTH_BYTES = 0,
+	parameter HEADER_LENGTH_BYTES = 1,
 	parameter REQUIRE_PACKED_OUTPUT = 1
 ) (
 	input clk,
@@ -27,12 +27,12 @@ localparam [AXIS_BYTES-1:0] HEADER_LAST_KEEP_MASK = (LAST_WORD_REMAINDER==0)? '1
 localparam [AXIS_BYTES-1:0] DATA_LAST_KEEP_MASK = ~HEADER_LAST_KEEP_MASK;
 
 localparam integer CTR_WIDTH = SPLIT_WORD_INDEX < 1? 1 : $clog2(SPLIT_WORD_INDEX+1);
-localparam logic [CTR_WIDTH-1:0] CTR_MAX = SPLIT_WORD_INDEX[CTR_WIDTH-1:0];
+localparam [CTR_WIDTH-1:0] CTR_MAX = SPLIT_WORD_INDEX[CTR_WIDTH-1:0];
 logic [CTR_WIDTH-1:0] ctr;
 
 // Have a dummy header output variable so that we don't run past the end
 logic [(SPLIT_WORD_INDEX+1)*AXIS_BYTES*8-1:0] axis_o_header_widened;
-assign axis_o_header = axis_o_header_widened[$high(axis_o_header):0];
+assign axis_o_header = axis_o_header_widened[HEADER_LENGTH_BYTES*8-1:0];
 
 // N.B. We currently only the system once axis_o_tlast has been seen
 // This means we effectively block whilst the packer is processing

@@ -18,7 +18,7 @@
 
 module axis_packer
 #(
-	parameter AXIS_BYTES = 4 
+	parameter AXIS_BYTES = 2
 ) (
 	input clk,
 	input sresetn,
@@ -41,7 +41,8 @@ assign axis_aligning_tkeep [(0+1)*AXIS_BYTES-1   -: AXIS_BYTES] = axis_i_tkeep;
 assign axis_aligning_tdata [(0+1)*AXIS_BYTES*8-1 -: AXIS_BYTES*8] = axis_i_tdata;
 
 generate
-	for(genvar i=0; i<AXIS_BYTES-1; i++)
+	genvar i;
+	for(i=0; i<AXIS_BYTES-1; i++)
 	begin
 		axis_packer_align_stage
 		#(
@@ -64,7 +65,7 @@ generate
 			.axis_o_tdata (axis_aligning_tdata [(i+1+1)*AXIS_BYTES*8-1 -: AXIS_BYTES*8])
 		);
 	end
-endgenerate;
+endgenerate
 
 
 axis_packer_combine_stage
@@ -103,19 +104,26 @@ module axis_packer_align_stage
 	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES)
 );
 
-	// Find the index of the lowest 0 in tkeep
-	logic [$clog2(AXIS_BYTES):0] lowest_zero_in_tkeep;
-	always_comb
-	begin
-		lowest_zero_in_tkeep = '1;
-		for(int i=AXIS_BYTES-1; i>=0; i--)
+	// Find index of lowest zero
+	// If no zeros, set to all ones
+	// This is why we need to be one bit wider than the clog2 range
+	function [$clog2(AXIS_BYTES):0] find_lowest_zero;
+		input [AXIS_BYTES-1:0] word;
+		integer i;
 		begin
-			if(axis_i_tkeep[i] == 0)
+			find_lowest_zero = '1;
+			for(i=AXIS_BYTES-1; i>=0; i=i-1)
 			begin
-				lowest_zero_in_tkeep = i[$clog2(AXIS_BYTES):0];
+				if(word[i] == 0)
+				begin
+					find_lowest_zero = i[$clog2(AXIS_BYTES):0];
+				end
 			end
 		end
-	end
+	endfunction
+
+	logic [$clog2(AXIS_BYTES):0] lowest_zero_in_tkeep;
+	assign lowest_zero_in_tkeep = find_lowest_zero(axis_i_tkeep);
 
 	// Do the shifting for each byte
 	// We are effectively baking in a register stage here
@@ -138,7 +146,8 @@ module axis_packer_align_stage
 
 	// For all the other bytes do our shifting logic
 	generate
-		for(genvar i=0; i<AXIS_BYTES; i++)
+		genvar i;
+		for(i=0; i<AXIS_BYTES; i++)
 		begin
 			always_ff @(posedge clk)
 			begin
@@ -151,7 +160,7 @@ module axis_packer_align_stage
 					// Shift if we are eligible
 					if(i < AXIS_BYTES-BYTES_TO_IGNORE) // Constant
 					begin
-						if(i >= lowest_zero_in_tkeep) // Expensive?
+						if(i >= lowest_zero_in_tkeep)
 						begin
 							if(i == AXIS_BYTES-BYTES_TO_IGNORE-1) // Constant
 							begin
@@ -169,7 +178,7 @@ module axis_packer_align_stage
 				end
 			end
 		end
-	endgenerate;
+	endgenerate
 endmodule
 
 // Combine multiple (least significant byte aligned) words into one
@@ -253,7 +262,8 @@ module axis_packer_combine_stage
 
 	// We need to do this in a for generate becuase we can't variable slice in verilog
 	generate
-		for(genvar i=0; i<AXIS_BYTES; i++)
+		genvar i;
+		for(i=0; i<AXIS_BYTES; i++)
 		begin
 			always_ff @(posedge clk)
 			begin
@@ -275,7 +285,7 @@ module axis_packer_combine_stage
 							begin
 								axis_o_tkeep[  (i-input_base_index)] <= axis_i_tkeep[i];
 								/* verilator lint_off WIDTH */
-								axis_o_tdata[(((i-input_base_index)+1)*8)-1 -: 8] <= axis_i_tdata[((i+1)*8)-1 -: 8];
+								//axis_o_tdata[(((i-input_base_index)+1)*8)-1 -: 8] <= axis_i_tdata[((i+1)*8)-1 -: 8];
 								/* verilator lint_on WIDTH */
 							end
 						end else begin
@@ -285,13 +295,12 @@ module axis_packer_combine_stage
 						 	if(i < (AXIS_BYTES-num_bytes_in_reg))
 							begin
 								axis_o_tkeep[  (num_bytes_in_reg+i)] <= axis_i_tkeep[i];
-								axis_o_tdata[(((num_bytes_in_reg+i)+1)*8)-1 -: 8] <= axis_i_tdata[((i+1)*8)-1 -: 8];
+								axis_o_tdata[ num_bytes_in_reg*8 + ((i+1)*8) -1 -: 8] <= axis_i_tdata[((i+1)*8)-1 -: 8];
 							end
 						end
 					end
 				end
 			end
 		end
-	endgenerate;
-
+	endgenerate
 endmodule

@@ -34,7 +34,7 @@ module gmii_tx_mac
 	output logic       eth_txer
 );
 
-function logic[31:0] crc32;
+function [31:0] crc32;
 	input [31:0] crc;
 	input [7:0] data;
 	begin
@@ -108,8 +108,8 @@ endfunction
 	logic [5:0] ctr;
 
 	//Sliced version of the counter for unpacking data
-	`STATIC_ASSERT(AXIS_BYTES <= 2**6); // Otherwise counter won't fit. No point making generic because this is outrageously wide!
-	`STATIC_ASSERT(AXIS_BYTES % 2 ==0); // Otherwise our counter slicing trick does not work
+//	`STATIC_ASSERT(AXIS_BYTES <= 2**6) // Otherwise counter won't fit. No point making generic because this is outrageously wide!
+//	`STATIC_ASSERT(AXIS_BYTES % 2 ==0) // Otherwise our counter slicing trick does not work
 	localparam DATA_CTR_WIDTH = `GET_MAX( $clog2(AXIS_BYTES), 1 );
 	logic[DATA_CTR_WIDTH-1:0] data_ctr;
 	assign data_ctr = ctr[DATA_CTR_WIDTH-1:0];
@@ -123,15 +123,12 @@ endfunction
 	logic [31:0] crc;
 	// TODO: Can we modify the poly to do away with this silly bit reversal and inversion?
 	logic [31:0] crc_inv_rev;
-	generate
-		for(genvar i=0; i<32; i++)
-			assign crc_inv_rev[i] = ~crc[31-i];
-	endgenerate
+	`BIT_REVERSE_FUNCTION(bit_reverse_32, 32)
+	assign crc_inv_rev = ~bit_reverse_32(crc);
+
 	logic [7:0] current_data_slice_rev;
-	generate
-		for(genvar i=0; i<8; i++)
-			assign current_data_slice_rev[i] = current_data_slice[7-i];
-	endgenerate
+	`BIT_REVERSE_FUNCTION(bit_reverse_8, 8)
+	assign current_data_slice_rev = bit_reverse_8(current_data_slice);
 
 	generate
 		if(AXIS_BYTES == 1)
