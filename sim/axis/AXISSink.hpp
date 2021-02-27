@@ -61,14 +61,26 @@ public:
 
                         // Check tkeep
                         if(packed) {
-                            if (tlast.is_null() || tlast) {
-                                if (keep <= max_tkeep)
-                                    throw std::runtime_error("keep indicating too many bytes on last beat!");
-                                if ((keep & (keep + 1)) == 0)
-                                    throw std::runtime_error("keep unpacked on tlast"); // Enforce that all bits are unset after the first unset bit. I.e tkeep is one less than a power of 2
-                            } else {
-                                if (keep == max_tkeep)
-                                    throw std::runtime_error("Checking for packed stream, but tkeep not all ones with tlast false");
+                            if (keep > max_tkeep)
+                                throw std::runtime_error("tkeep indicating more bytes are valid than bytes that exist, on last beat! This should be impossible without mis-sized vectors!");
+
+                            // Enforce that all bits are unset after the first unset bit. I.e tkeep is one less than a power of 2
+                            bool seen_unset_bit = false;
+                            for(int i=0; i<sizeof(dataT); i++)
+                            {
+                                bool current_bit_set = keep & (1 << i);
+                                if(seen_unset_bit && current_bit_set)
+                                {
+                                    throw("tkeep is unpacked on tlast");
+                                }
+                                seen_unset_bit |= (!current_bit_set);
+                            }
+
+                            if (!(tlast.is_null() || tlast)) {
+                                if (keep != max_tkeep)
+                                {
+                                    throw std::runtime_error("tkeep not all ones with tlast false");
+                                }
                             }
                         }
 

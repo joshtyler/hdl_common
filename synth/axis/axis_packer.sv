@@ -18,7 +18,7 @@
 
 module axis_packer
 #(
-	parameter AXIS_BYTES = 2
+	parameter AXIS_BYTES = 4
 ) (
 	input clk,
 	input sresetn,
@@ -100,7 +100,9 @@ module axis_packer_align_stage
 	input clk,
 	input sresetn,
 
+	// verilator lint_off UNOPTFLAT
 	`S_AXIS_PORT_NO_USER(axis_i, AXIS_BYTES),
+	// verilator lint_on UNOPTFLAT
 	`M_AXIS_PORT_NO_USER(axis_o, AXIS_BYTES)
 );
 
@@ -280,22 +282,28 @@ module axis_packer_combine_stage
 					if(axis_i_tvalid && able_to_write_to_register) begin
 						if(axis_o_tvalid)
 						begin
-							// N.B We are not necessarily reading from the bottom of the input word
-							if(i >= input_base_index)
+							// If the output is valid we want to fill it up from the bottom
+							// N.B We are not necessarily reading from the bottom of the input word (there could have been some data left over)
+
+							// This check just exists to make sure we don't assign past the end of the input vector
+							if(i < (AXIS_BYTES-input_base_index))
 							begin
-								axis_o_tkeep[  (i-input_base_index)] <= axis_i_tkeep[i];
-								/* verilator lint_off WIDTH */
-								//axis_o_tdata[(((i-input_base_index)+1)*8)-1 -: 8] <= axis_i_tdata[((i+1)*8)-1 -: 8];
-								/* verilator lint_on WIDTH */
+								axis_o_tkeep[i] <= axis_i_tkeep[i+input_base_index];
+								//verilator lint_off WIDTH
+								axis_o_tdata[((i+1)*8)-1 -: 8] <= axis_i_tdata[((i+input_base_index+1)*8)-1 -: 8];
+								//verilator lint_on WIDTH
+
 							end
 						end else begin
 							// The output register may be partially full, fill up from where we got to
 							// N.B. In this situation we are always starting at the bottom of the input word
 							// This is because if we had spare bytes from the input word, we would have flushed the output, resulting in the register being empty
-						 	if(i < (AXIS_BYTES-num_bytes_in_reg))
+						 	if(i >= num_bytes_in_reg)
 							begin
-								axis_o_tkeep[  (num_bytes_in_reg+i)] <= axis_i_tkeep[i];
-								axis_o_tdata[ num_bytes_in_reg*8 + ((i+1)*8) -1 -: 8] <= axis_i_tdata[((i+1)*8)-1 -: 8];
+								axis_o_tkeep[i] <= axis_i_tkeep[i-num_bytes_in_reg];
+								//verilator lint_off WIDTH
+								axis_o_tdata[((i+1)*8)-1 -: 8] <= axis_i_tdata[((i-num_bytes_in_reg+1)*8) -1 -: 8];
+								//verilator lint_on WIDTH
 							end
 						end
 					end

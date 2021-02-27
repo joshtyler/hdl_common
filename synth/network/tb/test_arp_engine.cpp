@@ -61,7 +61,7 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
 
     std::system(std::string("ip addr add 10.0.0.100/8 dev "+tap.getName()).c_str());
     std::system(std::string("ip link set "+tap.getName()+" up").c_str());
-    auto arping_file = popen("arping 10.0.0.110 -c 5", "r");
+    FILE * arping_file;
 
     while(true)
     {
@@ -69,6 +69,11 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
         {
             std::cerr << "uut.eval() failed!\n";
             break;
+        }
+
+        if(uut.getTime() == 50000)
+        {
+            arping_file = popen("arping 10.0.0.110 -c 5", "r");
         }
 
         if (uut.getTime() == 100000)
