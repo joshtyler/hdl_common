@@ -95,6 +95,7 @@ module arp_engine_harness_with_mac
 		.axis_o_dst_mac(arp_dst_mac)
 	);
 
+	`AXIS_INST_NO_USER(axis_to_mac, 4);
 	eth_framer
 	#(
 		.AXIS_BYTES(4),
@@ -111,7 +112,24 @@ module arp_engine_harness_with_mac
 		`AXIS_MAP_NO_USER(axis_o, axis_to_mac)
 	);
 
-	`AXIS_INST_NO_USER(axis_to_mac, 4);
+
+	`AXIS_INST_NO_USER(axis_to_mac_packetised, 4);
+
+	axis_packet_fifo_async
+	#(
+		.AXIS_BYTES(4),
+		.LOG2_DEPTH(8) // Plenty for an ARP(!)
+	) packet_fifo (
+		.i_clk(clk),
+		.i_sresetn(sresetn),
+
+		.o_clk(eth_rxclk),
+		.o_sresetn(eth_sresetn),
+
+		`AXIS_MAP_NULL_USER(axis_i, axis_to_mac),
+		.axis_i_drop(0),
+		`AXIS_MAP_IGNORE_USER(axis_o, axis_to_mac_packetised)
+	);
 
 	gmii_tx_mac
 	#(
@@ -120,7 +138,7 @@ module arp_engine_harness_with_mac
 		.clk(eth_rxclk),
 		.sresetn(eth_sresetn),
 
-		`AXIS_MAP_NO_USER(axis_i, axis_to_mac),
+		`AXIS_MAP_NO_USER(axis_i, axis_to_mac_packetised),
 
 		.eth_txd (eth_txd),
 		.eth_txen(eth_txen),

@@ -22,7 +22,7 @@ default: $(SYNTH_OUTPUT_NAME).bin
 
 %.asc: $(PCF_FILE) %.json
 	@echo "Begin pnr"
-	nextpnr-ice40 --hx8k --package $(PACKAGE) --json $(SYNTH_OUTPUT_NAME).json --pcf $(PCF_FILE) --asc $(SYNTH_OUTPUT_NAME).asc --pre-pack $(CLOCK_CONSTRAINTS_FILE) 2>&1 | tee nextpnr.log
+	nextpnr-ice40 --hx8k --package $(PACKAGE) --json $(SYNTH_OUTPUT_NAME).json --pcf $(PCF_FILE) --asc $(SYNTH_OUTPUT_NAME).asc --pre-pack $(CLOCK_CONSTRAINTS_FILE) --randomize-seed 2>&1 | tee nextpnr.log
 
 %.bin: %.asc
 	icepack $< $@

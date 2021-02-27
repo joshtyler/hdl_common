@@ -92,24 +92,25 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests (with ethernet M
 {
     VerilatedModel<Varp_engine_harness_with_mac> uut("arp_engine_with_mac.vcd", true);
 
-    ClockGen clk(uut.getTime(), 1e-9, 100e6);
+    ClockGen clketh(uut.getTime(), 1e-9, 125e6);
+    ClockGen clkuser(uut.getTime(), 1e-9, 50e6);
 
     // If you want to look at the data manually, run ip tuntap add name tap0 mode tap
     // Then pass "tap0"end as the argument to this constructor
     Tap tap("tap0");
 
-    GMIISource src(&clk, &uut.uut->eth_rxd, &uut.uut->eth_rxdv, &uut.uut->eth_rxer, &tap);
+    GMIISource src(&clketh, &uut.uut->eth_rxd, &uut.uut->eth_rxdv, &uut.uut->eth_rxer, &tap);
 
     // Currently we assume that the UUT outputs data on the same clock as rxclk
     // But this is not required(!)
-    GMIISink sink(&clk, &uut.uut->eth_txd, &uut.uut->eth_txen, &uut.uut->eth_txer, &tap);
+    GMIISink sink(&clketh, &uut.uut->eth_txd, &uut.uut->eth_txen, &uut.uut->eth_txer, &tap);
 
     uut.addPeripheral(&src);
     uut.addPeripheral(&sink);
-    ClockBind clkDriver1(clk,uut.uut->clk);
-    ClockBind clkDriver2(clk, uut.uut->eth_rxclk);
-    uut.addClock(&clkDriver1);
-    uut.addClock(&clkDriver2);
+    ClockBind clkDriverUser(clkuser,uut.uut->clk);
+    ClockBind clkDriverEth(clketh, uut.uut->eth_rxclk);
+    uut.addClock(&clkDriverUser);
+    uut.addClock(&clkDriverEth);
 
     std::system(std::string("ip addr add 10.0.0.100/8 dev "+tap.getName()).c_str());
     std::system(std::string("ip link set "+tap.getName()+" up").c_str());
@@ -123,7 +124,7 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests (with ethernet M
             break;
         }
 
-        if (uut.getTime() == 100000)
+        if (uut.getTime() == 1000000)
         {
             std::cerr << "Timeout\n";
             break;
