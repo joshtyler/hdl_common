@@ -97,9 +97,8 @@ endfunction
 	localparam [2:0] SM_PREAMBLE   = 3'b001;
 	localparam [2:0] SM_SFD        = 3'b010;
 	localparam [2:0] SM_DATA       = 3'b011;
-	localparam [2:0] SM_PAD        = 3'b100;
-	localparam [2:0] SM_CRC        = 3'b101;
-	localparam [2:0] SM_IPG        = 3'b110;
+	localparam [2:0] SM_CRC        = 3'b100;
+	localparam [2:0] SM_IPG        = 3'b101;
 
 
 	// We can share for multiple things
@@ -107,18 +106,12 @@ endfunction
 	// clog2(64) == 6
 	logic [5:0] ctr;
 
-	//Sliced version of the counter for unpacking data
 //	`STATIC_ASSERT(AXIS_BYTES <= 2**6) // Otherwise counter won't fit. No point making generic because this is outrageously wide!
 //	`STATIC_ASSERT(AXIS_BYTES % 2 ==0) // Otherwise our counter slicing trick does not work
-	localparam DATA_CTR_WIDTH = `GET_MAX( $clog2(AXIS_BYTES), 1 );
-	logic[DATA_CTR_WIDTH-1:0] data_ctr;
-	assign data_ctr = ctr[DATA_CTR_WIDTH-1:0];
 
 	// Flags, see state machine
 	logic length_ok;
 	logic last_byte_sent;
-
-	logic [7:0] current_data_slice;
 
 	logic [31:0] crc;
 	// TODO: Can we modify the poly to do away with this silly bit reversal and inversion?
@@ -126,31 +119,38 @@ endfunction
 	`BIT_REVERSE_FUNCTION(bit_reverse_32, 32)
 	assign crc_inv_rev = ~bit_reverse_32(crc);
 
-	logic [7:0] current_data_slice_rev;
+
+	// Width convert separately and register output. It makes the timing better than handling inline
+	// We know these blocks are 100% throughput capable, so they won't insert wait cycles into the stream
+	`AXIS_INST_NO_USER(axis_narrow, 1);
+	axis_width_converter
+	#(
+		.AXIS_I_BYTES(AXIS_BYTES),
+		.AXIS_O_BYTES(1)
+	) width_converter (
+		.clk(clk),
+		.sresetn(sresetn),
+
+		`AXIS_MAP_NO_USER(axis_i, axis_i),
+		`AXIS_MAP_NO_USER(axis_o, axis_narrow)
+	);
+	`AXIS_INST_NO_USER(axis_narrow_reg, 1);
+	axis_register
+	#(
+		.AXIS_BYTES(1)
+	) width_conv_register (
+		.clk(clk),
+		.sresetn(sresetn),
+
+		`AXIS_MAP_NULL_USER(axis_i, axis_narrow),
+		`AXIS_MAP_IGNORE_USER(axis_o, axis_narrow_reg)
+	);
+
+	logic [7:0] axis_narrow_reg_tdata_rev;
 	`BIT_REVERSE_FUNCTION(bit_reverse_8, 8)
-	assign current_data_slice_rev = bit_reverse_8(current_data_slice);
+	assign axis_narrow_reg_tdata_rev = bit_reverse_8(axis_narrow_reg_tdata);
 
-	generate
-		if(AXIS_BYTES == 1)
-		begin
-			// We need a special case for AXIS_BYTES=1 because data_ctr isn't valid since we want to count from 0 to 0
-			assign axis_i_tready = (state == SM_DATA);
-		end else begin
-			// Accept data in the data state when either we have sent all the bytes, or it is the last beat and we have sent all valid bytes
-			assign axis_i_tready = (state == SM_DATA) && ((data_ctr == '1) || (axis_i_tlast && axis_i_tkeep[data_ctr+1] == 0));
-		end
-
-
-		if(AXIS_BYTES == 1)
-		begin
-			// AXIS_BYTES=1 is a special case again for the same reason
-			assign current_data_slice = axis_i_tdata;
-		end else begin
-			// verilator lint_off WIDTH
-			assign current_data_slice = axis_i_tdata[(data_ctr+1)*8-1 -: 8];
-			//verilator lint_on WIDTH
-		end
-	endgenerate
+	assign axis_narrow_reg_tready = (state == SM_DATA);
 
 	// I wouldn't normally use a two block state machine, but in this case it is handy to reset the counter to zero on state transition
 	always @(posedge clk)
@@ -207,19 +207,19 @@ endfunction
 					eth_txen <= 1;
 					eth_txd <= 8'hD5;
 				end
-				// Send data bytes
+				// Send data bytes (or garbage padding)
 				SM_DATA:
 				begin
 					eth_txen <= 1;
-					eth_txd <= current_data_slice;
-					crc <= crc32(crc, current_data_slice_rev);
+					eth_txd <= axis_narrow_reg_tdata;
+					crc <= crc32(crc, axis_narrow_reg_tdata_rev);
 				end
 				// Send the CRC
 				SM_CRC:
 				begin
 					eth_txen <= 1;
 					// verilator lint_off WIDTH
-					eth_txd <= crc_inv_rev[(data_ctr+1)*8-1 -: 8];
+					eth_txd <= crc_inv_rev[(ctr[1:0]+1)*8-1 -: 8];
 					// verilator lint_on WIDTH
 				end
 				// SM_IPG is here and waits for the IPG before going back around the loop
