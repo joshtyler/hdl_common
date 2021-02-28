@@ -53,7 +53,7 @@ axis_width_converter
 	.axis_i_tready(arp_out_ready),
 	.axis_i_tvalid(arp_out_valid),
 	.axis_i_tlast(1'b1),
-	.axis_i_tkeep('1),
+	.axis_i_tkeep({ARP_PACKET_SIZE{1'b1}}),
 	.axis_i_tdata(arp_out),
 
 	`AXIS_MAP_NO_USER(axis_o, axis_o)

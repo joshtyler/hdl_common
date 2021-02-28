@@ -89,7 +89,7 @@ axis_width_converter
 	.axis_i_tready(header_ready),
 	.axis_i_tvalid(header_valid),
 	.axis_i_tlast(1'b1),
-	.axis_i_tkeep('1),
+	.axis_i_tkeep({6+6+2{1'b1}}),
 	.axis_i_tdata({byte_swap_2(axis_i_ethertype), axis_i_src_mac, axis_i_dst_mac}),
 	`AXIS_MAP_NO_USER(axis_o, ethernet_header_native)
 );
