@@ -14,7 +14,26 @@ module arp_engine_harness_with_mac
 	output logic [7:0] eth_txd,
 	output logic       eth_txen,
 	output logic       eth_txer,
-	output logic       eth_phyrst_n
+	output logic       eth_phyrst_n,
+
+	// Debug
+	output logic        axis_arp_tx_tready,
+	output logic        axis_arp_tx_tvalid,
+	output logic        axis_arp_tx_tlast,
+	output logic [3:0]  axis_arp_tx_tkeep,
+	output logic [31:0] axis_arp_tx_tdata,
+
+	output logic        axis_to_mac_tready,
+	output logic        axis_to_mac_tvalid,
+	output logic        axis_to_mac_tlast,
+	output logic [3:0]  axis_to_mac_tkeep,
+	output logic [31:0] axis_to_mac_tdata,
+
+	output logic        axis_to_mac_packetised_tready,
+	output logic        axis_to_mac_packetised_tvalid,
+	output logic        axis_to_mac_packetised_tlast,
+	output logic [3:0]  axis_to_mac_packetised_tkeep,
+	output logic [31:0] axis_to_mac_packetised_tdata
 );
 
 	localparam [15:0] ETHERTYPE_ARP = 16'h0806;
@@ -74,7 +93,7 @@ module arp_engine_harness_with_mac
 	// Okay if multicast, or unicast and  intended for us and an ARP packet
 	assign packet_is_ok = ((axis_from_mac_no_eth_unpacked_dst_mac[0] == 1) || (axis_from_mac_no_eth_unpacked_dst_mac == OUR_MAC)) && (axis_from_mac_no_eth_unpacked_ethertype == ETHERTYPE_ARP);
 
-	`AXIS_INST_NO_USER(axis_arp_tx, 4);
+	//`AXIS_INST_NO_USER(axis_arp_tx, 4);
 	logic [47:0] arp_dst_mac;
 	arp_engine
 	#(
@@ -95,7 +114,7 @@ module arp_engine_harness_with_mac
 		.axis_o_dst_mac(arp_dst_mac)
 	);
 
-	`AXIS_INST_NO_USER(axis_to_mac, 4);
+	//`AXIS_INST_NO_USER(axis_to_mac, 4);
 	eth_framer
 	#(
 		.AXIS_BYTES(4),
@@ -113,7 +132,7 @@ module arp_engine_harness_with_mac
 	);
 
 
-	`AXIS_INST_NO_USER(axis_to_mac_packetised, 4);
+	//`AXIS_INST_NO_USER(axis_to_mac_packetised, 4);
 
 	axis_packet_fifo_async
 	#(
