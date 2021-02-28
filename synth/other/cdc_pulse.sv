@@ -8,7 +8,7 @@ module cdc_pulse
 	input logic oclk,
 	input logic i,
 	output logic opulse,
-	output logic odata
+	output logic odata = 0
 );
 
 logic synced;

@@ -10,7 +10,7 @@ module cdc_sync
 	output logic o
 );
 
-logic[STAGES-1:0] tmp;
+logic[STAGES-1:0] tmp = 0;
 
 assign o = tmp[STAGES-1];
 
