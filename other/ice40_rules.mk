@@ -13,7 +13,7 @@ SIM_HDL_SRC_FILES   += $(HDL_SRC_FILES)
 .PHONY: default sim clean
 default: $(SYNTH_OUTPUT_NAME).bin
 
-%.json: $(SYNTH_HDL_SRC_FILES)
+$(SYNTH_OUTPUT_NAME).json: $(SYNTH_HDL_SRC_FILES)
 	@echo "Begin synthesis"
 #	yosys -p "synth_ice40; delete t:$$assert; write_json $(PROJ).json" $(SRC_FILES) > yosys.log
 	yosys -p "read_verilog -sv $(HDL_INC_DIRS) $(SYNTH_HDL_SRC_FILES); synth_ice40 -json $(SYNTH_OUTPUT_NAME).json" | tee yosys.log
