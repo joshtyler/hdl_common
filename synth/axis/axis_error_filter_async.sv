@@ -56,6 +56,22 @@ module axis_error_filter_async
 	assign axis_i_tuser  = i_user;
 	assign axis_i_drop  = i_error || overflowed;
 
+	`AXIS_INST(axis_reg, AXIS_BYTES, AXIS_USER_BITS);
+	logic axis_reg_drop;
+	axis_register
+	#(
+		.AXIS_BYTES(AXIS_BYTES),
+		.AXIS_USER_BITS(AXIS_USER_BITS+1)
+	) packet_fifo_out_reg (
+		.clk(i_clk),
+		.sresetn(i_sresetn),
+
+		`AXIS_MAP_NO_USER(axis_i, axis_i),
+		.axis_i_tuser({axis_i_tuser, axis_i_drop}),
+		`AXIS_MAP_NO_USER(axis_o, axis_reg),
+		.axis_o_tuser({axis_reg_tuser, axis_reg_drop})
+	);
+
 	axis_packet_fifo_async
 	#(
 		.AXIS_BYTES(AXIS_BYTES),
@@ -67,8 +83,8 @@ module axis_error_filter_async
 		.o_clk(o_clk),
 		.o_sresetn(o_sresetn),
 
-		`AXIS_MAP(axis_i, axis_i),
-		.axis_i_drop(axis_i_drop),
+		`AXIS_MAP(axis_i, axis_reg),
+		.axis_i_drop(axis_reg_drop),
 		`AXIS_MAP(axis_o, axis_o)
 	);
 

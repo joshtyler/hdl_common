@@ -23,7 +23,6 @@
 #include "../../../sim/other/PacketSourceSink.hpp"
 #include "../../../sim/network/TunTap.hpp"
 
-
 TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]")
 {
     VerilatedModel<Varp_engine_harness> uut("arp_engine.vcd", true);
@@ -63,6 +62,7 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
     std::system(std::string("ip link set "+tap.getName()+" up").c_str());
     FILE * arping_file;
 
+    constexpr vluint64_t max_time = 100000;
     while(true)
     {
         if (uut.eval() == false)
@@ -71,19 +71,19 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
             break;
         }
 
-        if(uut.getTime() == 50000)
+        if(uut.getTime() == max_time/2)
         {
-            arping_file = popen("arping 10.0.0.110 -c 5", "r");
+            arping_file = popen("arping 10.0.0.110 -c 1", "r");
         }
 
-        if (uut.getTime() == 100000)
+        if (uut.getTime() == max_time)
         {
             std::cerr << "Timeout\n";
             break;
         }
     }
 
-    int ret = pclose(arping_file);
+    int ret = WEXITSTATUS(pclose(arping_file));
 
     REQUIRE(ret == 0);
 }
@@ -114,8 +114,9 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests (with ethernet M
 
     std::system(std::string("ip addr add 10.0.0.100/8 dev "+tap.getName()).c_str());
     std::system(std::string("ip link set "+tap.getName()+" up").c_str());
-    auto arping_file = popen("arping 10.0.0.110 -c 5", "r");
+    FILE * arping_file;
 
+    constexpr vluint64_t max_time = 100000;
     while(true)
     {
         if (uut.eval() == false)
@@ -124,14 +125,19 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests (with ethernet M
             break;
         }
 
-        if (uut.getTime() == 1000000)
+        if(uut.getTime() == max_time/2)
+        {
+            arping_file = popen("arping 10.0.0.110 -c 1", "r");
+        }
+
+        if (uut.getTime() == max_time)
         {
             std::cerr << "Timeout\n";
             break;
         }
     }
 
-    int ret = pclose(arping_file);
+    int ret = WEXITSTATUS(pclose(arping_file));
 
     REQUIRE(ret == 0);
 }

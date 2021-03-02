@@ -73,85 +73,84 @@ module gmii_rx_mac_async
 
 	always @(posedge eth_clk)
 	begin
-		if (eth_sresetn == 0)
-		begin
-			state <= SM_WAIT_INVALID;
-		end else begin
-				fifo_in_valid <= 0;
+		fifo_in_valid <= 0;
 
-			case(state)
-				// Wait until input is invalid (i.e the next valid word will be preamble for a new packet)
-				SM_WAIT_INVALID:
+		case(state)
+			// Wait until input is invalid (i.e the next valid word will be preamble for a new packet)
+			SM_WAIT_INVALID:
+			begin
+				ctr <= 0;
+				if(!rx_valid)
 				begin
-					ctr <= 0;
-					if(!rx_valid)
-					begin
-						state <= SM_PREAMBLE;
-					end
+					state <= SM_PREAMBLE;
 				end
+			end
 
-				// Waits for a packet to begin, and enforces that the first word is preamble
-				SM_PREAMBLE:
+			// Waits for a packet to begin, and enforces that the first word is preamble
+			SM_PREAMBLE:
+			begin
+				if(rx_valid)
 				begin
-					if(rx_valid)
+					if(rx_data == 8'h55)
 					begin
-						if(rx_data == 8'h55)
-						begin
-							state <= SM_SFD;
-						end else begin
-							// We didn't get what we were expecting, reset
-							state <= SM_WAIT_INVALID;
-						end
-					end
-				end
-
-				// Enforces that every beat is valid and is preamble
-				// Waits for the start of frame delimiter
-				SM_SFD:
-				begin
-					if(rx_valid && (rx_data == 8'hD5))
-					begin
-						state <= SM_OUTPUT;
-					end else if((!rx_valid) || (rx_data != 8'h55)) begin
+						state <= SM_SFD;
+					end else begin
 						// We didn't get what we were expecting, reset
 						state <= SM_WAIT_INVALID;
 					end
 				end
+			end
 
-				// Outputs data (packed into the user requested size)
-				SM_OUTPUT:
+			// Enforces that every beat is valid and is preamble
+			// Waits for the start of frame delimiter
+			SM_SFD:
+			begin
+				if(rx_valid && (rx_data == 8'hD5))
 				begin
-					fifo_in_last  <= rx_last;
-					// verilator lint_off WIDTH
-					fifo_in_data[(ctr+1)*8-1 -: 8]  <= rx_data;
-					// verilator lint_on WIDTH
-					fifo_in_error <= rx_error;
-					fifo_in_valid <= rx_last || rx_error || (ctr == REG_CTR_MAX);
-
-					ctr <= ctr+1;
-
-					// On a new word, clear out the whole keep, otherwise just set the appropriate bit
-					if (ctr == 0)
-					begin
-						fifo_in_keep <= 1;
-					end else begin
-						fifo_in_keep[ctr] <= 1'b1;
-					end
-
-					// The (!rx_valid) shouldn't be needed
-					// We have it just in case last was asserted during SM_SFD
-					if(rx_last || (!rx_valid) || rx_error)
-					begin
-						// It is the end of a packet, go and wait for the next preamble
-						state <= SM_PREAMBLE;
-					end
-
-					if(ctr == REG_CTR_MAX)
-					begin
-						ctr <= 0;
-					end
+					state <= SM_OUTPUT;
+				end else if((!rx_valid) || (rx_data != 8'h55)) begin
+					// We didn't get what we were expecting, reset
+					state <= SM_WAIT_INVALID;
 				end
-			endcase
+			end
+
+			// Outputs data (packed into the user requested size)
+			SM_OUTPUT:
+			begin
+				fifo_in_last  <= rx_last;
+				// verilator lint_off WIDTH
+				fifo_in_data[(ctr+1)*8-1 -: 8]  <= rx_data;
+				// verilator lint_on WIDTH
+				fifo_in_error <= rx_error;
+				fifo_in_valid <= rx_last || rx_error || (ctr == REG_CTR_MAX);
+
+				ctr <= ctr+1;
+
+				// On a new word, clear out the whole keep, otherwise just set the appropriate bit
+				if (ctr == 0)
+				begin
+					fifo_in_keep <= 1;
+				end else begin
+					fifo_in_keep[ctr] <= 1'b1;
+				end
+
+				// The (!rx_valid) shouldn't be needed
+				// We have it just in case last was asserted during SM_SFD
+				if(rx_last || (!rx_valid) || rx_error)
+				begin
+					// It is the end of a packet, go and wait for the next preamble
+					state <= SM_PREAMBLE;
+				end
+
+				if(ctr == REG_CTR_MAX)
+				begin
+					ctr <= 0;
+				end
+			end
+		endcase
+		if (eth_sresetn == 0)
+		begin
+			state <= SM_WAIT_INVALID;
 		end
 	end
 

@@ -95,7 +95,7 @@ module arp_engine_harness_with_mac
 		.axis_o_dst_mac(arp_dst_mac)
 	);
 
-	//`AXIS_INST_NO_USER(axis_to_mac, 4);
+	`AXIS_INST_NO_USER(axis_to_mac, 4);
 	eth_framer
 	#(
 		.AXIS_BYTES(4),
@@ -131,6 +131,19 @@ module arp_engine_harness_with_mac
 		`AXIS_MAP_IGNORE_USER(axis_o, axis_to_mac_packetised)
 	);
 
+	`AXIS_INST_NO_USER(axis_to_mac_packetised_reg, 4);
+
+	axis_register
+	#(
+		.AXIS_BYTES(4)
+	) packet_fifo_out_reg (
+		.clk(eth_rxclk),
+		.sresetn(eth_sresetn),
+
+		`AXIS_MAP_NULL_USER(axis_i, axis_to_mac_packetised),
+		`AXIS_MAP_IGNORE_USER(axis_o, axis_to_mac_packetised_reg)
+	);
+
 	gmii_tx_mac
 	#(
 		.AXIS_BYTES(4)
@@ -138,7 +151,7 @@ module arp_engine_harness_with_mac
 		.clk(eth_rxclk),
 		.sresetn(eth_sresetn),
 
-		`AXIS_MAP_NO_USER(axis_i, axis_to_mac_packetised),
+		`AXIS_MAP_NO_USER(axis_i, axis_to_mac_packetised_reg),
 
 		.eth_txd (eth_txd),
 		.eth_txen(eth_txen),

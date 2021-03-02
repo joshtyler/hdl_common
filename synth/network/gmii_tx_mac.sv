@@ -155,76 +155,76 @@ endfunction
 	// I wouldn't normally use a two block state machine, but in this case it is handy to reset the counter to zero on state transition
 	always @(posedge clk)
 	begin
+		state <= next_state;
+		eth_txen <= 0;
+
+		// Reset the counter on state transition, otherwise increment unconditoinally
+		if(next_state != state)
+		begin
+			ctr <= 0;
+		end else begin
+			ctr <= ctr+1;
+		end
+
+		// Check if we have transmitted enough data to avoid padding
+		// No need to hide this in the block for the state becuase the previous counters don't count nearly this high
+		// 64 bytes is the minimum, but we transmit on zero, and length_ok needs to be high on the last beat
+		// Therefore check against 62
+		if(ctr[5:1] == '1)
+		begin
+			length_ok <= 1;
+		end
+
+		// Latch when the last byte has been sent
+		// This means we can send data and pad in the same state
+		if(axis_i_tready && axis_i_tlast)
+		begin
+			last_byte_sent <= 1;
+		end
+
+		case(state)
+			// Wait for a packet to be ready to be sent
+			// Reset our flags in this state
+			SM_WAIT_VALID:
+			begin
+				length_ok <= 0;
+				last_byte_sent <= 0;
+				crc <= '1;
+			end
+			// Send preamble bytes
+			SM_PREAMBLE:
+			begin
+				eth_txen <= 1;
+				eth_txd <= 8'h55;
+			end
+			// Send SFD
+			SM_SFD:
+			begin
+				eth_txen <= 1;
+				eth_txd <= 8'hD5;
+			end
+			// Send data bytes (or garbage padding)
+			SM_DATA:
+			begin
+				eth_txen <= 1;
+				eth_txd <= axis_narrow_reg_tdata;
+				crc <= crc32(crc, axis_narrow_reg_tdata_rev);
+			end
+			// Send the CRC
+			SM_CRC:
+			begin
+				eth_txen <= 1;
+				// verilator lint_off WIDTH
+				eth_txd <= crc_inv_rev[(ctr[1:0]+1)*8-1 -: 8];
+				// verilator lint_on WIDTH
+			end
+			// SM_IPG is here and waits for the IPG before going back around the loop
+			default: eth_txen <= 0; // Do nothing, but empty default is illegal
+		endcase
+
 		if (sresetn == 0)
 		begin
 			state <= SM_WAIT_VALID;
-		end else begin
-			state <= next_state;
-			eth_txen <= 0;
-
-			// Reset the counter on state transition, otherwise increment unconditoinally
-			if(next_state != state)
-			begin
-				ctr <= 0;
-			end else begin
-				ctr <= ctr+1;
-			end
-
-			// Check if we have transmitted enough data to avoid padding
-			// No need to hide this in the block for the state becuase the previous counters don't count nearly this high
-			// 64 bytes is the minimum, but we transmit on zero, and length_ok needs to be high on the last beat
-			// Therefore check against 62
-			if(ctr[5:1] == '1)
-			begin
-				length_ok <= 1;
-			end
-
-			// Latch when the last byte has been sent
-			// This means we can send data and pad in the same state
-			if(axis_i_tready && axis_i_tlast)
-			begin
-				last_byte_sent <= 1;
-			end
-
-			case(state)
-				// Wait for a packet to be ready to be sent
-				// Reset our flags in this state
-				SM_WAIT_VALID:
-				begin
-					length_ok <= 0;
-					last_byte_sent <= 0;
-					crc <= '1;
-				end
-				// Send preamble bytes
-				SM_PREAMBLE:
-				begin
-					eth_txen <= 1;
-					eth_txd <= 8'h55;
-				end
-				// Send SFD
-				SM_SFD:
-				begin
-					eth_txen <= 1;
-					eth_txd <= 8'hD5;
-				end
-				// Send data bytes (or garbage padding)
-				SM_DATA:
-				begin
-					eth_txen <= 1;
-					eth_txd <= axis_narrow_reg_tdata;
-					crc <= crc32(crc, axis_narrow_reg_tdata_rev);
-				end
-				// Send the CRC
-				SM_CRC:
-				begin
-					eth_txen <= 1;
-					// verilator lint_off WIDTH
-					eth_txd <= crc_inv_rev[(ctr[1:0]+1)*8-1 -: 8];
-					// verilator lint_on WIDTH
-				end
-				// SM_IPG is here and waits for the IPG before going back around the loop
-				default: eth_txen <= 0; // Do nothing, but empty default is illegal
-			endcase
 		end
 	end
 
