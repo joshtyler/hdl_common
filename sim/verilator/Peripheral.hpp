@@ -12,46 +12,11 @@
 
 #include <gsl/pointers>
 
-// We have a base class to allow us to have a vector of pointers, without the template parameter
+// We have a base class to allow us to have a vector of pointers, without a template parameter
 class InputLatchBase
 {
 public:
-	virtual void latch(void) = 0;
-};
-
-// Class to store the value of an input when latch is called
-template <class T> class InputLatch : public InputLatchBase
-{
-public:
-    InputLatch() : ref(nullptr) {}; // Allow default construction so that we can have a vector of InputLatches
-	InputLatch(const T* ref) :ref(ref) {latch();};
-    void latch(void) override {if(ref) saved = *ref;};
-    //T operator *() const {return ref? saved : T{};};
-    operator T() const {return ref? saved : T{};};
-    bool is_null(void) {return !ref;}
-private:
-	const T* ref;
-	T saved;
-};
-
-// Class to wrap a raw pointer for the output
-// Writes are ignored if initialised with nullptr
-template <class T> class OutputWrapper
-{
-public:
-    OutputWrapper(T* ref) :ref(ref) {};
-    inline const T& operator=(const T& other)
-    {
-        if(ref)
-        {
-            *ref = other;
-        }
-        return other;
-    };
-    inline operator T() const {return ref? *ref : T{};};
-    bool is_null(void) {return !ref;}
-private:
-    T* ref;
+    virtual void latch(void) = 0;
 };
 
 // Base class for Verilator peripherals
@@ -73,13 +38,93 @@ public:
 		}
 	}
 
-	void addInput(InputLatchBase *i) {inputs.push_back(i);};
+    // Update outputs from peripheral
+    virtual void eval(void) = 0;
 
-	// Update outputs from peripheral
-	virtual void eval(void) = 0;
+    // Input addition should only be done for class members
+    // And it is important that they do not change location after registering!
+    // Removal is permitted to allow inputs to be moved (e.g. for a vector of inputs)
+	void addInput(InputLatchBase *i)
+	{
+	    if(std::find(inputs.begin(), inputs.end(), i) != inputs.end())
+        {
+	        throw std::logic_error("Attempt to register an input that is already registered");
+        }
+	    inputs.push_back(i);
+	};
+
+    void removeInput(InputLatchBase *i)
+    {
+        auto old_end = inputs.end();
+        auto new_end = std::remove(inputs.begin(), inputs.end(), i);
+
+        // I.E. if nothing was removed
+        if(old_end == new_end)
+        {
+            throw std::logic_error("Attempt to remove input that was not registered");
+        }
+    };
 
 private:
 	std::vector<InputLatchBase *> inputs;
+};
+
+
+// Class to store the value of an input when latch is called
+// Registers itself with the peripheral so that the user cannot forget
+// Also takes a default value in the constructor, if ref is null, this default_value will always be returned
+// This makes for clean interfaces for optional signals
+template <class T> class InputLatch : public InputLatchBase
+{
+public:
+    InputLatch(gsl::not_null<Peripheral *> parent_, const T* ptr_, T default_value=T{})
+        :parent(parent_), ptr(ptr_), saved(default_value)
+    {
+        // Register ourselves so that our parent calls latch at the right time
+        parent->addInput(this);
+
+        // Store an initial value
+        latch();
+    };
+
+    ~InputLatch()
+    {
+        parent->removeInput(this);
+    }
+
+    InputLatch(const InputLatch &other)
+        :parent(other.parent), ptr(other.ptr), saved(other.saved)
+    {
+        parent->addInput(this);
+    }
+
+    void latch(void) override {if(ptr) saved = *ptr;};
+    operator T() const {return saved;};
+    bool is_null(void) {return !ptr;}
+private:
+    Peripheral *parent;
+    const T* ptr;
+    T saved;
+};
+
+// Class to wrap a raw pointer for the output
+// Writes are ignored if initialised with nullptr
+template <class T> class OutputWrapper
+{
+public:
+    OutputWrapper(T* ptr_) : ptr(ptr_) {};
+    inline const T& operator=(const T& other)
+    {
+        if(ptr)
+        {
+            *ptr = other;
+        }
+        return other;
+    };
+    inline operator T() const {return ptr ? *ptr : T{};};
+    bool is_null(void) {return !ptr;}
+private:
+    T* ptr;
 };
 
 #endif

@@ -24,22 +24,29 @@ struct AXISSinkConfig
     bool packed = false;
 };
 
+template <class dataT, class keepT> keepT static constexpr maxTkeep()
+{
+    return static_cast<keepT>((1 << sizeof(dataT))-1);
+}
+
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0> class AXISSink : public Peripheral
 {
 public:
 	AXISSink(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, PacketSink<uint8_t> *data_sink_, std::array<PacketSink<userT>*, n_users> users_sink_=std::array<PacketSink<userT>*, n_users>{}, AXISSinkConfig _config=AXISSinkConfig{})
-		:clk(clk_), sresetn(sresetn_), tready(signals_.tready), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), data_sink(data_sink_), users_sink(users_sink_), packed(_config.packed)
+		:clk(clk_),
+		 sresetn(this, sresetn_, true),
+		 tready(signals_.tready),
+		 tvalid(this, signals_.tvalid, true),
+		 tlast(this, signals_.tlast, true),
+		 tkeep(this, signals_.tkeep, maxTkeep<dataT, keepT>()),
+		 tdata(this, signals_.tdata),
+		 data_sink(data_sink_),
+		 users_sink(users_sink_),
+		 packed(_config.packed)
 	{
-        addInput(&sresetn);
-		addInput(&tvalid);
-		addInput(&tlast);
-		addInput(&tdata);
-		addInput(&tkeep);
-		for(size_t i=0; i<tusers.size(); i++)
+		for(const auto&tuser_sig : signals_.tusers)
         {
-		    tusers[i] = InputLatch<userT>(signals_.tusers.at(i));
-            addInput(&tusers[i]);
-
+		    tusers.push_back(InputLatch<userT>(this, tuser_sig));
         }
 		resetState();
 	};
@@ -50,25 +57,23 @@ public:
 		{
 			if (sresetn == 1)
 			{
-				//std::cout << "Got clk rising edge, ready:" << (int)ready << " valid:" << (int)valid << std::endl;
 				if(tready && tvalid)
 				{
-					if(!tdata.is_null()) {
-                        const keepT max_tkeep = static_cast<keepT>((1 << sizeof(dataT))-1);
-
-                        keepT keep = tkeep.is_null()? max_tkeep : tkeep;
-                        dataT data = tdata;
+					if(!tdata.is_null())
+					{
 
                         // Check tkeep
                         if(packed) {
-                            if (keep > max_tkeep)
+                            if (tkeep > maxTkeep<dataT, keepT>())
+                            {
                                 throw std::runtime_error("tkeep indicating more bytes are valid than bytes that exist, on last beat! This should be impossible without mis-sized vectors!");
+                            }
 
                             // Enforce that all bits are unset after the first unset bit. I.e tkeep is one less than a power of 2
                             bool seen_unset_bit = false;
                             for(int i=0; i<sizeof(dataT); i++)
                             {
-                                bool current_bit_set = keep & (1 << i);
+                                bool current_bit_set = tkeep & (1 << i);
                                 if(seen_unset_bit && current_bit_set)
                                 {
                                     throw("tkeep is unpacked on tlast");
@@ -76,14 +81,18 @@ public:
                                 seen_unset_bit |= (!current_bit_set);
                             }
 
-                            if (!(tlast.is_null() || tlast)) {
-                                if (keep != max_tkeep)
+                            if (!tlast)
+                            {
+                                if (tkeep != maxTkeep<dataT, keepT>())
                                 {
                                     throw std::runtime_error("tkeep not all ones with tlast false");
                                 }
                             }
                         }
 
+                        // Store the data byte by byte
+                        dataT data = tdata;
+                        keepT keep = tkeep;
                         for(size_t i=0; i<sizeof(dataT); i++)
                         {
                             if(keep & 1)
@@ -94,17 +103,20 @@ public:
                             data >>= 8;
                         }
                     }
+
                     for(size_t i=0; i < curUsers.size(); i++)
                     {
                         curUsers.at(i).push_back(tusers.at(i));
                     }
 
-					if(tlast.is_null() || tlast)
+                    // Dispatch the completed packets on tlast
+					if(tlast)
 					{
 					    if(data_sink)
 					    {
                             data_sink->send(cur_data);
                         }
+
                         cur_data = {};
 					    for(size_t i=0; i < curUsers.size(); i++)
                         {
@@ -130,9 +142,8 @@ private:
 	InputLatch <vluint8_t> tlast;
     InputLatch <keepT> tkeep;
 	InputLatch <dataT> tdata;
-    // Do not be tempted to make this a vector
-    // The location of each element needs to be fixed in memory since we register it as an input
-    std::array<InputLatch<userT>, n_users> tusers;
+
+    std::vector<InputLatch<userT>> tusers;
 
     std::vector<uint8_t> cur_data;
     std::array<std::vector<userT>, n_users> curUsers;
