@@ -100,11 +100,13 @@ axis_fifo
 	.axis_i_tvalid(addr_cmd_fifo_i_tvalid),
 	.axis_i_tlast(1'b0),
 	.axis_i_tdata({8{1'b1}}),
+	.axis_i_tkeep(1'b1),
 	.axis_i_tuser({s_wb_we, s_wb_addr}),
 
 	.axis_o_tready(cmd_ready_unbuf),
 	.axis_o_tvalid(cmd_valid_unbuf),
 	.axis_o_tlast(),
+	.axis_o_tkeep(),
 	.axis_o_tdata(),
 	.axis_o_tuser({cmd_we_unbuf, cmd_addr_unbuf})
 );
@@ -120,12 +122,14 @@ axis_register
 	.axis_i_tready(cmd_ready_unbuf),
 	.axis_i_tvalid(cmd_valid_unbuf),
 	.axis_i_tlast(1'b0),
+	.axis_i_tkeep(1'b1),
 	.axis_i_tdata({8{1'b1}}),
 	.axis_i_tuser({cmd_we_unbuf, cmd_addr_unbuf}),
 
 	.axis_o_tready(cmd_ready),
 	.axis_o_tvalid(cmd_valid),
 	.axis_o_tlast(),
+	.axis_o_tkeep(),
 	.axis_o_tdata(),
 	.axis_o_tuser({cmd_we, cmd_addr})
 );
@@ -143,11 +147,15 @@ axis_fifo
 	.axis_i_tready(), // Because this is at least as full, if not more full that the meta fifo, we know when this is ready from the meta fifo
 	.axis_i_tvalid(wr_dat_fifo_i_tvalid),
 	.axis_i_tlast(1'b0),
+	.axis_i_tkeep({DATA_BYTES{1'b1}}),
+	.axis_i_tuser(1'b1),
 	.axis_i_tdata(s_wb_dat_m2s),
 
 	.axis_o_tready(cmd_ready && cmd_we),
 	.axis_o_tvalid(), // We know from the meta fifo when this will be valid
 	.axis_o_tlast(),
+	.axis_o_tkeep(),
+	.axis_o_tuser(),
 	.axis_o_tdata(ram_dq_o)
 );
 assign ram_dq_oe = cmd_ready && cmd_valid && cmd_we;

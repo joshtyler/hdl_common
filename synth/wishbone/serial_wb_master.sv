@@ -1,3 +1,5 @@
+`include "axis/utility.h"
+
 module serial_wb_master
 #(
 	parameter BYTES = 1, // Wishbone only, stream is fixed as byte wide
@@ -134,11 +136,14 @@ logic axis_widen_i_tvalid;
 logic axis_widen_o_tready;
 logic axis_widen_o_tvalid;
 
+`BYTE_SWAP_FUNCTION(byte_swap_func, BYTES);
+
+logic [BYTES*8-1:0] m_wb_dat_m2s_le;
+
 axis_width_converter
 #(
 	.AXIS_I_BYTES(1),
 	.AXIS_O_BYTES(BYTES),
-	.MSB_FIRST(1) // Big endian
 ) input_dat_widen (
 	.clk(clk),
 	.sresetn(sresetn),
@@ -146,13 +151,17 @@ axis_width_converter
 	.axis_i_tready(axis_widen_i_tready),
 	.axis_i_tvalid(axis_widen_i_tvalid),
 	.axis_i_tlast(1'b0),
+	.axis_i_tkeep(1'b1),
 	.axis_i_tdata(axis_i_tdata),
 
 	.axis_o_tready(axis_widen_o_tready),
 	.axis_o_tvalid(axis_widen_o_tvalid),
 	.axis_o_tlast(),
-	.axis_o_tdata(m_wb_dat_m2s)
+	.axis_o_tkeep(),
+	.axis_o_tdata(m_wb_dat_m2s_le)
 );
+
+assign m_wb_dat_m2s = byte_swap_func(m_wb_dat_m2s_le);
 
 always_comb
 begin
@@ -212,6 +221,7 @@ axis_fifo
 	.axis_i_tready(), // It will never fill up, because the state machine only issues transactions it can store
 	.axis_i_tvalid(m_wb_ack && (!m_wb_we)),
 	.axis_i_tlast(1'b1), // Currently ignored
+	.axis_i_tkeep({BYTES{1'b1}}),
 	.axis_i_tdata(m_wb_dat_s2m),
 	.axis_i_tuser(1'b0),
 
@@ -219,6 +229,7 @@ axis_fifo
 	.axis_o_tready(axis_o_wide_tready),
 	.axis_o_tvalid(axis_o_wide_tvalid),
 	.axis_o_tlast(),
+	.axis_i_tkeep(),
 	.axis_o_tdata(axis_o_wide_tdata),
 	.axis_o_tuser()
 );
@@ -226,8 +237,7 @@ axis_fifo
 axis_width_converter
 #(
 	.AXIS_I_BYTES(BYTES),
-	.AXIS_O_BYTES(1),
-	.MSB_FIRST(1) // Big endian
+	.AXIS_O_BYTES(1)
 ) output_dat_narrow (
 	.clk(clk),
 	.sresetn(sresetn),
@@ -235,11 +245,13 @@ axis_width_converter
 	.axis_i_tready(axis_o_wide_tready),
 	.axis_i_tvalid(axis_o_wide_tvalid),
 	.axis_i_tlast(1'b1),
-	.axis_i_tdata(axis_o_wide_tdata),
+	.axis_i_tkeep({BYTES{1'b1}}),
+	.axis_i_tdata(byte_swap_func(axis_o_wide_tdata)),
 
 	.axis_o_tready(axis_o_tready),
 	.axis_o_tvalid(axis_o_tvalid),
 	.axis_o_tlast(axis_o_tlast),
+	.axis_o_tkeep(),
 	.axis_o_tdata(axis_o_tdata)
 );
 
