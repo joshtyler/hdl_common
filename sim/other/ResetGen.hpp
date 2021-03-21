@@ -19,7 +19,7 @@
 class ResetGen : public Peripheral
 {
 public:
-	ResetGen(VerilatedModelInterface *model, ClockGen &clk, vluint8_t &reset, bool polarity)
+	ResetGen(gsl::not_null<VerilatedModelInterface *> model, ClockGen &clk, vluint8_t &reset, bool polarity)
 		:Peripheral(model), clk(clk), reset(reset), ctr(0)
 	{
 		reset = polarity;

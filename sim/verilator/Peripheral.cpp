@@ -2,9 +2,9 @@
 
 #include "VerilatedModel.hpp"
 
-Peripheral::Peripheral(VerilatedModelInterface *model)
+Peripheral::Peripheral(gsl::not_null<VerilatedModelInterface *> model)
 {
-model->addPeripheral(this);
+    model->addPeripheral(this);
 }
 
 void Peripheral::latch(void)

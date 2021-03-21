@@ -29,7 +29,7 @@ public:
 class Peripheral
 {
 public:
-    Peripheral(VerilatedModelInterface *model);
+    Peripheral(gsl::not_null<VerilatedModelInterface *> model);
     virtual ~Peripheral() = default;
 
 	// Save inputs to Peripheral

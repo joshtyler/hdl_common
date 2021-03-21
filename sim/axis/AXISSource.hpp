@@ -67,7 +67,7 @@ private:
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0>class AXISSource : public Peripheral
 {
 public:
-	AXISSource(VerilatedModelInterface *model, gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, gsl::not_null<PacketSource<uint8_t> *> data_source_, std::array<PacketSource<userT>*, n_users> users_source_=std::array<PacketSource<userT>*, n_users>{}, AXISSourceConfig _config=AXISSourceConfig{})
+	AXISSource(gsl::not_null<VerilatedModelInterface *> model, gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, gsl::not_null<PacketSource<uint8_t> *> data_source_, std::array<PacketSource<userT>*, n_users> users_source_=std::array<PacketSource<userT>*, n_users>{}, AXISSourceConfig _config=AXISSourceConfig{})
 		:Peripheral(model), clk(clk_), sresetn(this, sresetn_, 1), tready(this, signals_.tready, 1), tvalid(signals_.tvalid), tlast(signals_.tlast), tkeep(signals_.tkeep), tdata(signals_.tdata), data_source(data_source_), output_packed(_config.packed)
 	{
 	    for(size_t i=0; i < n_users; i++)
