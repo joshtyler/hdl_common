@@ -18,8 +18,8 @@
 class GMIISource : public Peripheral
 {
 public:
-    GMIISource(gsl::not_null<ClockGen *> clk_, gsl::not_null<vluint8_t *>eth_rxd_, gsl::not_null<vluint8_t *>eth_rxdv_, gsl::not_null<vluint8_t *>eth_rxer_, gsl::not_null<PacketSource<vluint8_t> *> data_source_)
-		:clk(clk_), eth_rxd(eth_rxd_), eth_rxdv(eth_rxdv_), eth_rxer(eth_rxer), data_source(data_source_)
+    GMIISource(VerilatedModelInterface *model, gsl::not_null<ClockGen *> clk_, gsl::not_null<vluint8_t *>eth_rxd_, gsl::not_null<vluint8_t *>eth_rxdv_, gsl::not_null<vluint8_t *>eth_rxer_, gsl::not_null<PacketSource<vluint8_t> *> data_source_)
+		:Peripheral(model), clk(clk_), eth_rxd(eth_rxd_), eth_rxdv(eth_rxdv_), eth_rxer(eth_rxer), data_source(data_source_)
 	{
         eth_rxd = 0;
         eth_rxdv = 0;

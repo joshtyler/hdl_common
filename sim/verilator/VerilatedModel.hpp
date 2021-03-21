@@ -13,9 +13,11 @@
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 #include <string>
+#include <iostream>
 
 #include "Peripheral.hpp"
 #include "../other/ClockGen.hpp"
+
 
 // Class that binds together a clock generator, and a Verilated model input
 class ClockBind
@@ -33,8 +35,17 @@ static bool neverBreak(void)
 	return 0;
 }
 
+// This is a separate interface because Peripherals register themselves, but it would be awkward to template them with the model
+class VerilatedModelInterface
+{
+public:
+    void addPeripheral(Peripheral *p) {peripherals.push_back(p);};
+protected:
+    std::vector<Peripheral *> peripherals;
+};
+
 // Take care of boilerplate for a verilated model
-template <class MODEL> class VerilatedModel
+template <class MODEL> class VerilatedModel : public VerilatedModelInterface
 {
 public:
 
@@ -80,7 +91,6 @@ public:
 	};
 
 	void addClock(ClockBind *c) {clocks.push_back(c);};
-	void addPeripheral(Peripheral *p) {peripherals.push_back(p);};
 	void setFinishCallback(bool (*func)(void) ) {finishCallback = func;};
 
 	const vluint64_t & getTime(void) {return time;};
@@ -118,7 +128,6 @@ public:
 	MODEL* uut;
 private:
 	std::vector<ClockBind *> clocks;
-	std::vector<Peripheral *> peripherals;
 	vluint64_t time;
 	VerilatedVcdC* tfp;
 	bool (*finishCallback)(void);

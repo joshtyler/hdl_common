@@ -28,16 +28,13 @@ std::vector<std::vector<vluint8_t>> testPacker(std::vector<std::vector<vluint8_t
     sinkConfig.packed = true;
 
     SimplePacketSink<uint8_t> outAxisSink;
-	AXISSink<vluint32_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink, {}, sinkConfig);
+	AXISSink<vluint32_t, vluint8_t> outAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink, {}, sinkConfig);
 
     SimplePacketSource<uint8_t> inAxisSource(inData);
-	AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, &inAxisSource, std::array<PacketSource<vluint32_t>*, 0>{}, sourceConfig);
+	AXISSource<vluint32_t, vluint8_t> inAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, &inAxisSource, std::array<PacketSource<vluint32_t>*, 0>{}, sourceConfig);
 
-	ResetGen resetGen(clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
 
-	uut.addPeripheral(&outAxis);
-	uut.addPeripheral(&inAxis);
-	uut.addPeripheral(&resetGen);
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);
 

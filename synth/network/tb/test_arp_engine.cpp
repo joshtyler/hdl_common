@@ -28,13 +28,13 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
     VerilatedModel<Varp_engine_harness> uut("arp_engine.vcd", true);
 
     ClockGen clk(uut.getTime(), 1e-9, 100e6);
-    ResetGen resetGen(clk,uut.uut->sresetn, false);
+    ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
 
     // If you want to look at the data manually, run ip tuntap add name tap0 mode tap
     // Then pass "tap0" as the argument to this constructor
     Tap tap;
 
-    AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
+    AXISSource<vluint32_t, vluint8_t> inAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
             {
                     .tready = &uut.uut->axis_i_tready,
                     .tvalid = &uut.uut->axis_i_tvalid,
@@ -43,7 +43,7 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
                     .tdata = &uut.uut->axis_i_tdata
             }, &tap);
 
-    AXISSink<vluint32_t, vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
+    AXISSink<vluint32_t, vluint8_t> outAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
     {
         .tready = &uut.uut->axis_o_tready,
         .tvalid = &uut.uut->axis_o_tvalid,
@@ -52,9 +52,6 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
         .tdata = &uut.uut->axis_o_tdata
     }, &tap);
 
-    uut.addPeripheral(&resetGen);
-    uut.addPeripheral(&inAxis);
-    uut.addPeripheral(&outAxis);
     ClockBind clkDriver(clk,uut.uut->clk);
     uut.addClock(&clkDriver);
 
@@ -99,14 +96,12 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests (with ethernet M
     // Then pass "tap0"end as the argument to this constructor
     Tap tap("tap0");
 
-    GMIISource src(&clketh, &uut.uut->eth_rxd, &uut.uut->eth_rxdv, &uut.uut->eth_rxer, &tap);
+    GMIISource src(&uut, &clketh, &uut.uut->eth_rxd, &uut.uut->eth_rxdv, &uut.uut->eth_rxer, &tap);
 
     // Currently we assume that the UUT outputs data on the same clock as rxclk
     // But this is not required(!)
-    GMIISink sink(&clketh, &uut.uut->eth_txd, &uut.uut->eth_txen, &uut.uut->eth_txer, &tap);
+    GMIISink sink(&uut, &clketh, &uut.uut->eth_txd, &uut.uut->eth_txen, &uut.uut->eth_txer, &tap);
 
-    uut.addPeripheral(&src);
-    uut.addPeripheral(&sink);
     ClockBind clkDriverUser(clkuser,uut.uut->clk);
     ClockBind clkDriverEth(clketh, uut.uut->eth_rxclk);
     uut.addClock(&clkDriverUser);

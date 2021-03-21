@@ -12,6 +12,9 @@
 
 #include <gsl/pointers>
 
+// Forward declare to avoid circular include
+class VerilatedModelInterface;
+
 // We have a base class to allow us to have a vector of pointers, without a template parameter
 class InputLatchBase
 {
@@ -26,17 +29,12 @@ public:
 class Peripheral
 {
 public:
+    Peripheral(VerilatedModelInterface *model);
     virtual ~Peripheral() = default;
 
 	// Save inputs to Peripheral
 	// The overriding class adds all its inputs to the latch queue during construction
-	void latch(void)
-	{
-		for(auto itm : inputs)
-		{
-			itm->latch();
-		}
-	}
+	void latch(void);
 
     // Update outputs from peripheral
     virtual void eval(void) = 0;
@@ -44,26 +42,9 @@ public:
     // Input addition should only be done for class members
     // And it is important that they do not change location after registering!
     // Removal is permitted to allow inputs to be moved (e.g. for a vector of inputs)
-	void addInput(InputLatchBase *i)
-	{
-	    if(std::find(inputs.begin(), inputs.end(), i) != inputs.end())
-        {
-	        throw std::logic_error("Attempt to register an input that is already registered");
-        }
-	    inputs.push_back(i);
-	};
+	void addInput(InputLatchBase *i);
 
-    void removeInput(InputLatchBase *i)
-    {
-        auto old_end = inputs.end();
-        auto new_end = std::remove(inputs.begin(), inputs.end(), i);
-
-        // I.E. if nothing was removed
-        if(old_end == new_end)
-        {
-            throw std::logic_error("Attempt to remove input that was not registered");
-        }
-    };
+    void removeInput(InputLatchBase *i);
 
 private:
 	std::vector<InputLatchBase *> inputs;

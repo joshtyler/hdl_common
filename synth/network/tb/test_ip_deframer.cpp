@@ -34,7 +34,7 @@ namespace {
         ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
         SimplePacketSource<uint8_t> inAxisSource({packet});
-        AXISSource<vluint32_t, vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
+        AXISSource<vluint32_t, vluint8_t> inAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>
                 {
                         .tready = &uut.uut->axis_i_tready,
                         .tvalid = &uut.uut->axis_i_tvalid,
@@ -49,7 +49,7 @@ namespace {
         SimplePacketSink<uint32_t> outAxisDstIpSink;
         SimplePacketSink<uint32_t> outAxisLenBytesSink;
 
-        AXISSink<vluint32_t, vluint8_t, vluint32_t, 4> outAxis(&clk, &uut.uut->sresetn,
+        AXISSink<vluint32_t, vluint8_t, vluint32_t, 4> outAxis(&uut, &clk, &uut.uut->sresetn,
                                                                AxisSignals<vluint32_t, vluint8_t, vluint32_t, 4>
                                                                        {
                                                                                .tready = &uut.uut->axis_o_tready,
@@ -70,11 +70,8 @@ namespace {
                                                                     &outAxisLenBytesSink
                                                                });
 
-        ResetGen resetGen(clk, uut.uut->sresetn, false);
+        ResetGen resetGen(&uut, clk, uut.uut->sresetn, false);
 
-        uut.addPeripheral(&inAxis);
-        uut.addPeripheral(&outAxis);
-        uut.addPeripheral(&resetGen);
         ClockBind clkDriver(clk, uut.uut->clk);
         uut.addClock(&clkDriver);
 

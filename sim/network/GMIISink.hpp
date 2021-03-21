@@ -13,6 +13,7 @@
 #include <vector>
 #include "../other/ClockGen.hpp"
 #include "../verilator/Peripheral.hpp"
+#include "../verilator/VerilatedModel.hpp"
 #include "../other/PacketSourceSink.hpp"
 #include <zlib.h>
 
@@ -24,8 +25,8 @@ class GMIISinkException : public std::runtime_error
 class GMIISink : public Peripheral
 {
 public:
-    GMIISink(gsl::not_null<ClockGen *> clk_, gsl::not_null<vluint8_t *>eth_txd_, gsl::not_null<vluint8_t *>eth_txen_, gsl::not_null<vluint8_t *>eth_txer_, gsl::not_null<PacketSink<vluint8_t> *> data_sink_)
-		: clk(clk_), eth_txd(this, eth_txd_), eth_txen(this, eth_txen_), eth_txer(this, eth_txer_), data_sink(data_sink_)
+    GMIISink(VerilatedModelInterface *model, gsl::not_null<ClockGen *> clk_, gsl::not_null<vluint8_t *>eth_txd_, gsl::not_null<vluint8_t *>eth_txen_, gsl::not_null<vluint8_t *>eth_txer_, gsl::not_null<PacketSink<vluint8_t> *> data_sink_)
+		:Peripheral(model), clk(clk_), eth_txd(this, eth_txd_), eth_txen(this, eth_txen_), eth_txer(this, eth_txer_), data_sink(data_sink_)
 	{
         current_packet.reserve(1538); // Standard MTU
 	};

@@ -26,20 +26,17 @@ int main(int argc, char** argv)
 	VerilatedModel<Veth_crc> uut(argc,argv,recordVcd);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
-	AXISSink<vluint32_t, vluint8_t> outAxis(clk, uut.uut->sresetn, uut.uut->axis_o_tready,
+	AXISSink<vluint32_t, vluint8_t> outAxis(&uut, clk, uut.uut->sresetn, uut.uut->axis_o_tready,
 		uut.uut->axis_o_tvalid, uut.uut->axis_o_tlast, uut.uut->axis_o_tdata);
 
 	std::vector<std::vector<vluint8_t>> inData = {{0x0,0x1,0x2,0x3}};
 	//std::vector<std::vector<vluint8_t>> inData = {{0x01}};
-	AXISSource<vluint8_t> inAxis(clk, uut.uut->sresetn, uut.uut->axis_i_tready,
+	AXISSource<vluint8_t> inAxis(&uut, clk, uut.uut->sresetn, uut.uut->axis_i_tready,
 		uut.uut->axis_i_tvalid, uut.uut->axis_i_tlast, uut.uut->axis_i_tdata,
 		inData);
 
-	ResetGen resetGen(clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
 
-	uut.addPeripheral(&outAxis);
-	uut.addPeripheral(&inAxis);
-	uut.addPeripheral(&resetGen);
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);
 

@@ -17,7 +17,7 @@ add_subdirectory(synth)
 
 # See https://github.com/catchorg/Catch2/issues/421 for the slightly way of doing this
 # Needed to make catch2 detect tests in libraries
-add_executable(all_tests_exec $<TARGET_OBJECTS:axis_object> $<TARGET_OBJECTS:network_object> run_unit_tests.cpp sim/axis/AXIS.h)
+add_executable(all_tests_exec $<TARGET_OBJECTS:axis_object> $<TARGET_OBJECTS:network_object> run_unit_tests.cpp sim/verilator/Peripheral.cpp)
 target_link_libraries(all_tests_exec axis_object network_object)
 add_test(NAME all_tests COMMAND all_tests_exec)
 

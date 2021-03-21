@@ -26,17 +26,14 @@ std::vector<std::vector<vluint8_t>> testPadder(std::vector<std::vector<vluint8_t
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
     SimplePacketSink<uint8_t> outAxisSink;
-	AXISSink<vluint8_t> outAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink);
+	AXISSink<vluint8_t> outAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink);
 
     SimplePacketSource<uint8_t> inAxisSource(inData);
-	AXISSource<vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
+	AXISSource<vluint8_t> inAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
                                  &inAxisSource);
 
-	ResetGen resetGen(clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
 
-	uut.addPeripheral(&outAxis);
-	uut.addPeripheral(&inAxis);
-	uut.addPeripheral(&resetGen);
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);
 

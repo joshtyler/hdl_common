@@ -16,6 +16,7 @@
 #include "../other/ClockGen.hpp"
 #include "../other/PacketSourceSink.hpp"
 #include "../verilator/Peripheral.hpp"
+#include "../verilator/VerilatedModel.hpp"
 #include <gsl/pointers>
 #include <vector>
 
@@ -32,8 +33,9 @@ template <class dataT, class keepT> keepT static constexpr maxTkeep()
 template <class dataT, class keepT=dataT, class userT=dataT, unsigned int n_users=0> class AXISSink : public Peripheral
 {
 public:
-	AXISSink(gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, PacketSink<uint8_t> *data_sink_, std::array<PacketSink<userT>*, n_users> users_sink_=std::array<PacketSink<userT>*, n_users>{}, AXISSinkConfig _config=AXISSinkConfig{})
-		:clk(clk_),
+	AXISSink(VerilatedModelInterface *model, gsl::not_null<ClockGen *> clk_, const gsl::not_null<vluint8_t *> sresetn_, const AxisSignals<dataT, keepT, userT, n_users> &signals_, PacketSink<uint8_t> *data_sink_, std::array<PacketSink<userT>*, n_users> users_sink_=std::array<PacketSink<userT>*, n_users>{}, AXISSinkConfig _config=AXISSinkConfig{})
+		:Peripheral(model),
+		 clk(clk_),
 		 sresetn(this, sresetn_, true),
 		 tready(signals_.tready),
 		 tvalid(this, signals_.tvalid, true),

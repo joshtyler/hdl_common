@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 	VerilatedModel<Veth_framer> uut(argc,argv,recordVcd);
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
-	AXISSink<vluint8_t> outAxis(clk, uut.uut->sresetn, uut.uut->out_axis_tready,
+	AXISSink<vluint8_t> outAxis(&uut, clk, uut.uut->sresetn, uut.uut->out_axis_tready,
 		uut.uut->out_axis_tvalid, uut.uut->out_axis_tlast, uut.uut->out_axis_tdata);
 
 	std::vector<std::vector<vluint8_t>> payload = {{0x0,0x1,0x2,0x3}};
@@ -38,11 +38,8 @@ int main(int argc, char** argv)
 	uut.uut->src_mac = 0x010203040506;
 	uut.uut->dst_mac = 0xf0e0d0c0b0a0;
 
-	ResetGen resetGen(clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
 
-	uut.addPeripheral(&outAxis);
-	uut.addPeripheral(&payloadAxis);
-	uut.addPeripheral(&resetGen);
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);
 

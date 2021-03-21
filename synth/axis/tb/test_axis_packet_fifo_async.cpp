@@ -27,19 +27,15 @@ std::vector<std::vector<vluint8_t>> testPacketFifoAsync(std::vector<std::vector<
 
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
     SimplePacketSink<uint8_t> outAxisSink;
-	AXISSink<vluint8_t> outAxis(&clk, &uut.uut->i_sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink);
+	AXISSink<vluint8_t> outAxis(&uut, &clk, &uut.uut->i_sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink);
 
     SimplePacketSource<uint8_t> inAxisSource(inData);
-	AXISSource<vluint8_t> inAxis(&clk, &uut.uut->o_sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
+	AXISSource<vluint8_t> inAxis(&uut, &clk, &uut.uut->o_sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
 		&inAxisSource);
 
-	ResetGen i_resetGen(clk,uut.uut->i_sresetn, false);
-	ResetGen o_resetGen(clk,uut.uut->o_sresetn, false);
+	ResetGen i_resetGen(&uut, clk,uut.uut->i_sresetn, false);
+	ResetGen o_resetGen(&uut, clk,uut.uut->o_sresetn, false);
 
-	uut.addPeripheral(&outAxis);
-	uut.addPeripheral(&inAxis);
-	uut.addPeripheral(&i_resetGen);
-	uut.addPeripheral(&o_resetGen);
 	ClockBind i_clkDriver(clk,uut.uut->i_clk);
 	ClockBind o_clkDriver(clk,uut.uut->o_clk);
 	uut.addClock(&i_clkDriver);

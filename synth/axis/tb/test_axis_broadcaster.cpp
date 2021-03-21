@@ -26,21 +26,17 @@ auto testBroadcaster(std::vector<std::vector<vluint8_t>> inData, bool record_vcd
 	ClockGen clk(uut.getTime(), 1e-9, 100e6);
 
     SimplePacketSource<uint8_t> inAxisSource(inData);
-	AXISSource<vluint8_t> inAxis(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
+	AXISSource<vluint8_t> inAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
 		&inAxisSource);
 
     SimplePacketSink<uint8_t> outAxisSink1;
-	AXISSink<vluint8_t> outAxis1(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o1_tready, .tvalid = &uut.uut->axis_o1_tvalid, .tlast = &uut.uut->axis_o1_tlast, .tkeep = &uut.uut->axis_o1_tkeep, .tdata = &uut.uut->axis_o1_tdata}, &outAxisSink1);
+	AXISSink<vluint8_t> outAxis1(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o1_tready, .tvalid = &uut.uut->axis_o1_tvalid, .tlast = &uut.uut->axis_o1_tlast, .tkeep = &uut.uut->axis_o1_tkeep, .tdata = &uut.uut->axis_o1_tdata}, &outAxisSink1);
     SimplePacketSink<uint8_t> outAxisSink2;
-	AXISSink<vluint8_t> outAxis2(&clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o2_tready, .tvalid = &uut.uut->axis_o2_tvalid, .tlast = &uut.uut->axis_o2_tlast, .tkeep = &uut.uut->axis_o2_tkeep, .tdata = &uut.uut->axis_o2_tdata}, &outAxisSink2);
+	AXISSink<vluint8_t> outAxis2(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o2_tready, .tvalid = &uut.uut->axis_o2_tvalid, .tlast = &uut.uut->axis_o2_tlast, .tkeep = &uut.uut->axis_o2_tkeep, .tdata = &uut.uut->axis_o2_tdata}, &outAxisSink2);
 
 
-	ResetGen resetGen(clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
 
-	uut.addPeripheral(&inAxis);
-	uut.addPeripheral(&outAxis1);
-	uut.addPeripheral(&outAxis2);
-	uut.addPeripheral(&resetGen);
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);
 

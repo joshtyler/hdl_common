@@ -14,12 +14,13 @@
 
 #include "ClockGen.hpp"
 #include "../verilator/Peripheral.hpp"
+#include "../verilator/VerilatedModel.hpp"
 
 class ResetGen : public Peripheral
 {
 public:
-	ResetGen(ClockGen &clk, vluint8_t &reset, bool polarity)
-		:clk(clk), reset(reset), ctr(0)
+	ResetGen(VerilatedModelInterface *model, ClockGen &clk, vluint8_t &reset, bool polarity)
+		:Peripheral(model), clk(clk), reset(reset), ctr(0)
 	{
 		reset = polarity;
 	};
