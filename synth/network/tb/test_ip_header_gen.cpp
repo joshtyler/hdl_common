@@ -105,7 +105,7 @@ auto testip(uint64_t src_ip, uint64_t dest_ip, uint8_t protocol, std::vector<std
 	AXISSink<vluint32_t, vluint8_t> outAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink);
 
 
-	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);

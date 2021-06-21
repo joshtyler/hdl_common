@@ -19,27 +19,27 @@
 class ResetGen : public Peripheral
 {
 public:
-	ResetGen(gsl::not_null<VerilatedModelInterface *> model, ClockGen &clk, vluint8_t &reset, bool polarity)
-		:Peripheral(model), clk(clk), reset(reset), ctr(0)
+	ResetGen(gsl::not_null<VerilatedModelInterface *> model, gsl::not_null<ClockGen *> clk, gsl::not_null<vluint8_t *> reset, bool polarity)
+		:Peripheral(model), clk(clk), reset(reset)
 	{
-		reset = polarity;
+		*reset = polarity;
 	};
 	void eval(void) override
 	{
-		if((clk.getEvent() == ClockGen::Event::RISING) and ctr < 5)
+		if((clk->getEvent() == ClockGen::Event::RISING) and ctr < 5)
 		{
 			ctr = ctr + 1;
 			if(ctr == 5)
 			{
-				reset = ! reset;
+				*reset = ! *reset;
 			}
 		}
 	}
 
 private:
-	ClockGen &clk;
-	vluint8_t &reset;
-	int ctr;
+	ClockGen *clk;
+	vluint8_t *reset;
+	int ctr = 0;
 };
 
 #endif

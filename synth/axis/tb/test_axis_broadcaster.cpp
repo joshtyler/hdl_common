@@ -35,7 +35,7 @@ auto testBroadcaster(std::vector<std::vector<vluint8_t>> inData, bool record_vcd
 	AXISSink<vluint8_t> outAxis2(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_o2_tready, .tvalid = &uut.uut->axis_o2_tvalid, .tlast = &uut.uut->axis_o2_tlast, .tkeep = &uut.uut->axis_o2_tkeep, .tdata = &uut.uut->axis_o2_tdata}, &outAxisSink2);
 
 
-	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);

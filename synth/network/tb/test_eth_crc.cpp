@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 		uut.uut->axis_i_tvalid, uut.uut->axis_i_tlast, uut.uut->axis_i_tdata,
 		inData);
 
-	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);

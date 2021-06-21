@@ -34,7 +34,7 @@ template <class model_t, class data_in_t, class data_out_t> auto testWidthConver
 	AXISSink<data_out_t, vluint8_t> outAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<data_out_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tlast = &uut.uut->axis_o_tlast, .tkeep = &uut.uut->axis_o_tkeep, .tdata = &uut.uut->axis_o_tdata}, &outAxisSink);
 
 
-	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);

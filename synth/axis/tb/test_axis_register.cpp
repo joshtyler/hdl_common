@@ -30,7 +30,7 @@ std::vector<std::vector<vluint8_t>> testRegister(std::vector<std::vector<vluint8
 	SimplePacketSource<uint8_t> inAxisSource(inData);
 	AXISSource<vluint8_t> inAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, &inAxisSource);
 
-	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);

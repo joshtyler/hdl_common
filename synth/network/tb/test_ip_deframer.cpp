@@ -70,7 +70,7 @@ namespace {
                                                                     &outAxisLenBytesSink
                                                                });
 
-        ResetGen resetGen(&uut, clk, uut.uut->sresetn, false);
+        ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
         ClockBind clkDriver(clk, uut.uut->clk);
         uut.addClock(&clkDriver);

@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 	uut.uut->src_mac = 0x010203040506;
 	uut.uut->dst_mac = 0xf0e0d0c0b0a0;
 
-	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);

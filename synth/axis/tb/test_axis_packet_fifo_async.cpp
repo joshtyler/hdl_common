@@ -33,8 +33,8 @@ std::vector<std::vector<vluint8_t>> testPacketFifoAsync(std::vector<std::vector<
 	AXISSource<vluint8_t> inAxis(&uut, &clk, &uut.uut->o_sresetn, AxisSignals<vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata},
 		&inAxisSource);
 
-	ResetGen i_resetGen(&uut, clk,uut.uut->i_sresetn, false);
-	ResetGen o_resetGen(&uut, clk,uut.uut->o_sresetn, false);
+	ResetGen i_resetGen(&uut, &clk, &uut.uut->i_sresetn, false);
+	ResetGen o_resetGen(&uut, &clk, &uut.uut->o_sresetn, false);
 
 	ClockBind i_clkDriver(clk,uut.uut->i_clk);
 	ClockBind o_clkDriver(clk,uut.uut->o_clk);

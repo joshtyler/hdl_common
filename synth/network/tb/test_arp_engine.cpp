@@ -28,7 +28,7 @@ TEST_CASE("arp_engine: Test ARP engine responds to ARP requests", "[arp_engine]"
     VerilatedModel<Varp_engine_harness> uut("arp_engine.vcd", true);
 
     ClockGen clk(uut.getTime(), 1e-9, 100e6);
-    ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+    ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
     // If you want to look at the data manually, run ip tuntap add name tap0 mode tap
     // Then pass "tap0" as the argument to this constructor

@@ -104,7 +104,7 @@ template <class Verilated> auto testIpChecksum(std::vector<std::vector<uint8_t>>
     SimplePacketSink<uint8_t> outAxisSink;
 	AXISSink<vluint16_t, vluint8_t> outAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint16_t, vluint8_t>{.tready = &uut.uut->axis_o_tready, .tvalid = &uut.uut->axis_o_tvalid, .tdata = &uut.uut->axis_o_csum}, &outAxisSink);
 
-	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);

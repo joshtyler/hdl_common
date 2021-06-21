@@ -33,7 +33,7 @@ std::vector<std::vector<vluint8_t>> testPacker(std::vector<std::vector<vluint8_t
     SimplePacketSource<uint8_t> inAxisSource(inData);
 	AXISSource<vluint32_t, vluint8_t> inAxis(&uut, &clk, &uut.uut->sresetn, AxisSignals<vluint32_t, vluint8_t>{.tready = &uut.uut->axis_i_tready, .tvalid = &uut.uut->axis_i_tvalid, .tlast = &uut.uut->axis_i_tlast, .tkeep = &uut.uut->axis_i_tkeep, .tdata = &uut.uut->axis_i_tdata}, &inAxisSource, std::array<PacketSource<vluint32_t>*, 0>{}, sourceConfig);
 
-	ResetGen resetGen(&uut, clk,uut.uut->sresetn, false);
+	ResetGen resetGen(&uut, &clk, &uut.uut->sresetn, false);
 
 	ClockBind clkDriver(clk,uut.uut->clk);
 	uut.addClock(&clkDriver);
