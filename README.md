@@ -6,9 +6,12 @@ Most components have a verilator testbench, which is tested using the Catch2 uni
 
 To run all tests:
 ```bash
-make
-./run_unit_tests
+cmake -B build
+cmake --build build -j $(nproc)
+./build/all_test_exec
 ```
+
+N.B. There is also a Makefile to build the unit tests, but this is deprected (it is also currently not building). It will be removed in the future
 
 ## Licensing
 Software is licensed under LGPL 2.1 (or later)
